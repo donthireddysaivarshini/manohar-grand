@@ -1,0 +1,1579 @@
+MANOHAR GRAND
+Product Requirements Document — PRD
+
+Document Version: 1.0
+Product: Manohar Grand Hotel Website & Booking Platform
+Current Stage: Phase 0 — Product Definition
+Frontend: React + TypeScript
+Backend: Not included in current phase
+Primary Brand Colour: #FE0000
+Secondary Brand Colour: #FFFFFF
+
+1. PRODUCT OVERVIEW
+
+Manohar Grand is a hotel website and direct booking platform.
+
+The product will initially be developed as a fully responsive frontend prototype using static/mock data.
+
+The final product is expected to evolve into a full-stack hotel reservation system with:
+
+Customer-facing hotel website
+Room browsing
+Date-based availability
+Multiple-room booking
+Online payments
+Customer accounts
+Booking management
+Admin dashboard
+Room inventory management
+Pricing management
+Offline bookings
+Automatic inventory updates
+Payment management
+WhatsApp communication
+
+The current development phase must focus only on the customer-facing experience.
+
+No Django/backend/payment gateway/API integration should be implemented in Phase 1.
+
+2. PRODUCT GOAL
+
+The primary goal is to create a hotel website that feels like a premium, modern, trustworthy direct-booking hotel platform.
+
+The website should:
+
+Make the hotel look credible and established
+Showcase rooms beautifully
+Make room information easy to understand
+Make availability easy to check
+Make booking feel simple
+Reduce unnecessary steps
+Work exceptionally well on mobile
+Look premium without becoming overly luxurious or complicated
+Be structured so the frontend can later connect to a Django backend without major UI restructuring
+3. DESIGN DIRECTION
+Recommended visual direction
+
+Manohar Grand should have a:
+
+Premium contemporary hotel aesthetic with strong red branding, generous white space, high-quality photography and restrained typography.
+
+It should NOT look:
+
+like a generic hotel template
+like a travel marketplace
+like an e-commerce website
+overly luxurious
+overly corporate
+excessively red
+visually cluttered
+
+The website should feel like a high-quality independent hotel website.
+
+4. BRAND COLOURS
+
+Primary brand:
+
+#FE0000
+
+White:
+
+#FFFFFF
+
+Supporting neutral palette may be used to create a premium interface:
+
+Primary Red:       #FE0000
+White:             #FFFFFF
+Primary Text:      #171717
+Secondary Text:    #666666
+Light Background:  #F7F7F7
+Border:            #E5E5E5
+Dark Section:      #151515
+Success:           #16A34A
+Warning:           #F59E0B
+
+The exact supporting colours may be refined during UI implementation.
+
+Brand usage rule
+
+Red should be used strategically for:
+
+CTA buttons
+active states
+important highlights
+booking actions
+selected controls
+price emphasis
+links where appropriate
+
+Large areas of the website should remain white/light neutral.
+
+5. RESPONSIVE REQUIREMENT
+
+The website must be responsive from the beginning.
+
+Do not design desktop first and retrofit mobile later.
+
+The experience must work across:
+
+Desktop
+1440px
+1280px
+1024px
+Tablet
+768px
+834px
+912px
+Mobile
+390px
+375px
+360px
+
+The design must gracefully support intermediate widths.
+
+6. PRIMARY USERS
+
+There are initially two user types.
+
+Customer
+
+A person looking to:
+
+learn about Manohar Grand
+view rooms
+check availability
+select rooms
+make a reservation
+manage/view their booking
+Admin
+
+Hotel staff who will eventually:
+
+manage rooms
+manage prices
+manage availability
+create offline bookings
+manage online bookings
+
+Admin will NOT be built in Phase 1.
+
+7. CURRENT HOTEL INVENTORY
+
+Known information:
+
+Total Rooms: 28
+
+AC Rooms: 20
+
+Non-AC Rooms: 8
+
+For the initial prototype, the only room categories are:
+
+AC Room
+Non-AC Room
+
+Do not invent additional real room categories.
+
+Room-specific information such as:
+
+price
+bed type
+capacity
+room size
+amenities
+
+should use clearly identifiable demo/sample data until supplied by the client.
+
+Do not present invented information as confirmed hotel information.
+
+8. PRODUCT STRUCTURE
+
+The customer-facing product should contain:
+
+Manohar Grand
+│
+├── Home
+│
+├── Rooms
+│
+├── Room Details
+│
+├── About
+│
+├── Amenities
+│
+├── Gallery
+│
+├── Location / Contact
+│
+├── Booking
+│
+├── Checkout
+│
+├── Payment Demo
+│
+├── Booking Confirmation
+│
+└── Customer Account
+
+Phase 1 should primarily establish:
+
+Home
+Rooms
+Room Details
+About
+Amenities
+Gallery
+Contact
+Booking entry points
+9. GLOBAL NAVIGATION
+
+Desktop navigation should contain:
+
+MANOHAR GRAND
+│
+├── Home
+├── Rooms
+├── About
+├── Amenities
+├── Gallery
+├── Contact
+│
+└── BOOK NOW
+
+The exact navigation can be refined during UI development.
+
+The Book Now CTA should remain visually prominent.
+
+10. MOBILE NAVIGATION
+
+On mobile:
+
+Logo                         ☰
+
+Open menu:
+
+Home
+Rooms
+About
+Amenities
+Gallery
+Contact
+
+BOOK NOW
+
+The mobile navigation must be clean and touch-friendly.
+
+11. HOMEPAGE
+
+The homepage should establish the hotel brand immediately.
+
+Recommended structure:
+
+Header
+↓
+Hero
+↓
+Booking Search
+↓
+Room Categories
+↓
+Why Stay With Us
+↓
+Amenities
+↓
+Hotel Experience / About
+↓
+Gallery
+↓
+Location
+↓
+Booking CTA
+↓
+Footer
+12. HERO SECTION
+
+The hero should use a premium hotel stock photograph initially.
+
+Potential visual direction:
+
+hotel exterior
+elegant room
+welcoming hotel interior
+hospitality/lifestyle image
+
+The image should feel authentic and aspirational.
+
+Do not use overly artificial stock photography.
+
+Hero content should be concise.
+
+Example:
+
+A Comfortable Stay at Manohar Grand
+
+Supporting text:
+
+Experience comfortable rooms, thoughtful amenities and convenient hospitality.
+
+CTA:
+
+Book Your Stay
+
+Secondary CTA:
+
+Explore Rooms
+
+Copy can be refined later when the client provides official brand messaging.
+
+13. BOOKING SEARCH WIDGET
+
+The booking search component is one of the most important UI components.
+
+It should contain:
+
+CHECK-IN
+[ Select date ]
+
+CHECK-OUT
+[ Select date ]
+
+GUESTS
+[ 2 Adults ]
+
+ROOMS
+[ 1 Room ]
+
+[ CHECK AVAILABILITY ]
+
+On mobile, this should transform into a vertically stacked layout.
+
+The search component should feel visually integrated into the hotel design rather than looking like an external booking widget.
+
+14. ROOM CATEGORIES
+
+The initial room categories:
+
+AC Room
+20 rooms
+Non-AC Room
+8 rooms
+
+Each category should have:
+
+large image
+room name
+short description
+sample price
+capacity
+selected amenities
+View Details
+Book Now
+15. ROOM CARD
+
+The room card should communicate the important information without overwhelming the user.
+
+Suggested hierarchy:
+
+ROOM IMAGE
+
+AC Room
+
+Comfortable room for your stay.
+
+👤 2 Guests
+🛏 Double Bed
+❄ Air Conditioning
+📶 Wi-Fi
+
+From ₹XXXX / night
+
+[ View Details ]
+[ Book Now ]
+
+The actual icons/data can be replaced when the client provides confirmed information.
+
+16. ROOM DETAILS PAGE
+
+The room detail page should contain:
+
+Image Gallery
+↓
+Room Name
+↓
+Short Description
+↓
+Price
+↓
+Guest Capacity
+↓
+Amenities
+↓
+Room Information
+↓
+Availability / Booking
+↓
+Policies
+
+The page should provide enough information for a customer to confidently book without searching around the site.
+
+17. ROOM IMAGE GALLERY
+
+Use multiple stock images during prototype development.
+
+Potential images:
+
+bedroom
+bed close-up
+bathroom
+seating
+room detail
+hotel ambience
+
+Images must be treated as temporary stock/demo assets.
+
+When real client images arrive, they should be replaceable without redesigning the component.
+
+18. AMENITIES
+
+Create an amenities section using reusable cards.
+
+Example:
+
+Free Wi-Fi
+Air Conditioning
+24/7 Reception
+Hot Water
+Parking
+Room Service
+
+These are placeholders unless confirmed by the client.
+
+Important:
+
+Do not claim amenities as actual hotel facilities until confirmed by the client.
+
+19. ABOUT SECTION
+
+Create a premium editorial-style section explaining the hotel.
+
+For now, use placeholder/sample copy clearly marked in the development data.
+
+The content architecture should support:
+
+hotel description
+location advantages
+hospitality statement
+experience statement
+
+Later the client content can replace the placeholder text.
+
+20. GALLERY
+
+Create a visually attractive gallery.
+
+Desktop:
+
+Large image + smaller supporting images
+
+Mobile:
+
+Swipeable / stacked gallery
+
+Clicking an image should open a lightbox/gallery viewer.
+
+21. LOCATION
+
+The website should eventually support:
+
+hotel address
+Google Maps
+nearby landmarks
+travel/access information
+
+For now, use placeholder location data until the client confirms it.
+
+22. FOOTER
+
+Footer should include:
+
+Manohar Grand
+
+Navigation
+Rooms
+About
+Amenities
+Gallery
+Contact
+
+Contact Information
+
+Address
+
+Social Media
+
+Privacy Policy
+Terms & Conditions
+Cancellation Policy
+
+Do not invent legal policy content.
+
+Use placeholders until provided.
+
+23. BOOKING EXPERIENCE
+
+The future booking system should follow:
+
+Search
+↓
+Availability
+↓
+Room Selection
+↓
+Guest Details
+↓
+Booking Summary
+↓
+Payment
+↓
+Confirmation
+
+This follows established hotel booking patterns where guests first provide dates/occupancy, then compare/select available room options, then provide traveler/payment information.
+
+24. AVAILABILITY MODEL
+
+The final system must support date-specific inventory.
+
+Example:
+
+AC Rooms
+Total Inventory: 20
+
+20 Sep
+Booked: 5
+Available: 15
+
+21 Sep
+Booked: 8
+Available: 12
+
+22 Sep
+Booked: 20
+Available: 0
+
+Availability must be calculated per date.
+
+A room being available on one date does not mean it is available for the entire requested stay.
+
+25. MULTI-ROOM BOOKING
+
+The product must support:
+
+1 room
+2 rooms
+3 rooms
+...
+
+subject to actual availability.
+
+Example:
+
+AC Room
+
+Available: 8
+
+Rooms:
+[-]  2  [+]
+
+2 × ₹2,500 × 2 nights
+
+The price should update dynamically.
+
+26. PRICE CALCULATION
+
+The future booking engine should support:
+
+Room price
+×
+Number of rooms
+×
+Number of nights
++
+Taxes/fees
+=
+Total
+
+Example:
+
+₹2,500
+× 2 rooms
+× 2 nights
+
+Room subtotal: ₹10,000
+
+Taxes: ₹1,800
+
+Total: ₹11,800
+
+Tax percentages should remain configurable and must not be hard-coded as actual hotel policy until confirmed.
+
+27. BOOKING SUMMARY
+
+Before payment, the customer must see:
+
+Hotel
+Room Category
+Check-in
+Check-out
+Number of nights
+Number of rooms
+Guests
+Room price
+Taxes/fees
+Final total
+Cancellation policy
+Payment information
+
+The final total should be clearly visible.
+
+28. PAYMENT — FUTURE
+
+Phase 1 will not integrate a real payment gateway.
+
+However, the UI architecture must allow:
+
+Booking Summary
+↓
+Payment
+↓
+Payment Processing
+↓
+Payment Success / Failure
+↓
+Booking Confirmation
+
+For the prototype, payment can be simulated.
+
+29. BOOKING CONFIRMATION
+
+After successful demo payment:
+
+✓ Booking Confirmed
+
+Booking ID
+MG-2026-00001
+
+AC Room
+
+Check-in
+20 Sep 2026
+
+Check-out
+22 Sep 2026
+
+Rooms
+2
+
+Guests
+4
+
+Total
+₹XX,XXX
+
+Actions:
+
+View Booking
+Download Confirmation
+Back to Home
+30. CUSTOMER ACCOUNT
+
+The final product should support customer authentication.
+
+Customer routes:
+
+/customer/login
+/customer/register
+/customer/dashboard
+/customer/bookings
+/customer/bookings/:id
+/customer/profile
+
+This will not necessarily be fully implemented in the first visual phase.
+
+31. ADMIN — FUTURE SCOPE
+
+Admin will be developed after the customer-facing product is approved.
+
+Admin routes will eventually include:
+
+/admin/login
+
+/admin/dashboard
+
+/admin/rooms
+
+/admin/room-categories
+
+/admin/pricing
+
+/admin/availability
+
+/admin/bookings
+
+/admin/offline-bookings
+
+/admin/settings
+32. ADMIN INVENTORY
+
+The final admin system must allow:
+
+Room categories
+AC Room
+Non-AC Room
+Inventory
+AC = 20
+Non-AC = 8
+
+The admin should eventually be able to change inventory.
+
+33. ADMIN PRICING
+
+Admin must eventually be able to modify room prices.
+
+Example:
+
+AC Room
+
+Current:
+₹2,500
+
+New:
+₹2,800
+
+[Save]
+
+Pricing should not be hard-coded into the customer frontend.
+
+34. OFFLINE BOOKINGS
+
+The final system must support bookings created by hotel staff.
+
+Example:
+
+Offline Booking
+
+Guest:
+Rahul Kumar
+
+Check-in:
+20 Sep
+
+Check-out:
+22 Sep
+
+Room:
+AC Room
+
+Rooms:
+2
+
+Payment:
+Paid Offline
+
+The booking must affect the same inventory system as an online booking.
+
+35. ONLINE BOOKINGS
+
+Online booking:
+
+Customer
+↓
+Select dates
+↓
+Select room
+↓
+Enter details
+↓
+Payment
+↓
+Payment verified
+↓
+Booking confirmed
+↓
+Inventory updated
+36. UNIFIED INVENTORY
+
+This is a critical architectural requirement.
+
+Online and offline bookings must not have separate availability systems.
+
+Both must eventually use:
+
+              ROOM INVENTORY
+                    │
+          ┌─────────┴─────────┐
+          ↓                   ↓
+      ONLINE                OFFLINE
+      BOOKING               BOOKING
+          │                   │
+          └─────────┬─────────┘
+                    ↓
+             AVAILABILITY
+
+This prevents double-booking.
+
+37. FUTURE PAYMENT SECURITY
+
+The production system must never trust frontend payment success alone.
+
+The eventual architecture should be:
+
+Customer
+↓
+Booking request
+↓
+Payment Gateway
+↓
+Payment webhook
+↓
+Django verifies payment
+↓
+Booking confirmed
+↓
+Inventory updated
+
+Current frontend prototype does not implement this.
+
+38. WHATSAPP INTEGRATION
+
+The production system may use MSG91 WhatsApp API.
+
+Potential messages:
+
+Booking confirmation
+Payment confirmation
+Booking reminder
+Cancellation
+Booking update
+
+WhatsApp credentials/API keys must never be exposed in frontend code.
+
+Integration belongs in the backend.
+
+39. MOCK DATA REQUIREMENT
+
+Until backend development begins, the application must use mock data.
+
+Create structured data for:
+
+Hotel
+Room Categories
+Rooms / Inventory
+Amenities
+Bookings
+Customers
+Prices
+Availability
+
+Mock data must be centralized.
+
+Do not scatter hard-coded values throughout JSX components.
+
+40. FRONTEND ARCHITECTURE PRINCIPLE
+
+Components should not directly depend on mock data structures.
+
+Use a service/data layer.
+
+Conceptually:
+
+UI
+ ↓
+Service Layer
+ ↓
+Mock Data
+
+Later:
+
+UI
+ ↓
+Service Layer
+ ↓
+Django REST API
+ ↓
+PostgreSQL
+
+This allows the backend to be introduced without rebuilding the UI.
+
+41. RECOMMENDED PROJECT STRUCTURE
+
+Initial structure:
+
+src/
+│
+├── assets/
+│
+├── components/
+│   ├── common/
+│   ├── layout/
+│   ├── booking/
+│   ├── rooms/
+│   └── sections/
+│
+├── pages/
+│   ├── home/
+│   ├── rooms/
+│   ├── booking/
+│   └── account/
+│
+├── layouts/
+│
+├── routes/
+│
+├── data/
+│
+├── services/
+│
+├── store/
+│
+├── types/
+│
+├── hooks/
+│
+├── utils/
+│
+└── styles/
+42. DESIGN SYSTEM
+
+Create reusable components for:
+
+Button
+Input
+Select
+Date Picker
+Guest Selector
+Room Card
+Amenity Card
+Badge
+Modal
+Drawer
+Toast
+Card
+Section Heading
+Breadcrumb
+Header
+Footer
+Booking Summary
+Price Breakdown
+
+Do not create one-off versions of the same UI element.
+
+43. UX PRINCIPLES
+
+The product should follow these principles:
+
+1. Clarity over decoration
+
+The customer should always know:
+
+Where am I?
+
+What am I selecting?
+
+How much does it cost?
+
+What happens next?
+
+2. Booking should always be accessible
+
+Keep Book Now visible at important points.
+
+3. Mobile-first thinking
+
+The booking experience must be extremely comfortable on mobile.
+
+4. Minimal friction
+
+Don't ask for information unnecessarily.
+
+5. Strong visual hierarchy
+
+Price, dates, room type and CTA must be immediately visible.
+
+6. Trust
+
+Show:
+
+clear policies
+contact information
+hotel information
+amenities
+transparent pricing
+44. RESEARCH REQUIREMENT FOR ANTIGRAVITY
+
+During implementation, Antigravity should research current hotel booking experiences from major platforms such as:
+
+Booking.com
+Agoda
+Marriott
+other major hotel direct-booking websites
+
+The research should be used to understand:
+
+booking flow
+information hierarchy
+date selection
+guest selection
+room cards
+availability presentation
+price presentation
+checkout
+confirmation
+mobile UX
+accessibility
+interaction patterns
+
+Booking.com currently uses search criteria such as destination, dates, travelers and rooms before accommodation/room selection, while Marriott similarly asks for dates, guests and rooms before rate selection.
+
+Agoda's current product direction also demonstrates the importance of helping users compare room options and understand inclusions/policies before booking.
+
+Important restriction
+
+Research should inspire UX patterns, not copy designs.
+
+Do not copy:
+
+proprietary layouts
+branding
+exact visual designs
+copyrighted imagery
+proprietary text
+logos
+exact UI components
+
+Create an original Manohar Grand experience.
+
+45. PERFORMANCE REQUIREMENTS
+
+The frontend should be built with performance in mind.
+
+Requirements:
+
+optimized images
+lazy-loaded gallery images
+responsive images
+minimal unnecessary dependencies
+reusable components
+avoid excessive animation
+fast initial page load
+no layout-breaking image loading
+appropriate loading states
+46. ACCESSIBILITY
+
+The frontend should follow good accessibility practices.
+
+Include:
+
+semantic HTML
+keyboard navigation
+visible focus states
+accessible labels
+appropriate contrast
+alt text
+accessible buttons
+accessible dialogs
+touch-friendly controls
+47. ERROR / EMPTY STATES
+
+The product must not only design the "happy path".
+
+Eventually support:
+
+No rooms available
+Invalid dates
+Check-out before check-in
+Requested rooms unavailable
+Payment failed
+Booking failed
+Network error
+
+For Phase 1 these can be mocked where useful.
+
+48. DEMO REQUIREMENT
+
+The final frontend demo should allow a stakeholder to experience:
+
+Homepage
+↓
+Explore Rooms
+↓
+Select AC / Non-AC
+↓
+View Room
+↓
+Choose Dates
+↓
+Check Availability
+↓
+Select Number of Rooms
+↓
+See Price
+↓
+Enter Guest Details
+↓
+Review Booking
+↓
+Demo Payment
+↓
+Booking Confirmation
+
+This should feel like a real working hotel booking website, even though the backend is not yet connected.
+
+49. PHASE ROADMAP
+PHASE 0 — PRODUCT FOUNDATION
+
+Current phase
+
+Deliverables:
+
+PRD
+architecture
+information architecture
+user journeys
+design principles
+data model planning
+frontend architecture
+technology decisions
+research references
+
+No implementation yet.
+
+PHASE 1 — CUSTOMER WEBSITE
+
+Build:
+
+React project
+responsive design system
+header
+footer
+homepage
+rooms
+room details
+about
+amenities
+gallery
+contact
+booking CTA
+
+Static/mock data.
+
+PHASE 2 — CUSTOMER BOOKING EXPERIENCE
+
+Build:
+
+date selection
+guest selection
+room selection
+availability mock logic
+multi-room selection
+price calculation
+booking summary
+responsive booking flow
+PHASE 3 — CUSTOMER ACCOUNT
+
+Build:
+
+login
+registration
+dashboard
+bookings
+booking details
+profile
+
+Mock authentication.
+
+PHASE 4 — DEMO PAYMENT
+
+Build:
+
+checkout
+payment screen
+simulated payment
+success
+failure
+confirmation
+PHASE 5 — ADMIN UI
+
+Build:
+
+admin login
+dashboard
+rooms
+pricing
+availability
+bookings
+offline booking
+inventory management
+PHASE 6 — FRONTEND + ADMIN INTEGRATION
+
+Connect the mock customer and admin state.
+
+Example:
+
+Admin:
+
+AC Room
+₹2,500 → ₹2,800
+
+Customer:
+
+₹2,800
+
+Admin:
+
+Offline booking
+2 AC rooms
+
+Customer:
+
+Available rooms reduced by 2
+PHASE 7 — DJANGO BACKEND
+
+Introduce:
+
+React
+↓
+Django REST Framework
+↓
+PostgreSQL
+PHASE 8 — REAL BOOKING ENGINE
+
+Implement:
+
+inventory
+availability
+reservations
+concurrency protection
+booking status
+cancellations
+modifications
+offline bookings
+PHASE 9 — PAYMENT
+
+Integrate selected payment provider.
+
+Implement:
+
+payment creation
+payment verification
+webhooks
+failed payments
+refunds
+transaction records
+PHASE 10 — WHATSAPP
+
+Integrate MSG91 from backend.
+
+PHASE 11 — PRODUCTION
+
+Implement:
+
+security
+permissions
+logging
+monitoring
+backups
+deployment
+production QA
+payment testing
+booking concurrency testing
+50. DEFINITION OF DONE FOR PHASE 0
+
+Phase 0 is complete when:
+
+Product scope is documented
+Customer journey is defined
+Admin journey is defined
+Room model is defined
+Booking model concept is defined
+Availability concept is defined
+Pricing concept is defined
+Frontend architecture is defined
+Responsive requirement is defined
+Design direction is defined
+Brand colours are defined
+Mock-data strategy is defined
+Phase roadmap is defined
+Client information gaps are documented
+51. IMPORTANT IMPLEMENTATION RULES
+
+Antigravity must follow these rules throughout the project:
+
+DO
+Research established hotel booking UX before making major UX decisions.
+Prioritize mobile usability.
+Create reusable components.
+Keep business logic separate from UI.
+Keep mock data centralized.
+Use TypeScript types.
+Build for future API integration.
+Use realistic hotel booking interactions.
+Make the UI feel production-ready.
+Use stock imagery only as temporary placeholders.
+Clearly distinguish confirmed hotel facts from demo data.
+DO NOT
+Build Django during the initial frontend phase.
+Integrate real payment gateways during Phase 1.
+Integrate MSG91 during Phase 1.
+Hard-code booking logic into components.
+Hard-code prices throughout the UI.
+Invent confirmed hotel information.
+Create unnecessary room categories.
+Copy Booking.com/Agoda/Marriott designs.
+Use their logos or proprietary assets.
+Build the admin dashboard before the customer website is approved.
+Sacrifice mobile UX for desktop aesthetics.
+52. CORE PRODUCT PRINCIPLE
+
+The final product should feel like:
+
+A premium direct-booking website for Manohar Grand, not a clone of a hotel marketplace.
+
+The customer should be able to go from:
+
+"I want to stay here"
+
+to
+
+"My room is booked"
+
+with as little friction as possible.
+
+The design should borrow proven interaction principles from leading booking platforms while maintaining a distinctive Manohar Grand visual identity. Current hotel booking systems emphasize clear search inputs, room comparison, transparent booking information and a structured confirmation journey.
+
+One decision I strongly recommend
+
+Don't give Antigravity the entire Phase 1–10 implementation instruction yet.
+
+Put this PRD in the project folder as something like:
+
+/docs/PRD.md
+
+Then our workflow should be:
+
+PRD
+ ↓
+Phase 0 Architecture
+ ↓
+Phase 1 Design System
+ ↓
+Phase 1 Customer Website
+ ↓
+Review
+ ↓
+Phase 2 Booking UX
+ ↓
+Review
+ ↓
+Phase 3 Customer Account
+ ↓
+Review
+ ↓
+Admin
+ ↓
+Backend
+ ↓
+Production
+
+That way, when we give Antigravity the next prompt, we're telling it exactly one phase at a time, instead of allowing it to build a huge amount of code based on assumptions.
+
+Next, I recommend we do Phase 0 — Technical/Product Architecture.
+
+That should be a separate document containing the exact folder structure, routes, components, mock-data models, state architecture, service layer, future Django mapping, customer flow, and admin flow. Then we can give Antigravity that architecture and only after that start the Phase 1 implementation prompt.
+
+
+Yes. Since we are doing frontend only now, I would change the entire execution plan accordingly.
+
+And because you have already put all the information I gave you into one documentation file inside the project folder, we should not dump another huge prompt into Antigravity.
+
+We will work with Antigravity phase by phase, and you can send me every response it gives. I’ll review it and give you the next exact prompt.
+
+Frontend-only phase plan
+Phase 0 — Project Audit & Frontend Architecture
+
+No actual website UI yet.
+
+Antigravity will:
+
+Read your documentation file completely
+Inspect the existing project
+Understand the Manohar Grand requirements
+Decide the frontend architecture
+Confirm React + TypeScript + Vite setup
+Plan routing
+Plan components
+Plan mock data
+Plan state management
+Plan responsive structure
+Plan the booking flow
+Identify anything missing or contradictory
+Create the frontend folder structure
+
+Output: A clean technical foundation before we start designing.
+
+Phase 1 — Frontend Foundation + Design System
+
+Build:
+
+React/TypeScript foundation
+Routing
+Global styles
+Typography
+Colors
+Buttons
+Inputs
+Cards
+Header
+Footer
+Responsive system
+Reusable components
+Mobile navigation
+
+No booking functionality yet.
+
+Phase 2 — Home Page
+
+Build the complete homepage:
+
+Header
+Hero
+Booking/search widget
+Hotel introduction
+Featured rooms
+Amenities
+Gallery preview
+Location section
+CTA sections
+Footer
+
+Using mock/static data and stock images.
+
+Phase 3 — Rooms & Room Details
+
+Build:
+
+Rooms page
+
+AC Room
+Non-AC Room
+Pricing placeholders
+Capacity
+Amenities
+Images
+Availability CTA
+
+Room details page
+
+Gallery
+Room information
+Amenities
+Occupancy
+Price
+Policies
+Book Now
+Phase 4 — Frontend Booking Experience
+
+This is an important phase.
+
+Build the complete mock booking flow:
+
+Search → Availability → Select Room → Select Quantity → Guest Details → Booking Summary
+
+Including:
+
+Check-in
+Check-out
+Guests
+Number of rooms
+Availability
+Multiple rooms
+Quantity selector
+Price calculation
+Taxes/fees placeholder
+Booking summary
+Validation
+Error/empty states
+
+Still no Django/backend.
+
+Phase 5 — Checkout + Demo Payment
+
+Build:
+
+Checkout page
+Guest information
+Contact information
+Booking summary
+Payment selection UI
+Demo payment screen
+Successful payment state
+Failed payment state
+Booking confirmation
+
+We will make the architecture ready for a real payment gateway later, but we will not integrate a real gateway now.
+
+Phase 6 — Customer Account
+
+Build frontend:
+
+Login
+Register
+Forgot password UI
+Account dashboard
+My bookings
+Booking details
+Profile
+Logout
+Empty states
+
+Authentication can be mocked for now.
+
+Phase 7 — Complete Frontend Polish & QA
+
+Final frontend pass:
+
+Desktop
+Tablet
+Mobile
+Loading states
+Empty states
+Error states
+Form validation
+Navigation
+Accessibility
+Responsive issues
+Image optimization
+UX consistency
+Performance
+SEO basics
+Remove unnecessary code
+Component cleanup
+
+Then we have a complete frontend prototype.
+
+What we are NOT doing now
+
+Do not let Antigravity start these yet:
+
+❌ Django
+❌ PostgreSQL
+❌ Django REST API
+❌ Real authentication backend
+❌ Real availability database
+❌ Real payment gateway
+❌ MSG91 WhatsApp
+❌ Admin panel
+❌ Real online/offline inventory
+❌ Production deployment
+
+Those come later, after the frontend is properly completed.

@@ -1,0 +1,2 @@
+// Asset logos placeholder
+export {};
