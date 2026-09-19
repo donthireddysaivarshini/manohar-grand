@@ -1,44 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { MapPin, Phone, Mail, Clock, Send, CheckCircle2, ShieldAlert } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  MapPin,
+  Phone,
+  Mail,
+  Clock,
+  ExternalLink,
+  MessageCircle,
+  CalendarDays,
+  ShieldCheck,
+  Building,
+} from 'lucide-react';
 import { Container } from '../../components/common/Container';
 import { Section } from '../../components/common/Section';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
-import { Input } from '../../components/common/Input';
 import { Card, CardContent } from '../../components/common/Card';
 import { PLACEHOLDER_HOTEL_INFO } from '../../data/placeholderHotelInfo';
+import { CONFIRMED_HOTEL_INFO } from '../../data/confirmedInventory';
 
 export const ContactPage: React.FC = () => {
   useEffect(() => {
     document.title = 'Contact & Location | Manohar Grand Hotel';
   }, []);
-
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    message: '',
-  });
-
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitted, setIsSubmitted] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.name.trim()) newErrors.name = 'Please enter your name';
-    if (!formData.email.trim()) newErrors.email = 'Please enter your email';
-    if (!formData.message.trim()) newErrors.message = 'Please enter your message or question';
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-
-    setErrors({});
-    setIsSubmitted(true);
-  };
 
   return (
     <div className="flex flex-col w-full">
@@ -47,51 +31,52 @@ export const ContactPage: React.FC = () => {
         <Container size="xl">
           <div className="max-w-2xl flex flex-col items-start gap-3">
             <Badge variant="brand" size="md">
-              Inquiries &amp; Assistance
+              Location &amp; Help Desk
             </Badge>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight">
               Contact &amp; Location
             </h1>
             <p className="text-sm sm:text-base text-neutral-300 leading-relaxed">
-              Have questions about room availability or your upcoming stay? Reach out to our front desk team.
+              Find directions to Manohar Grand Luxury Hotel Rooms and connect directly with our front desk team.
             </p>
           </div>
         </Container>
       </Section>
 
-      {/* Main Contact Section */}
+      {/* Main Content Section */}
       <Section variant="default" padding="lg">
         <Container size="xl">
-          {/* Transparency Disclaimer */}
-          <div className="mb-8 p-4 rounded-lg bg-white border border-neutral-border shadow-sm flex items-start gap-3">
-            <ShieldAlert className="w-5 h-5 text-feedback-warning shrink-0 mt-0.5" />
-            <div className="text-xs text-neutral-secondary">
-              <span className="font-bold text-neutral-dark">Placeholder Notice: </span>
-              Physical address, direct telephone, and map coordinates will be populated upon client confirmation. The form below provides a frontend demonstration.
-            </div>
-          </div>
-
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            {/* Left: Contact Information Cards (5 cols) */}
-            <div className="lg:col-span-5 flex flex-col gap-4">
-              <Card variant="bordered" className="bg-white p-6">
-                <CardContent className="p-0 flex flex-col gap-5">
+            {/* Left: Contact Information & Direct Channels (5 cols) */}
+            <div className="lg:col-span-5 flex flex-col gap-5">
+              <Card variant="bordered" className="bg-white p-6 shadow-card">
+                <CardContent className="p-0 flex flex-col gap-6">
+                  <div>
+                    <h2 className="text-lg font-bold text-neutral-dark">
+                      Hotel Information
+                    </h2>
+                    <p className="text-xs text-neutral-secondary mt-1">
+                      Direct contact details and operational timings
+                    </p>
+                  </div>
+
+                  {/* Location Card */}
                   <a
                     href={PLACEHOLDER_HOTEL_INFO.googleMapsUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-start gap-3.5 group"
+                    className="flex items-start gap-3.5 group p-3 rounded-lg border border-neutral-border hover:border-brand/40 bg-neutral-light/50 hover:bg-brand-subtle/30 transition-all"
                   >
-                    <div className="w-10 h-10 rounded-lg bg-neutral-light border border-neutral-border flex items-center justify-center shrink-0 group-hover:bg-brand-subtle group-hover:border-brand/30 transition-colors">
+                    <div className="w-10 h-10 rounded-lg bg-white border border-neutral-border flex items-center justify-center shrink-0 group-hover:border-brand/40 group-hover:scale-105 transition-all">
                       <MapPin className="w-5 h-5 text-brand" />
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
                         <h3 className="text-sm font-bold text-neutral-dark group-hover:text-brand transition-colors">
-                          Hotel Location
+                          Hotel Address
                         </h3>
-                        <span className="text-[11px] text-brand font-semibold underline">
-                          Open Map &rarr;
+                        <span className="text-[11px] text-brand font-semibold inline-flex items-center gap-1 group-hover:underline">
+                          Map <ExternalLink className="w-3 h-3" />
                         </span>
                       </div>
                       <p className="text-xs text-neutral-secondary mt-1 leading-relaxed">
@@ -100,172 +85,137 @@ export const ContactPage: React.FC = () => {
                     </div>
                   </a>
 
-                  <div className="flex items-start gap-3.5">
-                    <div className="w-10 h-10 rounded-lg bg-neutral-light border border-neutral-border flex items-center justify-center shrink-0">
+                  {/* Phone */}
+                  <div className="flex items-start gap-3.5 p-3 rounded-lg border border-neutral-border bg-neutral-light/50">
+                    <div className="w-10 h-10 rounded-lg bg-white border border-neutral-border flex items-center justify-center shrink-0">
                       <Phone className="w-5 h-5 text-brand" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-neutral-dark">Direct Telephone</h3>
-                      <p className="text-xs text-neutral-secondary mt-1">
+                      <h3 className="text-sm font-bold text-neutral-dark">Front Desk &amp; Inquiries</h3>
+                      <p className="text-xs text-neutral-secondary mt-0.5">
                         {PLACEHOLDER_HOTEL_INFO.placeholderPhone}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-3.5">
-                    <div className="w-10 h-10 rounded-lg bg-neutral-light border border-neutral-border flex items-center justify-center shrink-0">
+                  {/* Email */}
+                  <div className="flex items-start gap-3.5 p-3 rounded-lg border border-neutral-border bg-neutral-light/50">
+                    <div className="w-10 h-10 rounded-lg bg-white border border-neutral-border flex items-center justify-center shrink-0">
                       <Mail className="w-5 h-5 text-brand" />
                     </div>
                     <div>
                       <h3 className="text-sm font-bold text-neutral-dark">Email Inquiries</h3>
-                      <p className="text-xs text-neutral-secondary mt-1">
+                      <p className="text-xs text-neutral-secondary mt-0.5">
                         {PLACEHOLDER_HOTEL_INFO.placeholderEmail}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-3.5 pt-2 border-t border-neutral-border/60">
-                    <div className="w-10 h-10 rounded-lg bg-neutral-light border border-neutral-border flex items-center justify-center shrink-0">
+                  {/* Check-in / Check-out */}
+                  <div className="flex items-start gap-3.5 p-3 rounded-lg border border-neutral-border bg-neutral-light/50">
+                    <div className="w-10 h-10 rounded-lg bg-white border border-neutral-border flex items-center justify-center shrink-0">
                       <Clock className="w-5 h-5 text-brand" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-neutral-dark">Check-in / Check-out</h3>
-                      <p className="text-xs text-neutral-secondary mt-1">
-                        {PLACEHOLDER_HOTEL_INFO.placeholderCheckInTime}
-                      </p>
-                      <p className="text-xs text-neutral-secondary">
-                        {PLACEHOLDER_HOTEL_INFO.placeholderCheckOutTime}
-                      </p>
+                      <h3 className="text-sm font-bold text-neutral-dark">Check-in / Check-out Schedule</h3>
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-neutral-secondary mt-1">
+                        <span>Check-in: <strong className="text-neutral-dark">{PLACEHOLDER_HOTEL_INFO.placeholderCheckInTime}</strong></span>
+                        <span>Check-out: <strong className="text-neutral-dark">{PLACEHOLDER_HOTEL_INFO.placeholderCheckOutTime}</strong></span>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Live Interactive Google Maps Container */}
-              <div className="relative aspect-[16/11] rounded-card overflow-hidden bg-neutral-100 border border-neutral-border shadow-sm">
-                <iframe
-                  src={PLACEHOLDER_HOTEL_INFO.googleMapsEmbedUrl}
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="strict-origin-when-cross-origin"
-                  title="Manohar Grand Luxury Hotel Rooms Location"
-                  className="w-full h-full"
-                />
-              </div>
+              {/* Quick Action Channels */}
+              <div className="flex flex-col gap-3">
+                <a
+                  href={PLACEHOLDER_HOTEL_INFO.googleMapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full"
+                >
+                  <Button variant="primary" size="lg" className="w-full gap-2 font-bold shadow-sm">
+                    <MapPin className="w-4 h-4" />
+                    Get Directions on Google Maps
+                  </Button>
+                </a>
 
-              <a
-                href={PLACEHOLDER_HOTEL_INFO.googleMapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full"
-              >
-                <Button variant="outline" size="md" className="w-full gap-2 font-semibold">
-                  <MapPin className="w-4 h-4 text-brand" />
-                  Get Turn-by-Turn Directions on Google Maps
-                </Button>
-              </a>
+                <a
+                  href="https://wa.me/?text=Hello%20Manohar%20Grand%20Team%2C%20I%20have%20an%20inquiry%20regarding%20room%20booking"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full"
+                >
+                  <Button variant="outline" size="lg" className="w-full gap-2 font-bold text-green-700 hover:bg-green-50 border-green-300">
+                    <MessageCircle className="w-4 h-4 text-green-600" />
+                    WhatsApp Front Desk Support
+                  </Button>
+                </a>
+              </div>
             </div>
 
-            {/* Right: Inquiry Form (7 cols) */}
-            <div className="lg:col-span-7">
-              <Card variant="default" className="bg-white p-6 sm:p-8 shadow-card">
-                <CardContent className="p-0">
-                  <div className="mb-6">
-                    <h2 className="text-xl font-bold text-neutral-dark">
-                      Send a Message to Manohar Grand
-                    </h2>
-                    <p className="text-xs sm:text-sm text-neutral-secondary mt-1">
-                      Fill out the form below and our reception staff will get back to you promptly.
+            {/* Right: Interactive Map & Direct Booking Perks (7 cols) */}
+            <div className="lg:col-span-7 flex flex-col gap-6">
+              {/* Interactive Google Map Embed */}
+              <div className="bg-white rounded-card border border-neutral-border shadow-card overflow-hidden flex flex-col">
+                <div className="p-4 border-b border-neutral-border flex items-center justify-between bg-neutral-light/60">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-brand" />
+                    <span className="text-xs font-bold text-neutral-dark uppercase tracking-wider">
+                      Interactive Map — Hyderabad
+                    </span>
+                  </div>
+                  <a
+                    href={PLACEHOLDER_HOTEL_INFO.googleMapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-brand font-semibold hover:underline inline-flex items-center gap-1"
+                  >
+                    Open Google Maps <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+
+                <div className="relative aspect-[16/10] sm:aspect-[16/11] w-full bg-neutral-100">
+                  <iframe
+                    src={PLACEHOLDER_HOTEL_INFO.googleMapsEmbedUrl}
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    title="Manohar Grand Luxury Hotel Rooms Google Map Location"
+                    className="w-full h-full"
+                  />
+                </div>
+              </div>
+
+              {/* Direct Booking Highlight Card */}
+              <Card variant="default" className="bg-white p-6 shadow-card border border-neutral-border">
+                <CardContent className="p-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <Building className="w-5 h-5 text-brand" />
+                      <h3 className="text-base font-bold text-neutral-dark">
+                        Ready to Plan Your Stay?
+                      </h3>
+                    </div>
+                    <p className="text-xs text-neutral-secondary max-w-md leading-relaxed">
+                      Choose between our {CONFIRMED_HOTEL_INFO.acRooms} AC Rooms and {CONFIRMED_HOTEL_INFO.nonAcRooms} Non-AC Rooms with guaranteed direct rates and instant reservation confirmation.
                     </p>
+                    <div className="flex items-center gap-2 text-xs text-neutral-500 pt-1">
+                      <ShieldCheck className="w-4 h-4 text-feedback-success" />
+                      <span>Best price guarantee • No hidden charges • Instant booking</span>
+                    </div>
                   </div>
 
-                  {isSubmitted ? (
-                    <div className="p-6 rounded-lg bg-green-50 border border-green-200 text-center flex flex-col items-center gap-3 animate-in fade-in duration-300">
-                      <div className="w-12 h-12 rounded-full bg-green-100 text-feedback-success flex items-center justify-center">
-                        <CheckCircle2 className="w-7 h-7" />
-                      </div>
-                      <h3 className="text-base font-bold text-neutral-dark">
-                        Demo Inquiry Received!
-                      </h3>
-                      <p className="text-xs text-neutral-secondary max-w-sm">
-                        Thank you for reaching out. In this frontend prototype, your submission has been processed locally without external backend APIs.
-                      </p>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setIsSubmitted(false);
-                          setFormData({ name: '', email: '', phone: '', message: '' });
-                        }}
-                        className="mt-2 text-xs"
-                      >
-                        Send Another Message
-                      </Button>
-                    </div>
-                  ) : (
-                    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                      <Input
-                        label="Full Name *"
-                        placeholder="Enter your full name"
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        error={errors.name}
-                      />
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <Input
-                          label="Email Address *"
-                          type="email"
-                          placeholder="name@example.com"
-                          value={formData.email}
-                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                          error={errors.email}
-                        />
-
-                        <Input
-                          label="Phone Number"
-                          type="tel"
-                          placeholder="+91 98765 43210"
-                          value={formData.phone}
-                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                          helperText="Optional for callback"
-                        />
-                      </div>
-
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-semibold tracking-wide text-neutral-text uppercase select-none">
-                          Your Message / Inquiry *
-                        </label>
-                        <textarea
-                          rows={4}
-                          placeholder="How can we assist you with your stay?"
-                          value={formData.message}
-                          onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                          className={`w-full px-3.5 py-2.5 rounded-lg text-sm bg-white border ${
-                            errors.message ? 'border-feedback-error' : 'border-neutral-border'
-                          } text-neutral-text focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand placeholder:text-neutral-muted transition-all`}
-                        />
-                        {errors.message && (
-                          <span className="text-xs text-feedback-error font-medium">
-                            {errors.message}
-                          </span>
-                        )}
-                      </div>
-
-                      <Button
-                        type="submit"
-                        variant="primary"
-                        size="lg"
-                        className="gap-2 font-bold shadow-md self-start mt-2"
-                      >
-                        <Send className="w-4 h-4" />
-                        Send Inquiry
-                      </Button>
-                    </form>
-                  )}
+                  <Link to="/booking" className="shrink-0 w-full sm:w-auto">
+                    <Button variant="primary" size="lg" className="w-full sm:w-auto gap-2 font-bold shadow-md">
+                      <CalendarDays className="w-4 h-4" />
+                      Book Now
+                    </Button>
+                  </Link>
                 </CardContent>
               </Card>
             </div>
