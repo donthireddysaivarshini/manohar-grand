@@ -10,3 +10,4 @@ export * from './Section';
 export * from './SkeletonLoader';
 export * from './LightboxModal';
 export * from './Logo';
+export * from './ScrollToTop';
