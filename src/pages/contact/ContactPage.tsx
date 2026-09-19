@@ -85,16 +85,27 @@ export const ContactPage: React.FC = () => {
                     </div>
                   </a>
 
-                  {/* Phone */}
+                  {/* Phone Numbers */}
                   <div className="flex items-start gap-3.5 p-3 rounded-lg border border-neutral-border bg-neutral-light/50">
                     <div className="w-10 h-10 rounded-lg bg-white border border-neutral-border flex items-center justify-center shrink-0">
                       <Phone className="w-5 h-5 text-brand" />
                     </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-neutral-dark">Front Desk &amp; Inquiries</h3>
-                      <p className="text-xs text-neutral-secondary mt-0.5">
-                        {PLACEHOLDER_HOTEL_INFO.placeholderPhone}
-                      </p>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-bold text-neutral-dark">Front Desk Telephone</h3>
+                        <span className="text-[10px] text-feedback-success font-bold uppercase tracking-wider bg-green-50 px-2 py-0.5 rounded border border-green-200">
+                          24/7 Available
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-neutral-secondary mt-1">
+                        <a href="tel:7997044999" className="hover:text-brand font-semibold text-neutral-dark">
+                          +91 7997044999
+                        </a>
+                        <span>•</span>
+                        <a href="tel:7997022999" className="hover:text-brand font-semibold text-neutral-dark">
+                          +91 7997022999
+                        </a>
+                      </div>
                     </div>
                   </div>
 
@@ -105,23 +116,59 @@ export const ContactPage: React.FC = () => {
                     </div>
                     <div>
                       <h3 className="text-sm font-bold text-neutral-dark">Email Inquiries</h3>
-                      <p className="text-xs text-neutral-secondary mt-0.5">
-                        {PLACEHOLDER_HOTEL_INFO.placeholderEmail}
-                      </p>
+                      <a
+                        href={`mailto:${PLACEHOLDER_HOTEL_INFO.email}`}
+                        className="text-xs text-neutral-secondary hover:text-brand font-medium mt-0.5 block"
+                      >
+                        {PLACEHOLDER_HOTEL_INFO.email}
+                      </a>
                     </div>
                   </div>
 
-                  {/* Check-in / Check-out */}
+                  {/* Operational Hours */}
                   <div className="flex items-start gap-3.5 p-3 rounded-lg border border-neutral-border bg-neutral-light/50">
                     <div className="w-10 h-10 rounded-lg bg-white border border-neutral-border flex items-center justify-center shrink-0">
                       <Clock className="w-5 h-5 text-brand" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-neutral-dark">Check-in / Check-out Schedule</h3>
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-neutral-secondary mt-1">
-                        <span>Check-in: <strong className="text-neutral-dark">{PLACEHOLDER_HOTEL_INFO.placeholderCheckInTime}</strong></span>
-                        <span>Check-out: <strong className="text-neutral-dark">{PLACEHOLDER_HOTEL_INFO.placeholderCheckOutTime}</strong></span>
-                      </div>
+                      <h3 className="text-sm font-bold text-neutral-dark">Front Desk &amp; Check-in Hours</h3>
+                      <p className="text-xs text-neutral-secondary mt-0.5 font-medium">
+                        {PLACEHOLDER_HOTEL_INFO.businessHours}
+                      </p>
+                      <p className="text-[11px] text-neutral-500 mt-1">
+                        Standard Check-in: 12:00 PM | Standard Check-out: 11:00 AM
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Social Media Channels */}
+                  <div className="pt-2 border-t border-neutral-border flex items-center justify-between">
+                    <span className="text-xs font-bold text-neutral-dark uppercase tracking-wider">
+                      Follow Our Pages:
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={PLACEHOLDER_HOTEL_INFO.socialLinks.facebook}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1.5 rounded-md bg-neutral-100 hover:bg-brand text-neutral-700 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all"
+                      >
+                        <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                          <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                        </svg>
+                        Facebook
+                      </a>
+                      <a
+                        href={PLACEHOLDER_HOTEL_INFO.socialLinks.instagram}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1.5 rounded-md bg-neutral-100 hover:bg-brand text-neutral-700 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all"
+                      >
+                        <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                          <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+                        </svg>
+                        Instagram
+                      </a>
                     </div>
                   </div>
                 </CardContent>
@@ -141,17 +188,26 @@ export const ContactPage: React.FC = () => {
                   </Button>
                 </a>
 
-                <a
-                  href="https://wa.me/?text=Hello%20Manohar%20Grand%20Team%2C%20I%20have%20an%20inquiry%20regarding%20room%20booking"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full"
-                >
-                  <Button variant="outline" size="lg" className="w-full gap-2 font-bold text-green-700 hover:bg-green-50 border-green-300">
-                    <MessageCircle className="w-4 h-4 text-green-600" />
-                    WhatsApp Front Desk Support
-                  </Button>
-                </a>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <a href="tel:7997044999" className="w-full">
+                    <Button variant="outline" size="md" className="w-full gap-2 font-semibold">
+                      <Phone className="w-4 h-4 text-brand" />
+                      Call Front Desk
+                    </Button>
+                  </a>
+
+                  <a
+                    href="https://wa.me/917997044999?text=Hello%20Manohar%20Grand%20Team%2C%20I%20have%20an%20inquiry%20regarding%20room%20booking"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full"
+                  >
+                    <Button variant="outline" size="md" className="w-full gap-2 font-semibold text-green-700 hover:bg-green-50 border-green-300">
+                      <MessageCircle className="w-4 h-4 text-green-600" />
+                      WhatsApp Chat
+                    </Button>
+                  </a>
+                </div>
               </div>
             </div>
 

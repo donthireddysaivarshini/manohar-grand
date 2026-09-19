@@ -56,29 +56,40 @@ export const LocationPreview: React.FC = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Card variant="bordered" className="bg-white p-4">
-                  <CardContent className="p-0 flex items-center gap-3">
-                    <Phone className="w-4 h-4 text-brand shrink-0" />
+                  <CardContent className="p-0 flex items-start gap-3">
+                    <Phone className="w-4 h-4 text-brand shrink-0 mt-0.5" />
                     <div>
                       <span className="text-[11px] font-bold text-neutral-dark uppercase tracking-wider block">
-                        Direct Phone
+                        Front Desk Phones
                       </span>
-                      <p className="text-xs text-neutral-secondary">
-                        {PLACEHOLDER_HOTEL_INFO.placeholderPhone}
-                      </p>
+                      <div className="flex flex-col text-xs text-neutral-secondary">
+                        <a href="tel:7997044999" className="hover:text-brand font-medium">
+                          +91 7997044999
+                        </a>
+                        <a href="tel:7997022999" className="hover:text-brand font-medium">
+                          +91 7997022999
+                        </a>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
 
                 <Card variant="bordered" className="bg-white p-4">
-                  <CardContent className="p-0 flex items-center gap-3">
-                    <Mail className="w-4 h-4 text-brand shrink-0" />
+                  <CardContent className="p-0 flex items-start gap-3">
+                    <Mail className="w-4 h-4 text-brand shrink-0 mt-0.5" />
                     <div>
                       <span className="text-[11px] font-bold text-neutral-dark uppercase tracking-wider block">
                         Email Contact
                       </span>
-                      <p className="text-xs text-neutral-secondary">
-                        {PLACEHOLDER_HOTEL_INFO.placeholderEmail}
-                      </p>
+                      <a
+                        href={`mailto:${PLACEHOLDER_HOTEL_INFO.email}`}
+                        className="text-xs text-neutral-secondary hover:text-brand font-medium block truncate"
+                      >
+                        {PLACEHOLDER_HOTEL_INFO.email}
+                      </a>
+                      <span className="text-[10px] text-feedback-success font-semibold mt-0.5 block">
+                        24/7 Front Desk
+                      </span>
                     </div>
                   </CardContent>
                 </Card>
