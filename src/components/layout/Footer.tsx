@@ -86,8 +86,23 @@ export const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
+                <Link to="/corporate-booking" className="hover:text-brand transition-colors">
+                  Corporate / Bulk Booking
+                </Link>
+              </li>
+              <li>
+                <Link to="/about" className="hover:text-brand transition-colors">
+                  About Hotel
+                </Link>
+              </li>
+              <li>
                 <Link to="/contact" className="hover:text-brand transition-colors">
                   Location &amp; Contact
+                </Link>
+              </li>
+              <li>
+                <Link to="/booking" className="text-brand font-semibold hover:underline">
+                  Book Your Stay &rarr;
                 </Link>
               </li>
             </ul>

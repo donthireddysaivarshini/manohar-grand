@@ -14,6 +14,7 @@ import { AboutPage } from '../pages/about/AboutPage';
 import { AmenitiesPage } from '../pages/amenities/AmenitiesPage';
 import { GalleryPage } from '../pages/gallery/GalleryPage';
 import { ContactPage } from '../pages/contact/ContactPage';
+import { CorporateBookingPage } from '../pages/corporate/CorporateBookingPage';
 import { BookingPage } from '../pages/booking/BookingPage';
 import { CheckoutPage } from '../pages/checkout/CheckoutPage';
 import { PaymentDemoPage } from '../pages/payment-demo/PaymentDemoPage';
@@ -51,6 +52,7 @@ export const AppRoutes: React.FC = () => {
           <Route path="/amenities" element={<AmenitiesPage />} />
           <Route path="/gallery" element={<GalleryPage />} />
           <Route path="/contact" element={<ContactPage />} />
+          <Route path="/corporate-booking" element={<CorporateBookingPage />} />
           <Route path="/booking" element={<BookingPage />} />
           <Route path="/account/login" element={<LoginPage />} />
           <Route path="/account/register" element={<RegisterPage />} />

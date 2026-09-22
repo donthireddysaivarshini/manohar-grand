@@ -11,3 +11,5 @@ export * from './SkeletonLoader';
 export * from './LightboxModal';
 export * from './Logo';
 export * from './ScrollToTop';
+export * from './Icon3D';
+export * from './ScrollReveal';

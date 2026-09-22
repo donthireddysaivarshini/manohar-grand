@@ -1,53 +1,62 @@
 import React from 'react';
-import { BedDouble, BadgePercent, HeartHandshake, Sparkles } from 'lucide-react';
 import { Container } from '../common/Container';
 import { Section } from '../common/Section';
 import { Badge } from '../common/Badge';
 import { Card, CardContent } from '../common/Card';
+import { Icon3D } from '../common/Icon3D';
+import { ScrollReveal } from '../common/ScrollReveal';
 import { EXPERIENCE_HIGHLIGHTS } from '../../data/experienceData';
 
-const ICONS_MAP: Record<string, React.ReactNode> = {
-  BedDouble: <BedDouble className="w-6 h-6 text-brand" />,
-  BadgePercent: <BadgePercent className="w-6 h-6 text-brand" />,
-  HeartHandshake: <HeartHandshake className="w-6 h-6 text-brand" />,
-  Sparkles: <Sparkles className="w-6 h-6 text-brand" />,
-};
-
+/**
+ * Why Choose Us (Highlights Section)
+ * - Features large 3D hospitality icons on soft grey surface plates.
+ * - Heading placed beside the icon with supporting description below.
+ * - Soft grey container cards (#F7F7F7) with subtle border and elevation.
+ */
 export const HighlightsSection: React.FC = () => {
   return (
     <Section variant="white" padding="lg">
       <Container size="xl">
-        <div className="text-center max-w-2xl mx-auto mb-12 flex flex-col items-center gap-3">
+        <ScrollReveal direction="up" className="text-center max-w-2xl mx-auto mb-10 sm:mb-12 flex flex-col items-center gap-2.5">
           <Badge variant="brand" size="md">
-            The Manohar Grand Experience
+            Why Choose Us
           </Badge>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-neutral-dark tracking-tight">
-            Why Guests Choose Us
+            Why Guests Choose Manohar Grand
           </h2>
-          <p className="text-sm text-neutral-secondary">
-            Designed for convenience, comfort, and peace of mind on every stay.
+          <p className="text-xs sm:text-sm text-neutral-secondary">
+            Comfortable rooms, prime metro connectivity, and dependable guest service in Kukatpally.
           </p>
-        </div>
+        </ScrollReveal>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {EXPERIENCE_HIGHLIGHTS.map((item) => (
-            <Card
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 lg:gap-6">
+          {EXPERIENCE_HIGHLIGHTS.map((item, index) => (
+            <ScrollReveal
               key={item.id}
-              variant="default"
-              className="bg-neutral-light border-neutral-border/80 p-6 flex flex-col gap-4 hover:border-brand/30 transition-all hover:shadow-card-hover"
+              direction="up"
+              delayMs={index * 100}
+              className="h-full"
             >
-              <CardContent className="p-0 flex flex-col gap-3">
-                <div className="w-12 h-12 rounded-lg bg-white border border-neutral-border flex items-center justify-center shadow-sm">
-                  {ICONS_MAP[item.iconName] || <Sparkles className="w-6 h-6 text-brand" />}
-                </div>
-                <h3 className="text-base font-bold text-neutral-dark">
-                  {item.title}
-                </h3>
-                <p className="text-xs sm:text-sm text-neutral-secondary leading-relaxed">
-                  {item.description}
-                </p>
-              </CardContent>
-            </Card>
+              <Card
+                variant="default"
+                className="h-full bg-[#F7F7F7] border border-neutral-200/90 rounded-2xl p-5 sm:p-6 transition-all duration-300 hover:border-brand/40 hover:-translate-y-1 hover:shadow-card-hover"
+              >
+                <CardContent className="p-0 flex items-start gap-4 sm:gap-5">
+                  {/* Large 3D Icon */}
+                  <Icon3D name={item.iconName} size="lg" className="shadow-sm" />
+
+                  {/* Heading beside icon & Description below */}
+                  <div className="flex-1 flex flex-col justify-center gap-1.5 pt-0.5">
+                    <h3 className="text-base sm:text-lg font-extrabold text-neutral-dark tracking-tight">
+                      {item.title}
+                    </h3>
+                    <p className="text-xs sm:text-sm text-neutral-secondary leading-relaxed">
+                      {item.description}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </ScrollReveal>
           ))}
         </div>
       </Container>

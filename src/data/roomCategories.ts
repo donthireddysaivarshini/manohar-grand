@@ -11,6 +11,7 @@ export interface RoomDetailedSpecification {
 
 export interface RoomCategoryExtended extends RoomCategory {
   subtitle: string;
+  occupancyNote?: string;
   overviewParagraphs: string[];
   specifications: RoomDetailedSpecification[];
   roomFeatures: {
@@ -29,30 +30,31 @@ export interface RoomCategoryExtended extends RoomCategory {
 /**
  * COMPREHENSIVE ROOM CATEGORIES DATA
  * Strictly category-based (AC Room & Non-AC Room).
- * Confirmed inventory: 20 AC / 8 Non-AC.
- * All other specifications are clearly tagged as demo data.
+ * Confirmed inventory: 20 AC / 8 Non-AC maintained internally for booking.
+ * Public marketing emphasis on total count removed per client instructions.
  */
 export const ROOM_CATEGORIES_DATA: RoomCategoryExtended[] = [
   {
     id: CONFIRMED_ROOM_CATEGORIES[0].id,
     slug: CONFIRMED_ROOM_CATEGORIES[0].slug,
     name: CONFIRMED_ROOM_CATEGORIES[0].name,
-    subtitle: 'Climate-controlled comfort with contemporary amenities',
+    subtitle: 'Climate-controlled comfort with contemporary conveniences',
     totalInventory: CONFIRMED_ROOM_CATEGORIES[0].totalInventory, // 20 Confirmed
     demoBasePricePerNight: DEMO_PRICING_CONFIG.baseRates['ac-room'],
     demoCapacity: {
       maxAdults: 2,
-      maxChildren: 1,
+      maxChildren: 2,
     },
-    demoBedType: 'King / Queen Double Bed (Demo specification)',
+    occupancyNote: 'Up to 2 guests included. Extra charge may apply for 3rd & 4th guest — rate to be confirmed.',
+    demoBedType: 'Double Bed (Demo specification)',
     demoSizeSqFt: '240 sq ft (Demo estimate)',
     demoAmenities: [
       'Individual Air Conditioning',
-      'High-Speed Wi-Fi (Demo)',
+      'Car Parking Available',
       'Attached Bathroom with Hot Water (Demo)',
+      'High-Speed Wi-Fi (Demo)',
       'Flat-Screen TV (Demo)',
       'Daily Housekeeping (Demo)',
-      'Wardrobe & Luggage Space (Demo)',
     ],
     demoImages: {
       hero: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80',
@@ -65,99 +67,99 @@ export const ROOM_CATEGORIES_DATA: RoomCategoryExtended[] = [
     },
     isPlaceholderData: true,
     overviewParagraphs: [
-      'Our AC Rooms provide an inviting and climate-controlled haven for travelers seeking a refreshing, tranquil stay. Designed with practical comforts in mind, each room features air conditioning, dedicated workspace, and a comfortable double bed.',
-      'Enjoy a restful night in a well-ventilated space equipped with an attached private bathroom, continuous hot water, and daily housekeeping services. Ideal for business travelers, couples, and visiting guests.',
+      'Our AC Rooms provide an inviting and climate-controlled haven for travelers seeking a refreshing, tranquil stay. Designed with practical comforts in mind, each room features air conditioning, clean bedding, and private attached washrooms.',
+      'Enjoy a restful night in a well-ventilated room equipped with hot water amenities and daily housekeeping. Ideal for business travelers, couples, and visiting guests.',
     ],
     specifications: [
       {
         label: 'Room Category',
         value: 'Air Conditioned (AC Room)',
         isDemo: false,
-        iconName: 'Wind',
+        iconName: 'air-conditioning',
       },
       {
-        label: 'Total Inventory',
-        value: '20 Rooms on Property',
+        label: 'Base Occupancy',
+        value: 'Up to 2 Guests (Base rate)',
         isDemo: false,
-        iconName: 'Layers',
+        iconName: 'comfortable-stay',
       },
       {
-        label: 'Max Occupancy',
-        value: 'Up to 2 Adults + 1 Child (Demo)',
+        label: 'Additional Guests',
+        value: 'Extra charge for 3rd & 4th guest (TBC)',
         isDemo: true,
-        iconName: 'Users',
+        iconName: 'easy-booking',
       },
       {
-        label: 'Bed Type',
-        value: 'Double Bed (Demo)',
-        isDemo: true,
-        iconName: 'BedDouble',
+        label: 'Parking',
+        value: 'Car Parking Available',
+        isDemo: false,
+        iconName: 'parking',
       },
       {
-        label: 'Room Size',
-        value: 'Approx. 240 sq ft (Demo)',
+        label: 'Bedding',
+        value: 'Comfortable Double Bed (Demo)',
         isDemo: true,
-        iconName: 'Maximize2',
+        iconName: 'comfortable-stay',
       },
       {
         label: 'Bathroom',
         value: 'Private Attached with Hot Shower (Demo)',
         isDemo: true,
-        iconName: 'Droplets',
+        iconName: 'hot-water',
       },
     ],
     roomFeatures: [
       {
         title: 'Air Conditioning',
         description: 'Individual remote-controlled AC for personalized room climate comfort.',
-        iconName: 'Wind',
+        iconName: 'air-conditioning',
+        isConfirmed: true,
+      },
+      {
+        title: 'Car Parking Space',
+        description: 'Dedicated parking facility available for visiting guest vehicles.',
+        iconName: 'parking',
         isConfirmed: true,
       },
       {
         title: 'Attached Private Bathroom',
-        description: 'Private bathroom with shower and hot water supply.',
-        iconName: 'Droplets',
+        description: 'Private bathroom with shower and 24/7 hot water supply.',
+        iconName: 'hot-water',
         isConfirmed: false,
       },
       {
         title: 'High-Speed Wi-Fi',
         description: 'Complimentary wireless internet connectivity in-room.',
-        iconName: 'Wifi',
+        iconName: 'wifi',
         isConfirmed: false,
       },
       {
         title: 'Television Entertainment',
         description: 'Wall-mounted flat-screen TV with standard entertainment channels.',
-        iconName: 'Tv',
+        iconName: 'tv',
         isConfirmed: false,
       },
       {
         title: 'Daily Housekeeping',
         description: 'Daily trash removal, fresh linen, and room tidying.',
-        iconName: 'Sparkles',
-        isConfirmed: false,
-      },
-      {
-        title: 'Power Backup Support',
-        description: 'Generator backup for lighting and essential power outlets.',
-        iconName: 'Zap',
+        iconName: 'housekeeping',
         isConfirmed: false,
       },
     ],
     policies: [
       {
+        title: 'Occupancy Policy',
+        description: 'Base room rate covers up to 2 guests. Extra guest charges may apply for 3rd and 4th guest (rate to be confirmed upon check-in).',
+        isDemo: true,
+      },
+      {
         title: 'Check-in / Check-out',
-        description: 'Check-in from 12:00 PM | Check-out until 11:00 AM (Demo timing pending confirmation).',
+        description: 'Check-in from 12:00 PM | Check-out until 11:00 AM (24/7 Front desk available).',
         isDemo: true,
       },
       {
         title: 'Cancellation & Changes',
         description: 'Free cancellation up to 24 hours prior to check-in date (Demo policy).',
-        isDemo: true,
-      },
-      {
-        title: 'Identification Requirement',
-        description: 'Valid government-issued photo ID required for all adult guests at check-in.',
         isDemo: true,
       },
     ],
@@ -173,14 +175,16 @@ export const ROOM_CATEGORIES_DATA: RoomCategoryExtended[] = [
       maxAdults: 2,
       maxChildren: 1,
     },
-    demoBedType: 'Double / Twin Bed (Demo specification)',
+    occupancyNote: 'Up to 2 guests. Practical, budget-friendly comfort.',
+    demoBedType: 'Double Bed (Demo specification)',
     demoSizeSqFt: '210 sq ft (Demo estimate)',
     demoAmenities: [
       'Ceiling Fan & Natural Ventilation',
-      'High-Speed Wi-Fi (Demo)',
+      'Car Parking Available',
       'Attached Bathroom with Hot Water (Demo)',
+      'High-Speed Wi-Fi (Demo)',
       'Daily Housekeeping (Demo)',
-      'Wardrobe & Clothes Rack (Demo)',
+      'Wardrobe & Clothes Space (Demo)',
     ],
     demoImages: {
       hero: 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80',
@@ -193,93 +197,99 @@ export const ROOM_CATEGORIES_DATA: RoomCategoryExtended[] = [
     },
     isPlaceholderData: true,
     overviewParagraphs: [
-      'Our Non-AC Rooms offer a practical and economical accommodation option without compromising on cleanliness and essential comfort. Each room is designed with good cross-ventilation, ceiling fan cooling, and clean furnishings.',
-      'Complete with an attached private bathroom, hot water amenities, and daily housekeeping, the Non-AC category is the perfect solution for transit guests, budget-conscious travelers, and short stays.',
+      'Our Non-AC Rooms offer a practical and economical accommodation option without compromising on cleanliness and essential comfort. Each room is designed with good ventilation, ceiling fan cooling, and clean furnishings.',
+      'Complete with an attached private bathroom, hot water amenities, and daily housekeeping, the Non-AC category is the perfect solution for transit guests, budget-conscious travelers, and short stays in Kukatpally.',
     ],
     specifications: [
       {
         label: 'Room Category',
         value: 'Standard (Non-AC Room)',
         isDemo: false,
-        iconName: 'Wind',
+        iconName: 'comfortable-stay',
       },
       {
-        label: 'Total Inventory',
-        value: '8 Rooms on Property',
+        label: 'Base Occupancy',
+        value: 'Up to 2 Guests',
         isDemo: false,
-        iconName: 'Layers',
+        iconName: 'comfortable-stay',
       },
       {
-        label: 'Max Occupancy',
-        value: 'Up to 2 Adults + 1 Child (Demo)',
-        isDemo: true,
-        iconName: 'Users',
+        label: 'Cooling',
+        value: 'Ceiling Fan & Natural Ventilation',
+        isDemo: false,
+        iconName: 'air-conditioning',
       },
       {
-        label: 'Bed Type',
-        value: 'Double or Twin Beds (Demo)',
-        isDemo: true,
-        iconName: 'BedDouble',
+        label: 'Parking',
+        value: 'Car Parking Available',
+        isDemo: false,
+        iconName: 'parking',
       },
       {
-        label: 'Room Size',
-        value: 'Approx. 210 sq ft (Demo)',
+        label: 'Bedding',
+        value: 'Comfortable Double Bed (Demo)',
         isDemo: true,
-        iconName: 'Maximize2',
+        iconName: 'comfortable-stay',
       },
       {
         label: 'Bathroom',
         value: 'Private Attached with Hot Shower (Demo)',
         isDemo: true,
-        iconName: 'Droplets',
+        iconName: 'hot-water',
       },
     ],
     roomFeatures: [
       {
         title: 'Ceiling Fan Cooling',
-        description: 'Ceiling fan and natural window airflow for room ventilation.',
-        iconName: 'Wind',
+        description: 'Ceiling fan and window airflow for natural room ventilation.',
+        iconName: 'air-conditioning',
+        isConfirmed: true,
+      },
+      {
+        title: 'Car Parking Space',
+        description: 'On-site parking space for guest vehicles.',
+        iconName: 'parking',
         isConfirmed: true,
       },
       {
         title: 'Attached Private Bathroom',
-        description: 'Private bathroom with shower and hot water supply.',
-        iconName: 'Droplets',
+        description: 'Private bathroom with shower and 24/7 hot water supply.',
+        iconName: 'hot-water',
         isConfirmed: false,
       },
       {
         title: 'High-Speed Wi-Fi',
         description: 'Complimentary wireless internet connectivity in-room.',
-        iconName: 'Wifi',
+        iconName: 'wifi',
         isConfirmed: false,
       },
       {
         title: 'Daily Housekeeping',
         description: 'Daily trash removal, fresh linen, and room tidying.',
-        iconName: 'Sparkles',
+        iconName: 'housekeeping',
         isConfirmed: false,
       },
       {
         title: 'Power Backup Support',
         description: 'Generator backup for lighting and essential power outlets.',
-        iconName: 'Zap',
+        iconName: 'power-backup',
         isConfirmed: false,
       },
     ],
     policies: [
       {
+        title: 'Occupancy Policy',
+        description: 'Base room rate covers up to 2 guests in standard bed configuration.',
+        isDemo: true,
+      },
+      {
         title: 'Check-in / Check-out',
-        description: 'Check-in from 12:00 PM | Check-out until 11:00 AM (Demo timing pending confirmation).',
+        description: 'Check-in from 12:00 PM | Check-out until 11:00 AM (24/7 Front desk available).',
         isDemo: true,
       },
       {
         title: 'Cancellation & Changes',
         description: 'Free cancellation up to 24 hours prior to check-in date (Demo policy).',
-        isDemo: true,
-      },
-      {
-        title: 'Identification Requirement',
-        description: 'Valid government-issued photo ID required for all adult guests at check-in.',
         isDemo: true,
       },
     ],

@@ -1,4 +1,5 @@
 import React from 'react';
+import { BrandLogoSvg } from '../../assets/logos/BrandLogoSvg';
 import { cn } from '../../utils/cn';
 
 export interface LogoProps {
@@ -9,6 +10,13 @@ export interface LogoProps {
   imageClassName?: string;
 }
 
+/**
+ * Centralized Manohar Grand Brand Logo component.
+ * - 100% Transparent SVG logo mark.
+ * - No white background box or raster JPEG/PNG.
+ * - Removed "HOTEL & HOSPITALITY" per client instructions.
+ * - Brand styling: Black "MANOHAR" + Brand Red "GRAND".
+ */
 export const Logo: React.FC<LogoProps> = ({
   size = 'md',
   showText = true,
@@ -18,66 +26,46 @@ export const Logo: React.FC<LogoProps> = ({
 }) => {
   const sizeMap = {
     sm: {
-      img: 'w-8 h-8',
-      title: 'text-base font-extrabold',
-      subtitle: 'text-[9px]',
+      svg: 'w-7 h-7',
+      title: 'text-base font-extrabold tracking-tight',
     },
     md: {
-      img: 'w-10 h-10',
-      title: 'text-lg md:text-xl font-extrabold',
-      subtitle: 'text-[10px]',
+      svg: 'w-9 h-9',
+      title: 'text-lg md:text-xl font-extrabold tracking-tight',
     },
     lg: {
-      img: 'w-12 h-12',
-      title: 'text-xl md:text-2xl font-extrabold',
-      subtitle: 'text-xs',
+      svg: 'w-11 h-11',
+      title: 'text-xl md:text-2xl font-extrabold tracking-tight',
     },
     xl: {
-      img: 'w-16 h-16',
-      title: 'text-2xl md:text-3xl font-extrabold',
-      subtitle: 'text-xs',
+      svg: 'w-14 h-14',
+      title: 'text-2xl md:text-3xl font-black tracking-tight',
     },
   };
 
   const currentSize = sizeMap[size];
 
   return (
-    <div className={cn('flex items-center gap-3', className)}>
-      <div
-        className={cn(
-          'relative rounded-lg overflow-hidden shrink-0 border border-neutral-border/60 shadow-sm bg-white',
-          currentSize.img,
-          imageClassName
-        )}
-      >
-        <img
-          src="/logomg.jpeg"
-          alt="Manohar Grand Hotel Logo"
-          className="w-full h-full object-contain"
+    <div className={cn('flex items-center gap-2.5 select-none', className)}>
+      {/* Transparent SVG Logo Mark */}
+      <div className={cn('shrink-0 flex items-center justify-center', imageClassName)}>
+        <BrandLogoSvg
+          className={currentSize.svg}
+          accentColor="#FE0000"
+          darkColor={textVariant === 'light' ? '#FFFFFF' : '#171717'}
         />
       </div>
 
       {showText && (
-        <div className="flex flex-col leading-tight">
-          <span
-            className={cn(
-              'tracking-tight font-sans',
-              currentSize.title,
-              textVariant === 'light' ? 'text-white' : 'text-neutral-dark'
-            )}
-          >
-            MANOHAR <span className="text-brand">GRAND</span>
-          </span>
-          <span
-            className={cn(
-              'uppercase tracking-widest font-semibold',
-              currentSize.subtitle,
-              textVariant === 'light' ? 'text-neutral-400' : 'text-neutral-secondary'
-            )}
-          >
-            Hotel &amp; Hospitality
-          </span>
-        </div>
+        <span
+          className={cn(
+            'font-sans leading-none',
+            currentSize.title,
+            textVariant === 'light' ? 'text-white' : 'text-neutral-dark'
+          )}
+        >
+          MANOHAR <span className="text-brand">GRAND</span>
+        </span>
       )}
     </div>
   );

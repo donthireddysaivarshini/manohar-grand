@@ -1,34 +1,14 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Wind,
-  Wifi,
-  Clock,
-  Droplets,
-  Sparkles,
-  Zap,
-  Car,
-  ShieldCheck,
-  CalendarDays,
-  ShieldAlert,
-} from 'lucide-react';
+import { CalendarDays, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { Container } from '../../components/common/Container';
 import { Section } from '../../components/common/Section';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { Card, CardContent } from '../../components/common/Card';
+import { Icon3D } from '../../components/common/Icon3D';
+import { ScrollReveal } from '../../components/common/ScrollReveal';
 import { AMENITIES_DATA } from '../../data/amenitiesData';
-
-const AMENITY_ICONS: Record<string, React.ReactNode> = {
-  Wind: <Wind className="w-6 h-6 text-brand" />,
-  Wifi: <Wifi className="w-6 h-6 text-brand" />,
-  Clock: <Clock className="w-6 h-6 text-brand" />,
-  Droplets: <Droplets className="w-6 h-6 text-brand" />,
-  Sparkles: <Sparkles className="w-6 h-6 text-brand" />,
-  Zap: <Zap className="w-6 h-6 text-brand" />,
-  Car: <Car className="w-6 h-6 text-brand" />,
-  ShieldCheck: <ShieldCheck className="w-6 h-6 text-brand" />,
-};
 
 export const AmenitiesPage: React.FC = () => {
   useEffect(() => {
@@ -48,7 +28,7 @@ export const AmenitiesPage: React.FC = () => {
               Amenities &amp; Guest Services
             </h1>
             <p className="text-sm sm:text-base text-neutral-300 leading-relaxed">
-              Experience convenient conveniences, clean attached bathrooms, and dedicated hospitality designed for a restful stay.
+              Convenient comforts, on-site parking, round-the-clock reception, and clean accommodations designed for a restful stay in Kukatpally.
             </p>
           </div>
         </Container>
@@ -57,65 +37,75 @@ export const AmenitiesPage: React.FC = () => {
       {/* Main Amenities Grid */}
       <Section variant="default" padding="lg">
         <Container size="xl">
-          <div className="mb-6 p-4 rounded-lg bg-white border border-neutral-border shadow-sm flex items-start gap-3">
+          {/* Grey Highlight Transparency Banner */}
+          <div className="mb-8 p-4 rounded-xl bg-[#F7F7F7] border border-neutral-200/90 shadow-sm flex items-start gap-3">
             <ShieldAlert className="w-5 h-5 text-feedback-warning shrink-0 mt-0.5" />
             <div className="text-xs text-neutral-secondary">
-              <span className="font-bold text-neutral-dark">Information Transparency: </span>
-              Air Conditioning in AC Rooms is a confirmed property specification. Other amenities listed below are temporary demo representations and will be verified upon client delivery.
+              <span className="font-bold text-neutral-dark">Amenity Status: </span>
+              Air Conditioning in AC Rooms and 24/7 Front Desk are confirmed hotel services. Other features listed below are prototype representations for demonstration.
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {AMENITIES_DATA.map((item) => (
-              <Card
+            {AMENITIES_DATA.map((item, index) => (
+              <ScrollReveal
                 key={item.id}
-                variant="default"
-                className="bg-white p-6 flex flex-col justify-between gap-4 hover:border-brand/30 transition-all hover:shadow-card-hover"
+                direction="up"
+                delayMs={index * 60}
+                className="h-full"
               >
-                <CardContent className="p-0 flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
-                    <div className="w-12 h-12 rounded-lg bg-neutral-light border border-neutral-border flex items-center justify-center">
-                      {AMENITY_ICONS[item.iconName] || <Sparkles className="w-6 h-6 text-brand" />}
+                <Card
+                  variant="default"
+                  className="h-full bg-white border border-neutral-200/90 rounded-2xl p-6 flex flex-col justify-between gap-4 hover:border-brand/30 transition-all hover:-translate-y-1 hover:shadow-card-hover"
+                >
+                  <CardContent className="p-0 flex flex-col gap-4">
+                    <div className="flex items-center justify-between">
+                      <Icon3D name={item.iconName} size="lg" className="shadow-sm" />
+                      {item.isConfirmed ? (
+                        <span className="text-[10px] uppercase font-bold text-feedback-success bg-green-50 px-2.5 py-1 rounded-full border border-green-200">
+                          Confirmed
+                        </span>
+                      ) : (
+                        <span className="text-[10px] uppercase font-bold text-neutral-400 bg-neutral-100 px-2 py-0.5 rounded">
+                          Demo
+                        </span>
+                      )}
                     </div>
-                    <Badge
-                      variant={item.isConfirmed ? 'success' : 'default'}
-                      size="sm"
-                      className="font-bold"
-                    >
-                      {item.isConfirmed ? 'Confirmed' : 'Demo Placeholder'}
-                    </Badge>
-                  </div>
 
-                  <div>
-                    <h3 className="text-base font-bold text-neutral-dark">{item.name}</h3>
-                    <p className="text-xs sm:text-sm text-neutral-secondary leading-relaxed mt-1">
-                      {item.description}
-                    </p>
-                  </div>
-                </CardContent>
+                    <div className="flex flex-col gap-1.5">
+                      <h3 className="text-base sm:text-lg font-bold text-neutral-dark">
+                        {item.name}
+                      </h3>
+                      <p className="text-xs sm:text-sm text-neutral-secondary leading-relaxed">
+                        {item.description}
+                      </p>
+                    </div>
+                  </CardContent>
 
-                <div className="pt-2 border-t border-neutral-border/50 text-[11px] text-neutral-400 font-medium">
-                  {item.statusLabel}
-                </div>
-              </Card>
+                  <div className="pt-3 border-t border-neutral-100 flex items-center gap-1.5 text-xs text-neutral-500 font-medium">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-brand" />
+                    <span>Included with your stay</span>
+                  </div>
+                </Card>
+              </ScrollReveal>
             ))}
           </div>
 
-          {/* Book Now Bottom Banner */}
-          <div className="mt-14 bg-white rounded-card border border-neutral-border p-8 text-center flex flex-col items-center gap-4 max-w-2xl mx-auto shadow-card">
-            <h3 className="text-2xl font-bold text-neutral-dark">
-              Ready to Book Your Room?
+          {/* Direct Booking CTA Bar */}
+          <ScrollReveal direction="up" className="mt-12 p-8 rounded-2xl bg-white border border-neutral-200 shadow-card text-center flex flex-col items-center gap-4">
+            <h3 className="text-xl sm:text-2xl font-black text-neutral-dark">
+              Plan Your Stay at Manohar Grand
             </h3>
-            <p className="text-sm text-neutral-secondary">
-              Choose your dates and select between our comfortable AC and Non-AC room options.
+            <p className="text-xs sm:text-sm text-neutral-secondary max-w-md">
+              Enjoy AC and Non-AC room choices with direct reservation guarantees and dedicated reception support.
             </p>
             <Link to="/booking">
               <Button variant="primary" size="lg" className="gap-2 font-bold shadow-md">
-                <CalendarDays className="w-5 h-5" />
-                Check Room Availability
+                <CalendarDays className="w-4 h-4" />
+                Book Your Stay Online
               </Button>
             </Link>
-          </div>
+          </ScrollReveal>
         </Container>
       </Section>
     </div>

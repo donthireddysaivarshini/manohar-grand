@@ -2,17 +2,13 @@ import React, { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   ChevronRight,
-  Wind,
-  Droplets,
-  Wifi,
   Tv,
   Sparkles,
-  Zap,
-  Clock,
-  ShieldCheck,
   ArrowLeft,
   ArrowRight,
   ShieldAlert,
+  Users,
+  Car,
 } from 'lucide-react';
 import { Container } from '../../components/common/Container';
 import { Section } from '../../components/common/Section';
@@ -23,16 +19,18 @@ import { RoomGallery } from '../../components/rooms/RoomGallery';
 import { RoomSpecGrid } from '../../components/rooms/RoomSpecGrid';
 import { RoomBookingCard } from '../../components/rooms/RoomBookingCard';
 import { ROOM_CATEGORIES_DATA, RoomCategoryExtended } from '../../data/roomCategories';
+import { Icon3D } from '../../components/common/Icon3D';
 
 const FEATURE_ICONS: Record<string, React.ReactNode> = {
-  Wind: <Wind className="w-5 h-5 text-brand" />,
-  Droplets: <Droplets className="w-5 h-5 text-brand" />,
-  Wifi: <Wifi className="w-5 h-5 text-brand" />,
+  Wind: <Icon3D name="air-conditioning" size="sm" />,
+  Droplets: <Icon3D name="hot-water" size="sm" />,
+  Wifi: <Icon3D name="wifi" size="sm" />,
   Tv: <Tv className="w-5 h-5 text-brand" />,
-  Sparkles: <Sparkles className="w-5 h-5 text-brand" />,
-  Zap: <Zap className="w-5 h-5 text-brand" />,
-  Clock: <Clock className="w-5 h-5 text-brand" />,
-  ShieldCheck: <ShieldCheck className="w-5 h-5 text-brand" />,
+  Sparkles: <Icon3D name="housekeeping" size="sm" />,
+  Zap: <Icon3D name="power-backup" size="sm" />,
+  Clock: <Icon3D name="reception" size="sm" />,
+  ShieldCheck: <Icon3D name="security" size="sm" />,
+  Car: <Icon3D name="parking" size="sm" />,
 };
 
 export const RoomDetailsPage: React.FC = () => {
@@ -45,9 +43,9 @@ export const RoomDetailsPage: React.FC = () => {
 
   useEffect(() => {
     if (category) {
-      document.title = `${category.name} | Manohar Grand Hotel`;
+      document.title = `${category.name} | Manohar Grand`;
     } else {
-      document.title = 'Room Category | Manohar Grand Hotel';
+      document.title = 'Room Category | Manohar Grand';
     }
   }, [category]);
 
@@ -106,8 +104,8 @@ export const RoomDetailsPage: React.FC = () => {
                 <Badge variant="brand" size="sm" className="font-bold">
                   {category.name}
                 </Badge>
-                <Badge variant="success" size="sm" className="font-bold">
-                  {category.totalInventory} Rooms Confirmed
+                <Badge variant="default" size="sm" className="font-semibold">
+                  Up to 2 Guests (Base)
                 </Badge>
               </div>
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-neutral-dark tracking-tight">
@@ -132,6 +130,47 @@ export const RoomDetailsPage: React.FC = () => {
             <div className="lg:col-span-8 flex flex-col gap-8">
               {/* 1. Interactive Image Gallery */}
               <RoomGallery roomName={category.name} images={category.demoImages.gallery} />
+
+              {/* Client-Required Occupancy & Parking Information Callouts */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {category.slug === 'ac-room' ? (
+                  <div className="p-4 rounded-xl bg-neutral-100/90 border border-neutral-200 flex items-start gap-3.5 shadow-xs">
+                    <div className="w-9 h-9 rounded-lg bg-white border border-neutral-200 flex items-center justify-center shrink-0 text-brand shadow-xs">
+                      <Users className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-xs font-bold text-neutral-dark">Guest Occupancy Details</span>
+                      <p className="text-xs text-neutral-600 leading-relaxed">
+                        Up to 2 guests. Extra charge may apply for 3rd &amp; 4th guest. <span className="font-semibold text-neutral-700">Rate to be confirmed.</span>
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-xl bg-neutral-100/90 border border-neutral-200 flex items-start gap-3.5 shadow-xs">
+                    <div className="w-9 h-9 rounded-lg bg-white border border-neutral-200 flex items-center justify-center shrink-0 text-brand shadow-xs">
+                      <Users className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-xs font-bold text-neutral-dark">Standard Occupancy</span>
+                      <p className="text-xs text-neutral-600 leading-relaxed">
+                        Comfortable accommodation for <strong>up to 2 guests</strong>.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="p-4 rounded-xl bg-neutral-100/90 border border-neutral-200 flex items-start gap-3.5 shadow-xs">
+                  <div className="w-9 h-9 rounded-lg bg-white border border-neutral-200 flex items-center justify-center shrink-0 text-brand shadow-xs">
+                    <Car className="w-4 h-4" />
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-xs font-bold text-neutral-dark">Car Parking Available</span>
+                    <p className="text-xs text-neutral-600 leading-relaxed">
+                      Convenient on-premise vehicle parking for all resident guests.
+                    </p>
+                  </div>
+                </div>
+              </div>
 
               {/* 2. Room Overview Paragraphs */}
               <Card variant="bordered" className="bg-white p-6 shadow-xs">
@@ -176,10 +215,10 @@ export const RoomDetailsPage: React.FC = () => {
                     {category.roomFeatures.map((feat, idx) => (
                       <div
                         key={idx}
-                        className="flex items-start gap-3 p-3 rounded-lg bg-neutral-light/70 border border-neutral-border/60"
+                        className="flex items-start gap-3.5 p-3.5 rounded-xl bg-neutral-light border border-neutral-border/70 hover:border-neutral-300 transition-colors"
                       >
-                        <div className="w-8 h-8 rounded-md bg-white border border-neutral-border flex items-center justify-center shrink-0">
-                          {FEATURE_ICONS[feat.iconName] || <Sparkles className="w-4 h-4 text-brand" />}
+                        <div className="shrink-0">
+                          {FEATURE_ICONS[feat.iconName] || <Sparkles className="w-5 h-5 text-brand" />}
                         </div>
                         <div className="flex flex-col gap-0.5">
                           <span className="text-xs font-bold text-neutral-dark">
@@ -227,7 +266,7 @@ export const RoomDetailsPage: React.FC = () => {
                         Explore Other Categories
                       </span>
                       <h3 className="text-base font-bold text-neutral-dark">
-                        Looking for {otherCategory.name}? ({otherCategory.totalInventory} Rooms)
+                        Looking for {otherCategory.name}?
                       </h3>
                       <p className="text-xs text-neutral-secondary">
                         {otherCategory.subtitle}
@@ -255,3 +294,4 @@ export const RoomDetailsPage: React.FC = () => {
     </div>
   );
 };
+

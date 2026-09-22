@@ -15,9 +15,10 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   { label: 'Home', href: '/' },
   { label: 'Rooms', href: '/rooms' },
-  { label: 'About', href: '/about' },
   { label: 'Amenities', href: '/amenities' },
   { label: 'Gallery', href: '/gallery' },
+  { label: 'Corporate Booking', href: '/corporate-booking' },
+  { label: 'About', href: '/about' },
   { label: 'Contact', href: '/contact' },
 ];
 
