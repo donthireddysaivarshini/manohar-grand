@@ -43,8 +43,8 @@ export const BookingSearchWidget: React.FC<BookingSearchWidgetProps> = ({
   return (
     <div
       className={cn(
-        'w-full bg-white rounded-card border border-neutral-border shadow-elevated p-4 sm:p-6 transition-all',
-        variant === 'floating' && '-mt-10 sm:-mt-14 relative z-20',
+        'w-full bg-white rounded-2xl border border-neutral-200 shadow-elevated p-4 sm:p-6 transition-all',
+        variant === 'floating' && '-mt-6 sm:-mt-10 lg:-mt-14 relative z-20',
         className
       )}
     >

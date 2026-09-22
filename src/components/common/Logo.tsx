@@ -1,5 +1,4 @@
 import React from 'react';
-import { BrandLogoSvg } from '../../assets/logos/BrandLogoSvg';
 import { cn } from '../../utils/cn';
 
 export interface LogoProps {
@@ -12,10 +11,9 @@ export interface LogoProps {
 
 /**
  * Centralized Manohar Grand Brand Logo component.
- * - 100% Transparent SVG logo mark.
- * - No white background box or raster JPEG/PNG.
- * - Removed "HOTEL & HOSPITALITY" per client instructions.
- * - Brand styling: Black "MANOHAR" + Brand Red "GRAND".
+ * - Uses client's official brand logo (/logomg.jpeg).
+ * - "MANOHAR GRAND" displayed in solid black color in header / light in dark mode.
+ * - Clean responsive dimensions.
  */
 export const Logo: React.FC<LogoProps> = ({
   size = 'md',
@@ -26,47 +24,55 @@ export const Logo: React.FC<LogoProps> = ({
 }) => {
   const sizeMap = {
     sm: {
-      svg: 'w-7 h-7',
-      title: 'text-base font-extrabold tracking-tight',
+      img: 'w-7 h-7 sm:w-8 sm:h-8',
+      title: 'text-sm sm:text-base font-extrabold tracking-tight',
     },
     md: {
-      svg: 'w-9 h-9',
-      title: 'text-lg md:text-xl font-extrabold tracking-tight',
+      img: 'w-8 h-8 sm:w-10 sm:h-10',
+      title: 'text-base sm:text-lg md:text-xl font-black tracking-tight',
     },
     lg: {
-      svg: 'w-11 h-11',
-      title: 'text-xl md:text-2xl font-extrabold tracking-tight',
+      img: 'w-10 h-10 sm:w-12 sm:h-12',
+      title: 'text-lg sm:text-xl md:text-2xl font-black tracking-tight',
     },
     xl: {
-      svg: 'w-14 h-14',
-      title: 'text-2xl md:text-3xl font-black tracking-tight',
+      img: 'w-12 h-12 sm:w-14 sm:h-14',
+      title: 'text-xl sm:text-2xl md:text-3xl font-black tracking-tight',
     },
   };
 
   const currentSize = sizeMap[size];
 
   return (
-    <div className={cn('flex items-center gap-2.5 select-none', className)}>
-      {/* Transparent SVG Logo Mark */}
-      <div className={cn('shrink-0 flex items-center justify-center', imageClassName)}>
-        <BrandLogoSvg
-          className={currentSize.svg}
-          accentColor="#FE0000"
-          darkColor={textVariant === 'light' ? '#FFFFFF' : '#171717'}
+    <div className={cn('flex items-center gap-2 sm:gap-2.5 select-none shrink-0', className)}>
+      {/* Official Brand Logo Image */}
+      <div
+        className={cn(
+          'relative rounded-lg overflow-hidden shrink-0 bg-transparent flex items-center justify-center',
+          currentSize.img,
+          imageClassName
+        )}
+      >
+        <img
+          src="/logomg.jpeg"
+          alt="Manohar Grand Logo"
+          className="w-full h-full object-contain mix-blend-multiply"
+          loading="eager"
         />
       </div>
 
       {showText && (
         <span
           className={cn(
-            'font-sans leading-none',
+            'font-sans uppercase leading-none whitespace-nowrap',
             currentSize.title,
-            textVariant === 'light' ? 'text-white' : 'text-neutral-dark'
+            textVariant === 'light' ? 'text-white' : 'text-black'
           )}
         >
-          MANOHAR <span className="text-brand">GRAND</span>
+          MANOHAR GRAND
         </span>
       )}
     </div>
   );
 };
+

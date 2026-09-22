@@ -57,7 +57,7 @@ export const BottomNav: React.FC = () => {
               >
                 <div
                   className={cn(
-                    'w-13 h-13 p-3 rounded-full flex items-center justify-center transition-all duration-300 transform',
+                    'w-12 h-12 p-2.5 rounded-full flex items-center justify-center transition-all duration-300 transform',
                     'shadow-[0_4px_14px_rgba(254,0,0,0.35)] group-active:scale-95',
                     isActive
                       ? 'bg-brand text-white scale-105 ring-4 ring-brand/20'
