@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { CalendarDays, Phone, Menu } from 'lucide-react';
+import { CalendarDays, Phone } from 'lucide-react';
 import { Container } from '../common/Container';
 import { Button } from '../common/Button';
 import { Logo } from '../common/Logo';
-import { MobileNav } from './MobileNav';
 import { cn } from '../../utils/cn';
 
 export interface NavItem {
@@ -23,8 +22,6 @@ export const NAV_ITEMS: NavItem[] = [
 ];
 
 export const Navbar: React.FC = () => {
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
-
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-40 w-full bg-neutral-dark text-white border-b border-neutral-800 shadow-md transition-all">
@@ -64,7 +61,7 @@ export const Navbar: React.FC = () => {
               ))}
             </nav>
 
-            {/* Header Actions (Phone Pill, Red Book Button, Hamburger Menu) */}
+            {/* Header Actions (Phone Pill, Red Book Button) */}
             <div className="flex items-center gap-1.5 xs:gap-2 sm:gap-3 shrink-0">
               <a
                 href="tel:7997044999"
@@ -81,31 +78,12 @@ export const Navbar: React.FC = () => {
                   <span>Book</span>
                 </Button>
               </Link>
-
-              {/* Mobile Hamburger Drawer Trigger (Mobile Only) */}
-              <button
-                type="button"
-                onClick={() => setIsMobileOpen(true)}
-                className="md:hidden inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-neutral-800 border border-neutral-700/80 text-neutral-200 hover:text-white hover:bg-neutral-700 transition-colors focus-visible:outline-brand"
-                aria-label="Open full navigation menu"
-                aria-expanded={isMobileOpen}
-              >
-                <Menu className="w-4.5 h-4.5" />
-              </button>
             </div>
           </div>
         </Container>
       </header>
       {/* Spacer to prevent content from jumping under fixed header */}
       <div className="h-14 sm:h-16 md:h-20 shrink-0" aria-hidden="true" />
-
-      {/* Complete Mobile Navigation Drawer */}
-      <MobileNav
-        isOpen={isMobileOpen}
-        onClose={() => setIsMobileOpen(false)}
-      />
     </>
   );
 };
-
-
