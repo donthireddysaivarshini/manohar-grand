@@ -4,6 +4,8 @@ import { Navbar } from '../components/layout/Navbar';
 import { BottomNav } from '../components/layout/BottomNav';
 import { Footer } from '../components/layout/Footer';
 import { MobileNav } from '../components/layout/MobileNav';
+import { FloatingContactWidget } from '../components/common/FloatingContactWidget';
+import { ScrollToTopButton } from '../components/common/ScrollToTopButton';
 
 export const MainLayout: React.FC = () => {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
@@ -23,6 +25,9 @@ export const MainLayout: React.FC = () => {
         isOpen={isMobileNavOpen}
         onClose={() => setIsMobileNavOpen(false)}
       />
+      {/* Persistent Floating Contact Us Widget & Scroll to Top */}
+      <FloatingContactWidget />
+      <ScrollToTopButton />
     </div>
   );
 };
