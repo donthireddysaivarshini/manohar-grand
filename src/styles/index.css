@@ -16,14 +16,32 @@
     --color-dark: #151515;
   }
 
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
   html {
     scroll-behavior: smooth;
     -webkit-tap-highlight-color: transparent;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
   }
 
   body {
     background-color: var(--color-bg-light);
     color: var(--color-text-primary);
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    position: relative;
+    margin: 0;
+    padding: 0;
+  }
+
+  #root {
+    width: 100%;
+    max-width: 100%;
     overflow-x: hidden;
   }
 

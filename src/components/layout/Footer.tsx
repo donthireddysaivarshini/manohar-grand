@@ -91,11 +91,6 @@ export const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/about" className="hover:text-brand transition-colors">
-                  About Hotel
-                </Link>
-              </li>
-              <li>
                 <Link to="/contact" className="hover:text-brand transition-colors">
                   Location &amp; Contact
                 </Link>
@@ -147,7 +142,7 @@ export const Footer: React.FC = () => {
                 className="flex items-start gap-2.5 hover:text-white transition-colors group"
               >
                 <MapPin className="w-4 h-4 text-brand shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
-                <span className="text-xs leading-relaxed text-neutral-400 group-hover:text-neutral-200">
+                <span className="text-xs leading-relaxed text-neutral-400 group-hover:text-neutral-200 break-words">
                   {PLACEHOLDER_HOTEL_INFO.address}
                 </span>
               </a>
@@ -168,7 +163,7 @@ export const Footer: React.FC = () => {
                 <Mail className="w-4 h-4 text-brand shrink-0" />
                 <a
                   href={`mailto:${PLACEHOLDER_HOTEL_INFO.email}`}
-                  className="text-xs text-neutral-400 hover:text-white transition-colors"
+                  className="text-xs text-neutral-400 hover:text-white transition-colors break-all"
                 >
                   {PLACEHOLDER_HOTEL_INFO.email}
                 </a>
@@ -185,9 +180,9 @@ export const Footer: React.FC = () => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-neutral-500">
+        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-neutral-500 text-center sm:text-left">
           <p>&copy; {currentYear} Manohar Grand. All rights reserved.</p>
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
             <span className="hover:text-neutral-400 cursor-pointer">
               Privacy Policy
             </span>

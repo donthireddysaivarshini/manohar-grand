@@ -72,13 +72,13 @@ export const ScrollReveal: React.FC<ScrollRevealProps> = ({
 
     switch (direction) {
       case 'up':
-        return 'opacity-0 translate-y-6';
+        return 'opacity-0 translate-y-4';
       case 'down':
-        return 'opacity-0 -translate-y-6';
+        return 'opacity-0 -translate-y-4';
       case 'left':
-        return 'opacity-0 translate-x-6';
+        return 'opacity-0 translate-y-4';
       case 'right':
-        return 'opacity-0 -translate-x-6';
+        return 'opacity-0 translate-y-4';
       case 'fade':
       default:
         return 'opacity-0';

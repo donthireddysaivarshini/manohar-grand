@@ -83,8 +83,8 @@ export const BottomNav: React.FC = () => {
               key={item.href}
               to={item.href}
               className={cn(
-                'flex flex-col items-center justify-center py-1 px-3 min-w-[56px] min-h-[44px] rounded-lg transition-all',
-                'focus-visible:outline-brand group',
+                'flex-1 min-w-0 flex flex-col items-center justify-center py-1 px-1 xs:px-2 min-h-[44px] rounded-lg transition-all',
+                'focus-visible:outline-brand group text-center',
                 isActive ? 'text-brand' : 'text-neutral-500 hover:text-neutral-900'
               )}
             >

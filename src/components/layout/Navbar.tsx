@@ -23,28 +23,28 @@ export const NAV_ITEMS: NavItem[] = [
 
 export const Navbar: React.FC = () => {
   return (
-    <header className="sticky top-0 z-40 bg-white/98 backdrop-blur-md border-b border-neutral-200 shadow-xs transition-all">
-      <Container size="xl">
-        <div className="flex items-center justify-between h-16 sm:h-20">
+    <header className="sticky top-0 z-40 w-full bg-neutral-dark text-white border-b border-neutral-800 shadow-md transition-all">
+      <Container size="xl" className="px-3 xs:px-4 sm:px-6 md:px-8">
+        <div className="flex items-center justify-between h-14 sm:h-16 md:h-20 gap-2">
           {/* Brand Logo Area */}
           <Link
             to="/"
-            className="flex items-center gap-2 group focus-visible:outline-brand rounded-lg p-0.5"
+            className="flex items-center gap-2 group focus-visible:outline-brand rounded-lg p-0.5 shrink-0 min-w-0"
             aria-label="Manohar Grand Home"
           >
-            <Logo size="md" />
+            <Logo size="md" textVariant="light" />
           </Link>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-7 xl:gap-8" aria-label="Main Navigation">
+          <nav className="hidden lg:flex items-center gap-6 xl:gap-8" aria-label="Main Navigation">
             {NAV_ITEMS.map((item) => (
               <NavLink
                 key={item.href}
                 to={item.href}
                 className={({ isActive }) =>
                   cn(
-                    'text-sm font-semibold tracking-wide transition-colors hover:text-brand relative py-1 focus-visible:outline-brand rounded',
-                    isActive ? 'text-brand font-bold' : 'text-neutral-dark'
+                    'text-sm font-semibold tracking-wide transition-colors py-1 focus-visible:outline-brand rounded relative',
+                    isActive ? 'text-brand font-bold' : 'text-neutral-300 hover:text-white'
                   )
                 }
               >
@@ -60,20 +60,20 @@ export const Navbar: React.FC = () => {
             ))}
           </nav>
 
-          {/* Header Actions (Call & Book) */}
-          <div className="flex items-center gap-2.5 sm:gap-3">
+          {/* Header Actions (Phone Pill & Red Book Button) */}
+          <div className="flex items-center gap-1.5 xs:gap-2 sm:gap-3 shrink-0">
             <a
               href="tel:7997044999"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-neutral-200 text-neutral-700 hover:text-brand hover:border-brand/40 text-xs font-bold transition-colors"
-              aria-label="Call Front Desk"
+              className="inline-flex items-center justify-center gap-1.5 h-8 sm:h-9 px-2.5 sm:px-3 rounded-lg bg-neutral-800 border border-neutral-700/80 text-neutral-200 hover:text-white hover:border-neutral-500 text-xs font-semibold transition-colors"
+              aria-label="Call Reception 7997044999"
             >
-              <Phone className="w-3.5 h-3.5 text-brand" />
-              <span className="hidden xs:inline">7997044999</span>
+              <Phone className="w-3.5 h-3.5 text-brand shrink-0" />
+              <span className="hidden sm:inline font-bold">7997044999</span>
             </a>
 
-            <Link to="/booking">
-              <Button variant="primary" size="sm" className="gap-1.5 font-bold text-xs sm:text-sm h-9 sm:h-10 px-3 sm:px-4">
-                <CalendarDays className="w-4 h-4" />
+            <Link to="/booking" className="shrink-0">
+              <Button variant="primary" size="sm" className="gap-1.5 font-bold text-xs h-8 sm:h-9 px-3 sm:px-4 shrink-0 shadow-sm">
+                <CalendarDays className="w-3.5 h-3.5" />
                 <span>Book</span>
               </Button>
             </Link>

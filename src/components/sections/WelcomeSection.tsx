@@ -14,8 +14,8 @@ export const WelcomeSection: React.FC = () => {
       <Container size="xl">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
           {/* Left: Dual Image Showcase */}
-          <ScrollReveal direction="left" className="relative">
-            <div className="relative z-10 aspect-[4/3] rounded-card overflow-hidden shadow-card border border-neutral-border bg-neutral-100 group">
+          <ScrollReveal direction="up" className="relative">
+            <div className="relative z-10 aspect-[4/3] rounded-2xl overflow-hidden shadow-card border border-neutral-border bg-neutral-100 group">
               <img
                 src={DEMO_MEDIA.welcome.primary}
                 alt="Hotel reception and welcoming ambience (Demo Stock)"
@@ -23,7 +23,7 @@ export const WelcomeSection: React.FC = () => {
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
             </div>
-            <div className="hidden sm:block absolute -bottom-5 -right-5 z-20 w-1/2 aspect-[4/3] rounded-card overflow-hidden shadow-elevated border-4 border-white bg-neutral-100">
+            <div className="hidden sm:block absolute -bottom-3 -right-2 md:-bottom-4 md:-right-4 z-20 w-1/2 aspect-[4/3] rounded-xl overflow-hidden shadow-elevated border-4 border-white bg-neutral-100">
               <img
                 src={DEMO_MEDIA.welcome.secondary}
                 alt="Guest room detail (Demo Stock)"
@@ -34,7 +34,7 @@ export const WelcomeSection: React.FC = () => {
           </ScrollReveal>
 
           {/* Right: Editorial Intro Content */}
-          <ScrollReveal direction="right" className="flex flex-col items-start gap-4 sm:gap-5">
+          <ScrollReveal direction="up" className="flex flex-col items-start gap-4 sm:gap-5">
             <Badge variant="brand" size="md">
               Welcome to Manohar Grand
             </Badge>
