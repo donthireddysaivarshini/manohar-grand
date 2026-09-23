@@ -33,7 +33,7 @@ export const BottomNav: React.FC = () => {
     <nav
       aria-label="Mobile Bottom Navigation"
       className={cn(
-        'fixed bottom-0 left-0 right-0 z-40 lg:hidden',
+        'fixed bottom-0 left-0 right-0 z-40 md:hidden',
         'bg-white/95 backdrop-blur-lg border-t border-neutral-200/90 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]',
         'px-2 pt-1.5 pb-[max(0.6rem,env(safe-area-inset-bottom))]',
         'print:hidden'

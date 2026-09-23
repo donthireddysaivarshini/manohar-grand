@@ -39,15 +39,15 @@ export const Navbar: React.FC = () => {
               <Logo size="md" textVariant="light" />
             </Link>
 
-            {/* Desktop Navigation Links */}
-            <nav className="hidden lg:flex items-center gap-6 xl:gap-8" aria-label="Main Navigation">
+            {/* Desktop & Tablet Navigation Links */}
+            <nav className="hidden md:flex items-center gap-4 lg:gap-6 xl:gap-8" aria-label="Main Navigation">
               {NAV_ITEMS.map((item) => (
                 <NavLink
                   key={item.href}
                   to={item.href}
                   className={({ isActive }) =>
                     cn(
-                      'text-sm font-semibold tracking-wide transition-colors py-1 focus-visible:outline-brand rounded relative',
+                      'text-xs lg:text-sm font-semibold tracking-wide transition-colors py-1 focus-visible:outline-brand rounded relative whitespace-nowrap',
                       isActive ? 'text-brand font-bold' : 'text-neutral-300 hover:text-white'
                     )
                   }
@@ -82,11 +82,11 @@ export const Navbar: React.FC = () => {
                 </Button>
               </Link>
 
-              {/* Mobile Hamburger Drawer Trigger */}
+              {/* Mobile Hamburger Drawer Trigger (Mobile Only) */}
               <button
                 type="button"
                 onClick={() => setIsMobileOpen(true)}
-                className="lg:hidden inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-neutral-800 border border-neutral-700/80 text-neutral-200 hover:text-white hover:bg-neutral-700 transition-colors focus-visible:outline-brand"
+                className="md:hidden inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-neutral-800 border border-neutral-700/80 text-neutral-200 hover:text-white hover:bg-neutral-700 transition-colors focus-visible:outline-brand"
                 aria-label="Open full navigation menu"
                 aria-expanded={isMobileOpen}
               >
