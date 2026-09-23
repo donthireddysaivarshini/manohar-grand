@@ -26,7 +26,7 @@ export const AboutPage: React.FC = () => {
               About Manohar Grand
             </Badge>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight">
-              Hospitality with Care &amp; Comfort
+              Redefines Luxury with Affordable Prices
             </h1>
             <p className="text-sm sm:text-base text-neutral-300 leading-relaxed">
               Providing welcoming hospitality, comfortable rooms, and dependable service with direct walkable access to the JNTU Metro corridor.
