@@ -25,7 +25,7 @@
     -webkit-tap-highlight-color: transparent;
     width: 100%;
     max-width: 100%;
-    overflow-x: hidden;
+    overflow-x: clip;
   }
 
   body {
@@ -33,7 +33,7 @@
     color: var(--color-text-primary);
     width: 100%;
     max-width: 100%;
-    overflow-x: hidden;
+    overflow-x: clip;
     position: relative;
     margin: 0;
     padding: 0;
@@ -42,7 +42,7 @@
   #root {
     width: 100%;
     max-width: 100%;
-    overflow-x: hidden;
+    overflow-x: clip;
   }
 
   /* Focus visible styles for keyboard accessibility */

@@ -27,7 +27,7 @@ export const Navbar: React.FC = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full bg-neutral-dark text-white border-b border-neutral-800 shadow-md transition-all">
+      <header className="fixed top-0 left-0 right-0 z-40 w-full bg-neutral-dark text-white border-b border-neutral-800 shadow-md transition-all">
         <Container size="xl" className="px-3 xs:px-4 sm:px-6 md:px-8">
           <div className="flex items-center justify-between h-14 sm:h-16 md:h-20 gap-2">
             {/* Brand Logo Area */}
@@ -96,6 +96,8 @@ export const Navbar: React.FC = () => {
           </div>
         </Container>
       </header>
+      {/* Spacer to prevent content from jumping under fixed header */}
+      <div className="h-14 sm:h-16 md:h-20 shrink-0" aria-hidden="true" />
 
       {/* Complete Mobile Navigation Drawer */}
       <MobileNav
