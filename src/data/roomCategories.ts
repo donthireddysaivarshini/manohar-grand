@@ -29,14 +29,16 @@ export interface RoomCategoryExtended extends RoomCategory {
 
 /**
  * COMPREHENSIVE ROOM CATEGORIES DATA
- * Features Wakefit Memory Foam Mattresses, clear cancellation policies, and mandatory Aadhar check-in.
+ * Features WAKEFIT Memory Foam Mattress in all bedrooms for extra comfort,
+ * 32-Inch Smart TV with OTT Apps (subscription not included),
+ * 50% refund cancellation before 2 days / 0% same-day, and mandatory Aadhar check-in.
  */
 export const ROOM_CATEGORIES_DATA: RoomCategoryExtended[] = [
   {
     id: CONFIRMED_ROOM_CATEGORIES[0].id,
     slug: CONFIRMED_ROOM_CATEGORIES[0].slug,
     name: CONFIRMED_ROOM_CATEGORIES[0].name,
-    subtitle: 'Climate-controlled comfort with Wakefit Memory Foam Mattress',
+    subtitle: 'Climate-controlled comfort with Wakefit Memory Foam Mattress & 32" Smart TV',
     totalInventory: CONFIRMED_ROOM_CATEGORIES[0].totalInventory, // 20 Confirmed
     demoBasePricePerNight: DEMO_PRICING_CONFIG.baseRates['ac-room'],
     demoCapacity: {
@@ -44,10 +46,11 @@ export const ROOM_CATEGORIES_DATA: RoomCategoryExtended[] = [
       maxChildren: 2,
     },
     occupancyNote: 'Up to 2 guests included. Extra charge may apply for 3rd & 4th guest (confirmed at check-in).',
-    demoBedType: 'Wakefit Memory Foam Double Bed',
+    demoBedType: 'WAKEFIT Memory Foam Double Bed',
     demoSizeSqFt: '240 sq ft',
     demoAmenities: [
-      'Wakefit Memory Foam Mattress',
+      'WAKEFIT Memory Foam Mattress',
+      '32-Inch Smart TV with OTT Apps',
       'Individual Air Conditioning',
       'Car Parking Available',
       'Attached Bathroom with 24/7 Hot Water',
@@ -65,8 +68,8 @@ export const ROOM_CATEGORIES_DATA: RoomCategoryExtended[] = [
     },
     isPlaceholderData: false,
     overviewParagraphs: [
-      'Our AC Rooms provide an inviting and climate-controlled haven. Each room is outfitted with a premium Wakefit Memory Foam mattress, ensuring ergonomic spine support and a deep, refreshing night’s sleep.',
-      'Enjoy individual remote AC control, clean attached private bathroom with 24/7 hot water, daily housekeeping, and on-premise car parking. Walkable distance to JNTU Metro Station.',
+      'Our AC Rooms provide an inviting and climate-controlled haven. Each room is outfitted with a premium WAKEFIT Memory Foam mattress for extra comfort and posture support, ensuring deep, restful sleep.',
+      'Stay entertained with a 32-Inch Smart TV featuring popular OTT apps (subscription not included / guest login supported). Enjoy remote AC control, private bathroom with 24/7 hot water, high-speed Wi-Fi, and on-premise car parking near JNTU Metro.',
     ],
     specifications: [
       {
@@ -77,21 +80,21 @@ export const ROOM_CATEGORIES_DATA: RoomCategoryExtended[] = [
       },
       {
         label: 'Mattress & Bedding',
-        value: 'Wakefit Memory Foam Mattress',
+        value: 'WAKEFIT Memory Foam Mattress',
         isDemo: false,
         iconName: 'comfortable-stay',
+      },
+      {
+        label: 'Smart TV & Media',
+        value: '32-Inch Smart TV (OTT Apps Included, Subscription Not Included)',
+        isDemo: false,
+        iconName: 'tv',
       },
       {
         label: 'Base Occupancy',
         value: 'Up to 2 Guests (Base rate)',
         isDemo: false,
         iconName: 'comfortable-stay',
-      },
-      {
-        label: 'Additional Guests',
-        value: 'Extra charge for 3rd & 4th guest',
-        isDemo: false,
-        iconName: 'easy-booking',
       },
       {
         label: 'Parking',
@@ -108,14 +111,20 @@ export const ROOM_CATEGORIES_DATA: RoomCategoryExtended[] = [
     ],
     roomFeatures: [
       {
-        title: 'Wakefit Memory Foam Mattress',
-        description: 'Premium ergonomic mattress for restorative sleep and contouring pressure relief.',
+        title: 'WAKEFIT Memory Foam Mattress',
+        description: 'WAKEFIT Memory Foam mattress in all bedrooms for extra contouring comfort and peaceful sleep.',
         iconName: 'comfortable-stay',
         isConfirmed: true,
       },
       {
+        title: '32-Inch Smart TV with OTT Apps',
+        description: 'Enjoy YouTube and OTT entertainment apps (subscription not included — log in with your own account).',
+        iconName: 'tv',
+        isConfirmed: true,
+      },
+      {
         title: 'Individual Air Conditioning',
-        description: 'Personalized remote-controlled AC for quiet, custom cooling comfort.',
+        description: 'Personalized remote-controlled AC for custom cooling comfort.',
         iconName: 'air-conditioning',
         isConfirmed: true,
       },
@@ -133,14 +142,8 @@ export const ROOM_CATEGORIES_DATA: RoomCategoryExtended[] = [
       },
       {
         title: 'High-Speed Wi-Fi',
-        description: 'Wireless internet connectivity for work, streaming, and navigation.',
+        description: 'Fast wireless internet connectivity for streaming, work, and browsing.',
         iconName: 'wifi',
-        isConfirmed: true,
-      },
-      {
-        title: 'Daily Housekeeping',
-        description: 'Professional room tidying, clean linen, and sanitation.',
-        iconName: 'housekeeping',
         isConfirmed: true,
       },
     ],
@@ -156,13 +159,13 @@ export const ROOM_CATEGORIES_DATA: RoomCategoryExtended[] = [
         isDemo: false,
       },
       {
-        title: 'Check-in & Check-out',
-        description: 'Check-in from 12:00 PM | Check-out until 11:00 AM (24/7 Front desk assistance available).',
+        title: 'OTT Subscription Policy',
+        description: '32-Inch Smart TV is provided with OTT apps. Personal active subscriptions required for OTT platforms.',
         isDemo: false,
       },
       {
-        title: 'Occupancy Terms',
-        description: 'Base rate includes up to 2 guests. Extra guest charge applies for 3rd/4th guest.',
+        title: 'Check-in & Check-out',
+        description: 'Check-in from 12:00 PM | Check-out until 11:00 AM (24/7 Front desk assistance available).',
         isDemo: false,
       },
     ],
@@ -171,18 +174,19 @@ export const ROOM_CATEGORIES_DATA: RoomCategoryExtended[] = [
     id: CONFIRMED_ROOM_CATEGORIES[1].id,
     slug: CONFIRMED_ROOM_CATEGORIES[1].slug,
     name: CONFIRMED_ROOM_CATEGORIES[1].name,
-    subtitle: 'Practical comfort with Wakefit Memory Foam Mattress',
+    subtitle: 'Practical comfort with Wakefit Memory Foam Mattress & 32" Smart TV',
     totalInventory: CONFIRMED_ROOM_CATEGORIES[1].totalInventory, // 8 Confirmed
     demoBasePricePerNight: DEMO_PRICING_CONFIG.baseRates['non-ac-room'],
     demoCapacity: {
       maxAdults: 2,
       maxChildren: 1,
     },
-    occupancyNote: 'Up to 2 guests. Practical budget stay with Wakefit mattress.',
-    demoBedType: 'Wakefit Memory Foam Double Bed',
+    occupancyNote: 'Up to 2 guests. Practical budget stay with Wakefit mattress & Smart TV.',
+    demoBedType: 'WAKEFIT Memory Foam Double Bed',
     demoSizeSqFt: '210 sq ft',
     demoAmenities: [
-      'Wakefit Memory Foam Mattress',
+      'WAKEFIT Memory Foam Mattress',
+      '32-Inch Smart TV with OTT Apps',
       'Ceiling Fan & Natural Ventilation',
       'Car Parking Available',
       'Attached Bathroom with 24/7 Hot Water',
@@ -200,8 +204,8 @@ export const ROOM_CATEGORIES_DATA: RoomCategoryExtended[] = [
     },
     isPlaceholderData: false,
     overviewParagraphs: [
-      'Our Non-AC Rooms offer an economical and practical stay featuring genuine Wakefit Memory Foam mattresses for great spinal comfort and peaceful rest.',
-      'Equipped with ceiling fan cooling, attached private bathroom with 24/7 hot water, high-speed Wi-Fi, and on-site car parking. Ideal for budget-conscious business and family transit stays.',
+      'Our Non-AC Rooms offer an economical and comfortable stay featuring genuine WAKEFIT Memory Foam mattresses in all bedrooms for extra comfort.',
+      'Equipped with a 32-Inch Smart TV with OTT apps (subscription not included), ceiling fan ventilation, attached bathroom with 24/7 hot water, high-speed Wi-Fi, and on-site car parking.',
     ],
     specifications: [
       {
@@ -212,19 +216,19 @@ export const ROOM_CATEGORIES_DATA: RoomCategoryExtended[] = [
       },
       {
         label: 'Mattress & Bedding',
-        value: 'Wakefit Memory Foam Mattress',
+        value: 'WAKEFIT Memory Foam Mattress',
         isDemo: false,
         iconName: 'comfortable-stay',
+      },
+      {
+        label: 'Smart TV & Media',
+        value: '32-Inch Smart TV (OTT Apps Included, Subscription Not Included)',
+        isDemo: false,
+        iconName: 'tv',
       },
       {
         label: 'Base Occupancy',
         value: 'Up to 2 Guests (Base rate)',
-        isDemo: false,
-        iconName: 'comfortable-stay',
-      },
-      {
-        label: 'Ventilation',
-        value: 'Ceiling Fan & Natural Airflow',
         isDemo: false,
         iconName: 'comfortable-stay',
       },
@@ -243,9 +247,15 @@ export const ROOM_CATEGORIES_DATA: RoomCategoryExtended[] = [
     ],
     roomFeatures: [
       {
-        title: 'Wakefit Memory Foam Mattress',
-        description: 'Authentic Wakefit mattress in every room for deep, rejuvenating sleep.',
+        title: 'WAKEFIT Memory Foam Mattress',
+        description: 'WAKEFIT Memory Foam mattress in all bedrooms for extra comfort and spinal alignment.',
         iconName: 'comfortable-stay',
+        isConfirmed: true,
+      },
+      {
+        title: '32-Inch Smart TV with OTT Apps',
+        description: 'Wall-mounted Smart TV with OTT platform apps (subscription not included).',
+        iconName: 'tv',
         isConfirmed: true,
       },
       {
@@ -272,12 +282,6 @@ export const ROOM_CATEGORIES_DATA: RoomCategoryExtended[] = [
         iconName: 'wifi',
         isConfirmed: true,
       },
-      {
-        title: 'Daily Housekeeping',
-        description: 'Regular room tidying and clean linen upkeep.',
-        iconName: 'housekeeping',
-        isConfirmed: true,
-      },
     ],
     policies: [
       {
@@ -291,13 +295,13 @@ export const ROOM_CATEGORIES_DATA: RoomCategoryExtended[] = [
         isDemo: false,
       },
       {
-        title: 'Check-in & Check-out',
-        description: 'Check-in from 12:00 PM | Check-out until 11:00 AM (24/7 Front desk assistance available).',
+        title: 'OTT Subscription Policy',
+        description: '32-Inch Smart TV is provided with OTT apps. Personal active subscriptions required for OTT platforms.',
         isDemo: false,
       },
       {
-        title: 'Occupancy Terms',
-        description: 'Standard occupancy is 2 guests in clean, practical surroundings.',
+        title: 'Check-in & Check-out',
+        description: 'Check-in from 12:00 PM | Check-out until 11:00 AM (24/7 Front desk assistance available).',
         isDemo: false,
       },
     ],

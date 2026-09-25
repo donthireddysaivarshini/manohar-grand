@@ -9,10 +9,10 @@ export interface ExperienceHighlight {
 export const EXPERIENCE_HIGHLIGHTS: ExperienceHighlight[] = [
   {
     id: 'wakefit-comfort',
-    title: 'Comfortable Stay & Wakefit Mattresses',
-    description: 'Every bedroom is equipped with premium Wakefit Memory Foam mattresses for spine support and restful, deep sleep in both AC and Non-AC rooms.',
+    title: 'Comfortable Stay & Entertainment',
+    description: 'WAKEFIT Memory Foam Mattress in all bedrooms for extra comfort with 32-Inch Smart TV with OTT Apps (subscription not included).',
     iconName: 'comfortable-stay',
-    badge: 'Wakefit Memory Foam',
+    badge: 'Wakefit & Smart TV',
   },
   {
     id: 'connectivity',

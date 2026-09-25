@@ -88,11 +88,16 @@ export const RoomCategoryCard: React.FC<RoomCategoryCardProps> = ({ category }) 
             </div>
           </div>
 
-          {/* Wakefit Mattress Feature Banner */}
-          <div className="p-2.5 rounded-xl bg-red-50/60 border border-brand/20 flex items-center gap-2 text-xs text-brand font-semibold">
-            <Sparkles className="w-4 h-4 text-brand shrink-0" />
-            <span className="text-[11px] sm:text-xs leading-tight">
-              Wakefit Memory Foam Mattress in all rooms
+          {/* Wakefit Mattress & Smart TV Feature Banner */}
+          <div className="p-2.5 rounded-xl bg-red-50/70 border border-brand/20 flex flex-col gap-1 text-xs text-brand">
+            <div className="flex items-center gap-1.5 font-bold">
+              <Sparkles className="w-3.5 h-3.5 text-brand shrink-0" />
+              <span className="text-[11px] sm:text-xs">
+                WAKEFIT Memory Foam Mattress in all bedrooms
+              </span>
+            </div>
+            <span className="text-[10px] text-neutral-600 pl-5">
+              32" Smart TV with OTT Apps (subscription not included)
             </span>
           </div>
 
