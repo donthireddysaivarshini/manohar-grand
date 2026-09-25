@@ -6,7 +6,6 @@ import {
   WelcomeSection,
   RoomCategoriesSection,
   HighlightsSection,
-  AmenitiesPreview,
   GalleryPreview,
   LocationPreview,
   FinalCTA,
@@ -33,19 +32,16 @@ export const HomePage: React.FC = () => {
       {/* 4. Room Categories Section (20 AC / 8 Non-AC) */}
       <RoomCategoriesSection />
 
-      {/* 5. Hotel Experience Highlights */}
+      {/* 5. Why Choose Us (Comprehensive Hotel Highlights & Amenities) */}
       <HighlightsSection />
 
-      {/* 6. Amenities Preview */}
-      <AmenitiesPreview />
-
-      {/* 7. Visual Photo Gallery Preview */}
+      {/* 6. Visual Photo Gallery Preview */}
       <GalleryPreview />
 
-      {/* 8. Location & Connectivity Preview */}
+      {/* 7. Location & Connectivity Preview */}
       <LocationPreview />
 
-      {/* 9. Final Conversion Booking CTA */}
+      {/* 8. Final Conversion Booking CTA */}
       <FinalCTA />
     </div>
   );
