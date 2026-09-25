@@ -40,11 +40,11 @@ export const WelcomeSection: React.FC = () => {
             </Badge>
 
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-neutral-dark tracking-tight leading-snug">
-              Thoughtful Comfort &amp; Convenient Stay
+              Redefines Luxury with Affordable Prices
             </h2>
 
             <p className="text-sm sm:text-base text-neutral-secondary leading-relaxed">
-              At Manohar Grand, we are dedicated to providing our guests with clean, well-maintained accommodations and attentive service. Whether traveling for work, transit, or visiting family, enjoy a relaxing stay tailored to your everyday needs.
+              Located in the heart of Hyderabad, Manohar Grand blends comfort, luxury, and convenience for every traveler. Our elegantly designed rooms feature modern amenities like high-speed Wi-Fi, plush bedding, and stunning views of Nexus Forum Mall and JNTU Metro Station, just minutes away.we promise exceptional hospitality and an unforgettable stay.
             </p>
 
             {/* Location & Key Feature Highlights */}
