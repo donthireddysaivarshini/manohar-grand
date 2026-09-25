@@ -31,8 +31,8 @@ export const HeroSection: React.FC = () => {
             Welcome to Manohar Grand
           </h1>
 
-          {/* 2. Room Category Highlight / Subtitle in Bold Brand Red */}
-          <p className="text-sm xs:text-base sm:text-lg lg:text-xl font-bold text-brand tracking-tight leading-snug">
+          {/* 2. Room Category Highlight / Subtitle in White */}
+          <p className="text-sm xs:text-base sm:text-lg lg:text-xl font-medium text-white tracking-tight leading-snug">
             Luxury Air-conditioned and Non A/c Rooms
           </p>
 
