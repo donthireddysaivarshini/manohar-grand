@@ -72,11 +72,15 @@ export const AboutPage: React.FC = () => {
                 <div className="flex flex-col gap-2.5 pt-2 text-xs text-neutral-dark font-medium w-full">
                   <div className="flex items-center gap-2 p-2.5 rounded-lg bg-neutral-50 border border-neutral-200">
                     <CheckCircle2 className="w-4 h-4 text-feedback-success shrink-0" />
+                    <span><strong>Wakefit Memory Foam Mattresses</strong> in each and every bedroom</span>
+                  </div>
+                  <div className="flex items-center gap-2 p-2.5 rounded-lg bg-neutral-50 border border-neutral-200">
+                    <CheckCircle2 className="w-4 h-4 text-feedback-success shrink-0" />
                     <span>Air-Conditioned &amp; Non-AC Room options available</span>
                   </div>
                   <div className="flex items-center gap-2 p-2.5 rounded-lg bg-neutral-50 border border-neutral-200">
                     <CheckCircle2 className="w-4 h-4 text-feedback-success shrink-0" />
-                    <span>Walkable distance from JNTU Metro Station</span>
+                    <span>Walkable distance from JNTU Metro Station (1 min walk)</span>
                   </div>
                   <div className="flex items-center gap-2 p-2.5 rounded-lg bg-neutral-50 border border-neutral-200">
                     <CheckCircle2 className="w-4 h-4 text-feedback-success shrink-0" />

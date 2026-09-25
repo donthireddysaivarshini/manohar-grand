@@ -17,13 +17,13 @@ export const FloatingContactWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
 
-  // Show after scrolling a little or immediately on load
+  // Show smoothly after load
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 80) {
+      if (window.scrollY > 40) {
         setIsVisible(true);
       } else {
-        setIsVisible(true); // Always keep accessible or smoothly animate
+        setIsVisible(true);
       }
     };
 
@@ -49,16 +49,16 @@ export const FloatingContactWidget: React.FC = () => {
           aria-label="Quick Contact Options"
         >
           {/* Header */}
-          <div className="bg-neutral-900 text-white p-3.5 flex items-center justify-between border-b border-neutral-800">
+          <div className="bg-[#141414] text-white p-3.5 flex items-center justify-between border-b border-neutral-800">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-brand/20 flex items-center justify-center text-brand">
+              <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400">
                 <MessageSquare className="w-4 h-4" />
               </div>
               <div>
                 <h4 className="text-xs font-bold text-white">Contact Manohar Grand</h4>
                 <p className="text-[10px] text-neutral-300 flex items-center gap-1">
-                  <Clock className="w-3 h-3 text-feedback-success" />
-                  <span>24/7 Front Desk Available</span>
+                  <Clock className="w-3 h-3 text-emerald-400" />
+                  <span>24/7 Front Desk Support</span>
                 </p>
               </div>
             </div>
@@ -73,43 +73,43 @@ export const FloatingContactWidget: React.FC = () => {
           </div>
 
           {/* Contact Action List */}
-          <div className="p-3 space-y-2 bg-neutral-50/50">
+          <div className="p-3 space-y-2 bg-neutral-50/60">
             {/* Primary Phone */}
             <a
               href="tel:7997044999"
-              className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-neutral-200/80 hover:border-brand hover:bg-brand-subtle transition-all group"
+              className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-neutral-200/80 hover:border-emerald-500 hover:bg-emerald-50/40 transition-all group"
             >
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-red-50 text-brand flex items-center justify-center group-hover:bg-brand group-hover:text-white transition-colors">
+                <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-colors">
                   <Phone className="w-4 h-4" />
                 </div>
                 <div className="text-left">
                   <span className="text-[10px] font-semibold text-neutral-500 block uppercase">Call Primary</span>
-                  <span className="text-xs font-bold text-neutral-900 group-hover:text-brand transition-colors">
+                  <span className="text-xs font-bold text-neutral-900 group-hover:text-emerald-600 transition-colors">
                     +91 7997044999
                   </span>
                 </div>
               </div>
-              <ArrowUpRight className="w-4 h-4 text-neutral-400 group-hover:text-brand group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+              <ArrowUpRight className="w-4 h-4 text-neutral-400 group-hover:text-emerald-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
             </a>
 
             {/* Secondary Phone */}
             <a
               href="tel:7997022999"
-              className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-neutral-200/80 hover:border-brand hover:bg-brand-subtle transition-all group"
+              className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-neutral-200/80 hover:border-emerald-500 hover:bg-emerald-50/40 transition-all group"
             >
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-red-50 text-brand flex items-center justify-center group-hover:bg-brand group-hover:text-white transition-colors">
+                <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-colors">
                   <Phone className="w-4 h-4" />
                 </div>
                 <div className="text-left">
                   <span className="text-[10px] font-semibold text-neutral-500 block uppercase">Call Secondary</span>
-                  <span className="text-xs font-bold text-neutral-900 group-hover:text-brand transition-colors">
+                  <span className="text-xs font-bold text-neutral-900 group-hover:text-emerald-600 transition-colors">
                     +91 7997022999
                   </span>
                 </div>
               </div>
-              <ArrowUpRight className="w-4 h-4 text-neutral-400 group-hover:text-brand group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+              <ArrowUpRight className="w-4 h-4 text-neutral-400 group-hover:text-emerald-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
             </a>
 
             {/* WhatsApp Chat */}
@@ -117,39 +117,39 @@ export const FloatingContactWidget: React.FC = () => {
               href="https://wa.me/917997044999?text=Hello%20Manohar%20Grand,%20I%20would%20like%20to%20inquire%20about%20room%20availability."
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-neutral-200/80 hover:border-feedback-success hover:bg-emerald-50/50 transition-all group"
+              className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-neutral-200/80 hover:border-emerald-500 hover:bg-emerald-50/60 transition-all group"
             >
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-emerald-50 text-feedback-success flex items-center justify-center group-hover:bg-feedback-success group-hover:text-white transition-colors">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500 text-white flex items-center justify-center group-hover:bg-emerald-600 transition-colors">
                   <MessageCircle className="w-4 h-4" />
                 </div>
                 <div className="text-left">
-                  <span className="text-[10px] font-semibold text-neutral-500 block uppercase">WhatsApp</span>
-                  <span className="text-xs font-bold text-neutral-900 group-hover:text-feedback-success transition-colors">
+                  <span className="text-[10px] font-semibold text-neutral-500 block uppercase">WhatsApp Chat</span>
+                  <span className="text-xs font-bold text-emerald-700 group-hover:text-emerald-800 transition-colors">
                     Chat on WhatsApp
                   </span>
                 </div>
               </div>
-              <ArrowUpRight className="w-4 h-4 text-neutral-400 group-hover:text-feedback-success group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+              <ArrowUpRight className="w-4 h-4 text-emerald-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
             </a>
 
             {/* Email */}
             <a
               href={`mailto:${PLACEHOLDER_HOTEL_INFO.email}`}
-              className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-neutral-200/80 hover:border-brand hover:bg-brand-subtle transition-all group"
+              className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-neutral-200/80 hover:border-emerald-500 hover:bg-emerald-50/40 transition-all group"
             >
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-neutral-100 text-neutral-700 flex items-center justify-center group-hover:bg-brand group-hover:text-white transition-colors">
+                <div className="w-8 h-8 rounded-lg bg-neutral-100 text-neutral-700 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-colors">
                   <Mail className="w-4 h-4" />
                 </div>
                 <div className="text-left truncate max-w-[170px]">
                   <span className="text-[10px] font-semibold text-neutral-500 block uppercase">Email Reception</span>
-                  <span className="text-[11px] font-bold text-neutral-900 group-hover:text-brand transition-colors truncate block">
+                  <span className="text-[11px] font-bold text-neutral-900 group-hover:text-emerald-600 transition-colors truncate block">
                     {PLACEHOLDER_HOTEL_INFO.email}
                   </span>
                 </div>
               </div>
-              <ArrowUpRight className="w-4 h-4 text-neutral-400 group-hover:text-brand group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+              <ArrowUpRight className="w-4 h-4 text-neutral-400 group-hover:text-emerald-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
             </a>
           </div>
 
@@ -158,7 +158,7 @@ export const FloatingContactWidget: React.FC = () => {
             <Link
               to="/contact"
               onClick={() => setIsOpen(false)}
-              className="inline-flex items-center justify-center gap-1.5 text-xs font-bold text-brand hover:text-brand-hover hover:underline"
+              className="inline-flex items-center justify-center gap-1.5 text-xs font-bold text-emerald-700 hover:text-emerald-800 hover:underline"
             >
               <MapPin className="w-3.5 h-3.5" />
               <span>View Location, Map &amp; Full Details</span>
@@ -167,7 +167,7 @@ export const FloatingContactWidget: React.FC = () => {
         </div>
       )}
 
-      {/* Floating Button & Pill Badge */}
+      {/* Floating Green Button & Pill Badge */}
       <div className="flex items-center gap-2">
         <button
           type="button"
@@ -175,16 +175,16 @@ export const FloatingContactWidget: React.FC = () => {
           className={cn(
             'group relative flex items-center justify-center',
             'w-13 h-13 sm:w-14 sm:h-14 rounded-full',
-            'bg-gradient-to-tr from-[#E00000] to-[#FE0000] text-white',
-            'shadow-[0_8px_24px_rgba(254,0,0,0.42)] hover:shadow-[0_12px_28px_rgba(254,0,0,0.55)]',
+            'bg-gradient-to-tr from-[#1EBE5D] to-[#25D366] text-white',
+            'shadow-[0_8px_24px_rgba(37,211,102,0.45)] hover:shadow-[0_12px_28px_rgba(37,211,102,0.60)]',
             'transition-all duration-300 transform active:scale-95 hover:scale-105',
-            'border-2 border-white/80 focus-visible:outline-brand cursor-pointer'
+            'border-2 border-white/90 focus-visible:outline-emerald-500 cursor-pointer'
           )}
-          aria-label={isOpen ? 'Close contact menu' : 'Contact Us'}
+          aria-label={isOpen ? 'Close contact menu' : 'Contact Us on WhatsApp / Call'}
           aria-expanded={isOpen}
         >
-          {/* Subtle pulse ring animation */}
-          <span className="absolute -inset-1 rounded-full bg-brand/30 animate-ping pointer-events-none opacity-60" />
+          {/* Subtle green pulse ring animation */}
+          <span className="absolute -inset-1 rounded-full bg-emerald-500/40 animate-ping pointer-events-none opacity-70" />
 
           {isOpen ? (
             <X className="w-6 h-6 text-white relative z-10 transition-transform duration-200" />
@@ -202,7 +202,7 @@ export const FloatingContactWidget: React.FC = () => {
               'px-3.5 py-1.5 rounded-full bg-white/95 backdrop-blur-md',
               'text-neutral-900 font-bold text-xs tracking-tight',
               'border border-neutral-200/90 shadow-[0_4px_16px_rgba(0,0,0,0.12)]',
-              'hover:bg-brand hover:text-white hover:border-brand transition-all duration-200',
+              'hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all duration-200',
               'animate-in fade-in slide-in-from-left-2 cursor-pointer'
             )}
           >

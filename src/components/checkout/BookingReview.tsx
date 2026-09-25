@@ -162,6 +162,36 @@ export const BookingReview: React.FC<BookingReviewProps> = ({ onBackToDetails })
         </CardContent>
       </Card>
 
+      {/* Policies & Requirements Review Card */}
+      <Card variant="bordered" className="bg-white p-5 shadow-xs border-neutral-200">
+        <CardContent className="p-0 flex flex-col gap-3 text-xs">
+          <div className="flex items-center gap-2 text-neutral-dark font-bold">
+            <ShieldAlert className="w-4 h-4 text-brand" />
+            <span>Important Stay Policies &amp; Guidelines</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            <div className="p-3 rounded-lg bg-[#F7F7F7] border border-neutral-200">
+              <span className="font-bold text-neutral-dark block mb-1">
+                🪪 Mandatory Government ID (18+)
+              </span>
+              <p className="text-neutral-600 text-[11px] leading-relaxed">
+                Original Aadhar Card is mandatory for every staying guest upon check-in. Primary guest must be 18+ years of age.
+              </p>
+            </div>
+
+            <div className="p-3 rounded-lg bg-[#F7F7F7] border border-neutral-200">
+              <span className="font-bold text-neutral-dark block mb-1">
+                🔄 Cancellation Policy
+              </span>
+              <p className="text-neutral-600 text-[11px] leading-relaxed">
+                Cancel 2+ days before check-in to get 50% refund. Cancellations made on the day of stay or within 48 hours are non-refundable (0% refund).
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
         <Button

@@ -2,11 +2,14 @@ import { HotelInfo } from '../types/hotel';
 import { CONFIRMED_HOTEL_INFO } from './confirmedInventory';
 
 /**
- * PLACEHOLDER / UNCONFIRMED HOTEL DATA
- * All fields below are temporary placeholders for UI prototype purposes.
- * They will be replaced with official client data in future phases.
+ * HOTEL INFORMATION & POLICIES
  */
-export const PLACEHOLDER_HOTEL_INFO: HotelInfo = {
+export const PLACEHOLDER_HOTEL_INFO: HotelInfo & {
+  cancellationPolicy: string;
+  guestIdPolicy: string;
+  agePolicy: string;
+  mattressFeature: string;
+} = {
   name: CONFIRMED_HOTEL_INFO.hotelName,
   totalRooms: CONFIRMED_HOTEL_INFO.totalRooms,
   acRooms: CONFIRMED_HOTEL_INFO.acRooms,
@@ -31,8 +34,14 @@ export const PLACEHOLDER_HOTEL_INFO: HotelInfo = {
   placeholderAddress: 'Plot No: 11, Road No: 1, Vasantha Nagar Colony, Near J.N.T.U Metro Station, Kukatpally, Hyderabad, Telangana',
   placeholderPhone: '+91 7997044999 / +91 7997022999',
   placeholderEmail: 'manohargrand1@gmail.com',
-  placeholderCheckInTime: '12:00 PM (Standard Check-in)',
+  placeholderCheckInTime: '12:00 PM (24/7 Front Desk available)',
   placeholderCheckOutTime: '11:00 AM (Standard Check-out)',
-  placeholderDescription: 'Welcome to Manohar Grand Luxury Hotel Rooms. A contemporary hospitality destination offering 24/7 service, comfortable AC and Non-AC stays with modern conveniences, prime connectivity near JNTU Metro Station, and warm hospitality.',
-  placeholderCancellationPolicy: 'Free cancellation up to 24 hours prior to check-in.',
+  placeholderDescription: 'Welcome to Manohar Grand Luxury Hotel Rooms. Located in the heart of Kukatpally near JNTU Metro Station, offering premium Wakefit Memory Foam mattresses in every room, 24/7 reception, AC and Non-AC stays, on-site car parking, and warm hospitality.',
+  placeholderCancellationPolicy: 'Cancellations made 2+ days (48+ hours) prior to check-in receive a 50% refund. Same-day cancellations or cancellations within 48 hours are non-refundable (0% refund).',
+  
+  // Specific Policies
+  cancellationPolicy: 'Cancellations made 2+ days (48+ hours) before check-in will receive a 50% refund. Cancellations made on the day of stay or within 48 hours of check-in are strictly non-refundable (0% return).',
+  guestIdPolicy: 'Original Aadhar Card (or valid Govt. Photo ID) is mandatory for every person checking in.',
+  agePolicy: 'Primary guest must be 18 years of age or older to check in.',
+  mattressFeature: 'Premium Wakefit Memory Foam Mattresses in each and every bedroom.',
 };

@@ -100,21 +100,25 @@ export const CheckoutSummary: React.FC = () => {
           </div>
         </div>
 
-        {/* Inclusions */}
+        {/* Inclusions & Policies */}
         <div className="flex flex-col gap-1.5 text-[11px] text-neutral-secondary pt-1">
           <div className="flex items-center gap-1.5">
             <CheckCircle2 className="w-3.5 h-3.5 text-feedback-success shrink-0" />
-            <span>Best rate guarantee for direct reservations</span>
+            <span>Best rate guarantee for direct bookings</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <CheckCircle2 className="w-3.5 h-3.5 text-feedback-success shrink-0" />
-            <span>Instant booking voucher on demo payment</span>
+          <div className="flex items-start gap-1.5">
+            <CheckCircle2 className="w-3.5 h-3.5 text-feedback-success shrink-0 mt-0.5" />
+            <span>Cancel 2+ days prior for 50% refund (Same-day: non-refundable)</span>
+          </div>
+          <div className="flex items-start gap-1.5 text-brand font-medium">
+            <ShieldAlert className="w-3.5 h-3.5 text-brand shrink-0 mt-0.5" />
+            <span>Mandatory original Aadhar Card for all guests (18+)</span>
           </div>
         </div>
 
         <div className="flex items-center justify-center gap-1.5 text-[11px] text-neutral-400 pt-1 border-t border-neutral-border/60">
           <ShieldCheck className="w-3.5 h-3.5 text-feedback-success" />
-          <span>Demo Checkout Experience</span>
+          <span>Secure Direct Reservation • Manohar Grand</span>
         </div>
       </CardContent>
     </Card>

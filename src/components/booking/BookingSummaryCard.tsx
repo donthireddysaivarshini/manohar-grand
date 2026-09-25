@@ -192,15 +192,19 @@ export const BookingSummaryCard: React.FC = () => {
           </div>
         )}
 
-        {/* Reservation Inclusions */}
+        {/* Reservation Inclusions & Policies */}
         <div className="flex flex-col gap-1.5 text-[11px] text-neutral-secondary pt-1">
           <div className="flex items-center gap-1.5">
             <CheckCircle2 className="w-3.5 h-3.5 text-feedback-success shrink-0" />
-            <span>Best rate guarantee for direct bookings</span>
+            <span>Best rate guarantee with direct booking</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <CheckCircle2 className="w-3.5 h-3.5 text-feedback-success shrink-0" />
-            <span>Free cancellation up to 24 hours prior (Demo policy)</span>
+          <div className="flex items-start gap-1.5">
+            <CheckCircle2 className="w-3.5 h-3.5 text-feedback-success shrink-0 mt-0.5" />
+            <span>Cancel 2+ days before check-in for 50% refund (Same-day: non-refundable)</span>
+          </div>
+          <div className="flex items-start gap-1.5 text-brand font-medium">
+            <ShieldAlert className="w-3.5 h-3.5 text-brand shrink-0 mt-0.5" />
+            <span>Original Aadhar Card is mandatory for every guest (18+)</span>
           </div>
         </div>
 

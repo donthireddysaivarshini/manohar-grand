@@ -126,10 +126,29 @@ export const GuestDetailsForm: React.FC<GuestDetailsFormProps> = ({ onProceedToR
             </span>
           </div>
 
+          {/* Mandatory Guest Identification & Cancellation Notice */}
+          <div className="p-3.5 rounded-xl bg-amber-50/80 border border-amber-200/90 flex flex-col gap-2 mt-1">
+            <div className="flex items-start gap-2 text-xs font-bold text-amber-900">
+              <ShieldCheck className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+              <span>Mandatory Guest Policy &amp; Government ID Requirements:</span>
+            </div>
+            <ul className="text-[11px] text-amber-900/90 space-y-1 pl-6 list-disc">
+              <li>
+                <strong>Original Aadhar Card is mandatory</strong> for each and every staying guest at check-in.
+              </li>
+              <li>
+                Primary guest must be <strong>18 years of age or older</strong>.
+              </li>
+              <li>
+                <strong>Cancellation Policy:</strong> Cancellations made 2+ days before check-in receive a 50% refund. Cancellations made on the day of stay or within 48 hours are non-refundable (0% refund).
+              </li>
+            </ul>
+          </div>
+
           <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-neutral-border/80 mt-2">
             <div className="flex items-center gap-2 text-xs text-neutral-secondary">
               <ShieldCheck className="w-4 h-4 text-feedback-success shrink-0" />
-              <span>Your contact details are securely kept for reservation purposes</span>
+              <span>Secure reservation with Manohar Grand</span>
             </div>
 
             <Button

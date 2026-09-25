@@ -253,10 +253,29 @@ export const ConfirmationPage: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Check-In Guidelines & Policies */}
+                <div className="p-4 rounded-lg bg-neutral-50 border border-neutral-200 text-xs flex flex-col gap-2">
+                  <span className="font-bold text-neutral-dark uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                    <ShieldAlert className="w-3.5 h-3.5 text-brand" />
+                    Important Check-In Guidelines &amp; Policies
+                  </span>
+                  <ul className="text-[11px] text-neutral-600 space-y-1 pl-4 list-disc">
+                    <li>
+                      <strong>Mandatory ID:</strong> Original Aadhar Card is required for every guest upon arrival (Primary guest 18+).
+                    </li>
+                    <li>
+                      <strong>Wakefit Mattresses:</strong> All bedrooms feature premium Wakefit Memory Foam mattresses.
+                    </li>
+                    <li>
+                      <strong>Cancellation Policy:</strong> Cancellations made 2+ days prior to check-in receive 50% refund. Cancellations made on the day of stay or within 48 hours are non-refundable (0% refund).
+                    </li>
+                  </ul>
+                </div>
+
                 {/* Simulation Notice */}
                 <div className="flex items-center gap-2 p-3 rounded bg-amber-50 border border-amber-200 text-[11px] text-amber-900">
                   <ShieldAlert className="w-4 h-4 shrink-0 text-feedback-warning" />
-                  <span>Demo Voucher: Generated for frontend prototype testing. Official reservation confirmation will be issued when backend booking engine is live.</span>
+                  <span>Demo Voucher: Generated for prototype preview. Official reservation confirmation will be issued when backend booking engine is live.</span>
                 </div>
               </CardContent>
             </Card>
