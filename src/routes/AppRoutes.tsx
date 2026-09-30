@@ -25,6 +25,7 @@ import { DashboardPage } from '../pages/account/DashboardPage';
 import { MyBookingsPage } from '../pages/account/MyBookingsPage';
 import { BookingDetailPage } from '../pages/account/BookingDetailPage';
 import { ProfilePage } from '../pages/account/ProfilePage';
+import { AuthCallbackPage } from '../pages/account/AuthCallbackPage';
 import { NotFoundPage } from '../pages/NotFound';
 
 // Scroll restoration helper
@@ -56,6 +57,7 @@ export const AppRoutes: React.FC = () => {
           <Route path="/booking" element={<BookingPage />} />
           <Route path="/account/login" element={<LoginPage />} />
           <Route path="/account/register" element={<RegisterPage />} />
+          <Route path="/auth/callback" element={<AuthCallbackPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
 

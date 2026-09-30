@@ -1,8 +1,13 @@
 export interface CustomerUser {
   id: string;
-  name: string;
   email: string;
-  phone: string;
+  first_name?: string;
+  last_name?: string;
+  full_name?: string;
+  name?: string;
+  phone?: string;
+  role?: string;
+  is_staff?: boolean;
 }
 
 export interface AuthState {

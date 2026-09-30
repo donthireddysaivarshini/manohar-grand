@@ -1,33 +1,58 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { CustomerUser, AuthState } from '../types/customer';
+import { BACKEND_URL, fetchApi, initCsrfToken } from '../services/apiClient';
 
 interface AuthContextType extends AuthState {
-  login: (email: string) => Promise<void>;
-  logout: () => void;
+  loginWithGoogle: () => void;
+  hydrate: () => Promise<CustomerUser | null>;
+  logout: () => Promise<void>;
+  setUser: (user: CustomerUser | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<CustomerUser | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const login = async (email: string) => {
-    setIsLoading(true);
-    // Mock login operation
-    setTimeout(() => {
-      setUser({
-        id: 'demo-user-1',
-        name: 'Demo Guest',
-        email,
-        phone: '+91 9876543210',
-      });
+  const hydrate = async (): Promise<CustomerUser | null> => {
+    try {
+      const res = await fetchApi<CustomerUser>('/api/v1/auth/me/');
+      if (res.success && res.data) {
+        setUser(res.data);
+        return res.data;
+      } else {
+        setUser(null);
+        return null;
+      }
+    } catch {
+      setUser(null);
+      return null;
+    } finally {
       setIsLoading(false);
-    }, 300);
+    }
   };
 
-  const logout = () => {
-    setUser(null);
+  useEffect(() => {
+    initCsrfToken();
+    hydrate();
+  }, []);
+
+  const loginWithGoogle = () => {
+    // Initiates django-allauth OAuth Authorization Code flow
+    window.location.href = `${BACKEND_URL}/accounts/google/login/?process=login`;
+  };
+
+  const logout = async () => {
+    setIsLoading(true);
+    try {
+      await fetchApi('/api/v1/auth/logout/', { method: 'POST' });
+    } catch (err) {
+      console.warn('Logout API error:', err);
+    } finally {
+      setUser(null);
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -36,8 +61,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         user,
         isAuthenticated: !!user,
         isLoading,
-        login,
+        loginWithGoogle,
+        hydrate,
         logout,
+        setUser,
       }}
     >
       {children}

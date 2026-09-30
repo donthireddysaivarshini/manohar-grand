@@ -1,0 +1,1781 @@
+Yes. Now that we're moving from the frontend prototype into the **real application**, I recommend we first freeze the product architecture before writing Django code.
+
+One important update from the current ecosystem: **Django 6.0 is currently supported, while Django 5.2 is the current LTS line through April 2028**. For a hotel booking system that we want to maintain for years, I recommend **Django 5.2 LTS** rather than chasing the newest feature release. ([Django Project][1])
+
+And for Google login, we should validate the Google ID token **on our Django backend** and create/manage our own application session; Google's documentation explicitly describes the ID-token-to-backend flow this way. ([Google for Developers][2])
+
+For Razorpay, our eventual architecture should create the Razorpay order **server-side**, verify the returned signature on the server, and use webhooks as an important payment-status source. ([Razorpay][3])
+
+---
+
+# MANOHAR GRAND
+
+# Backend + Full Booking Platform PRD v1.0
+
+## 1. Product vision
+
+Build a complete **direct hotel booking and hotel management platform** for Manohar Grand.
+
+It will have two major sides:
+
+### Customer platform
+
+Customers can:
+
+* Browse the hotel
+* View AC / Non-AC rooms
+* View room images and details
+* Check availability
+* Select dates
+* Select guests
+* Select rooms
+* See live pricing
+* See taxes/charges
+* Sign in with Google
+* Make a booking
+* Pay online through Razorpay
+* Receive booking confirmation
+* View booking history
+* Cancel eligible bookings
+* Track refunds
+* Download invoice
+* Submit corporate/bulk booking enquiries
+
+### Admin platform
+
+Hotel staff/admin can:
+
+* Manage rooms
+* Upload room images
+* Edit room information
+* Edit prices
+* Manage occupancy
+* Configure extra-person charges
+* Configure taxes
+* Configure miscellaneous charges
+* Manage physical rooms
+* Block rooms
+* Manage inventory
+* View calendar
+* View bookings
+* Create walk-in/phone bookings
+* Modify bookings
+* Cancel bookings
+* Process refunds
+* Manage corporate bookings
+* Manage website content
+* Manage gallery
+* Manage amenities
+* Manage homepage content
+* Manage cancellation policies
+* View reports
+* Manage users/roles
+* View audit logs
+
+---
+
+# 2. Confirmed current hotel data
+
+We should treat these as the only confirmed inventory facts right now:
+
+| Category    | Inventory |
+| ----------- | --------: |
+| AC Room     |        20 |
+| Non-AC Room |         8 |
+
+The **28 total rooms should not be prominently marketed on the website**, as requested by the client.
+
+Internally, however:
+
+```text
+AC = 20
+Non-AC = 8
+Total = 28
+```
+
+remains important for inventory management.
+
+Everything else should be configurable until confirmed by the client.
+
+---
+
+# 3. Technology architecture
+
+## Frontend
+
+Existing:
+
+```text
+React
+TypeScript
+Vite
+Tailwind CSS
+React Router
+Lucide
+```
+
+We keep the existing frontend.
+
+---
+
+## Backend
+
+Recommended:
+
+```text
+Python
+Django 5.2 LTS
+Django REST Framework
+SQLite initially
+```
+
+Django REST Framework gives us serializers, authentication/permissions and ViewSets suitable for the API layer. ([Django REST Framework][4])
+
+---
+
+## Database
+
+### Development / initial deployment
+
+```text
+SQLite
+db.sqlite3
+```
+
+We will deliberately keep the database layer portable.
+
+Later:
+
+```text
+SQLite
+   ↓
+PostgreSQL
+```
+
+No business logic should depend on SQLite-specific behavior.
+
+### Important
+
+SQLite is perfectly reasonable for our initial development/demo and low-concurrency environment.
+
+However, **before a production hotel with real simultaneous bookings goes live, we should evaluate PostgreSQL** because inventory locking/concurrent reservations are much more demanding.
+
+We can architect for PostgreSQL now while developing with SQLite.
+
+---
+
+# 4. Overall architecture
+
+```text
+                    MANOHAR GRAND
+                         │
+             ┌───────────┴───────────┐
+             │                       │
+        CUSTOMER APP             ADMIN APP
+             │                       │
+             └───────────┬───────────┘
+                         │
+                     REST API
+                         │
+                Django REST Framework
+                         │
+       ┌─────────────────┼─────────────────┐
+       │                 │                 │
+    Auth              Booking          Content
+       │                 │                 │
+    Users             Inventory        Images
+    Google            Pricing          Pages
+    Roles             Payments         Gallery
+       │                 │                 │
+       └─────────────────┼─────────────────┘
+                         │
+                    Django ORM
+                         │
+                     SQLite
+```
+
+External services:
+
+```text
+Google
+   ↓
+Authentication
+
+Razorpay
+   ↓
+Payments / Refunds / Webhooks
+
+Email
+   ↓
+Notifications
+
+MSG91 WhatsApp
+   ↓
+Booking / notification messages
+```
+
+---
+
+# 5. Django application structure
+
+I recommend **domain-based Django apps**, not one giant `views.py`.
+
+```text
+backend/
+│
+├── manage.py
+│
+├── config/
+│   ├── settings/
+│   │   ├── base.py
+│   │   ├── development.py
+│   │   └── production.py
+│   ├── urls.py
+│   ├── asgi.py
+│   └── wsgi.py
+│
+├── accounts/
+├── rooms/
+├── inventory/
+├── bookings/
+├── pricing/
+├── payments/
+├── refunds/
+├── content/
+├── corporate/
+├── notifications/
+├── reports/
+├── audit/
+└── common/
+```
+
+This will make the system much easier to maintain.
+
+---
+
+# 6. Core database model
+
+This is the most important part.
+
+## User
+
+```text
+User
+├── id
+├── email
+├── name
+├── phone
+├── profile_image
+├── google_id
+├── role
+├── is_active
+├── created_at
+└── updated_at
+```
+
+Roles:
+
+```text
+CUSTOMER
+ADMIN
+MANAGER
+RECEPTIONIST
+CONTENT_MANAGER
+```
+
+We don't need all roles exposed immediately, but the architecture supports them.
+
+---
+
+# 7. Room Category
+
+```text
+RoomCategory
+├── name
+├── slug
+├── description
+├── base_occupancy
+├── max_adults
+├── max_children
+├── active
+├── display_order
+├── created_at
+└── updated_at
+```
+
+Examples:
+
+```text
+AC Room
+Non-AC Room
+```
+
+---
+
+# 8. Physical Room
+
+This is critical.
+
+```text
+Room
+├── room_number
+├── category
+├── floor
+├── status
+├── active
+└── notes
+```
+
+Example:
+
+```text
+101 → AC
+102 → AC
+...
+120 → AC
+
+201 → Non-AC
+...
+208 → Non-AC
+```
+
+Customer does **not** need to choose Room 101.
+
+The system can assign a physical room internally.
+
+---
+
+# 9. Room images
+
+```text
+RoomImage
+├── room_category
+├── image
+├── alt_text
+├── is_primary
+├── display_order
+└── created_at
+```
+
+This directly solves the client's requirement:
+
+> "Client should be able to add images of AC rooms and Non-AC rooms."
+
+Admin uploads → database/media storage → frontend automatically displays them.
+
+---
+
+# 10. Room amenities
+
+```text
+Amenity
+├── name
+├── description
+├── icon
+├── active
+└── display_order
+```
+
+Many-to-many:
+
+```text
+RoomCategory ↔ Amenities
+```
+
+So the client can add/remove amenities without changing code.
+
+---
+
+# 11. Room pricing
+
+Do NOT put price directly into the frontend.
+
+Create:
+
+```text
+RoomRate
+├── room_category
+├── rate
+├── valid_from
+├── valid_to
+├── rate_type
+├── active
+└── created_at
+```
+
+Later this supports:
+
+```text
+Normal
+Weekend
+Seasonal
+Special
+Corporate
+```
+
+---
+
+# 12. Daily inventory
+
+This is where the booking engine becomes serious.
+
+We can maintain inventory based on:
+
+```text
+Category
+Date
+Total inventory
+Blocked inventory
+Booked inventory
+Held inventory
+Available inventory
+```
+
+Conceptually:
+
+```text
+Available =
+Total
+- Blocked
+- Booked
+- Held
+```
+
+For example:
+
+```text
+AC
+20 total
+
+3 booked
+2 held
+1 blocked
+
+Available = 14
+```
+
+---
+
+# 13. Booking
+
+```text
+Booking
+├── booking_id
+├── customer
+├── status
+├── source
+├── check_in
+├── check_out
+├── adults
+├── children
+├── subtotal
+├── taxes
+├── discounts
+├── additional_charges
+├── total
+├── cancellation_policy_snapshot
+├── pricing_snapshot
+├── created_at
+└── updated_at
+```
+
+---
+
+# 14. Booking items
+
+A booking can contain multiple room categories.
+
+Example:
+
+Customer books:
+
+```text
+2 AC
++
+1 Non-AC
+```
+
+Therefore:
+
+```text
+Booking
+   ├── BookingRoom
+   ├── BookingRoom
+   └── BookingRoom
+```
+
+Each booking-room record stores its own:
+
+* category
+* quantity
+* nightly rate
+* extra guest charge
+* taxes
+* total
+
+---
+
+# 15. Guest records
+
+We should separate:
+
+**Customer account**
+
+from
+
+**Guests staying at the hotel.**
+
+For example:
+
+Google account:
+
+> Sai
+
+Booking guests:
+
+```text
+Guest 1
+Guest 2
+Guest 3
+```
+
+Eventually we can support:
+
+* name
+* age
+* phone
+* email
+* ID type
+* ID number
+
+But sensitive ID collection should only be added if the hotel's operational/legal requirements actually require it.
+
+---
+
+# 16. Booking status
+
+I recommend:
+
+```text
+DRAFT
+HELD
+PENDING_PAYMENT
+CONFIRMED
+CHECKED_IN
+CHECKED_OUT
+CANCELLED
+NO_SHOW
+REFUND_PENDING
+REFUNDED
+PAYMENT_FAILED
+EXPIRED
+```
+
+---
+
+# 17. Availability algorithm
+
+Customer searches:
+
+```text
+Check-in
+Check-out
+Guests
+Rooms
+```
+
+Backend checks **every night**:
+
+```text
+check_in <= date < check_out
+```
+
+For each requested room category:
+
+```text
+minimum available inventory across all nights
+```
+
+Example:
+
+```text
+AC
+
+Sep 28 → 10
+Sep 29 → 8
+Sep 30 → 5
+```
+
+Customer asks for:
+
+```text
+6 AC rooms
+```
+
+Result:
+
+```text
+NOT AVAILABLE
+```
+
+because the minimum availability is 5.
+
+---
+
+# 18. Alternative dates
+
+This should be built into the availability service.
+
+If requested dates aren't available:
+
+```text
+Requested dates unavailable.
+
+Alternative dates:
+
+Sep 29–Oct 2
+Sep 30–Oct 3
+Oct 1–Oct 4
+```
+
+Also show:
+
+```text
+Other room categories available
+```
+
+For example:
+
+```text
+AC: Fully booked
+
+Non-AC:
+Available
+```
+
+---
+
+# 19. Inventory locking
+
+This is essential.
+
+When a customer proceeds to payment:
+
+```text
+AVAILABLE
+    ↓
+TEMPORARY HOLD
+    ↓
+PAYMENT
+    ↓
+CONFIRMED
+```
+
+If payment fails:
+
+```text
+HOLD RELEASED
+```
+
+If payment times out:
+
+```text
+HOLD EXPIRED
+```
+
+This prevents two customers from buying the final available room simultaneously.
+
+---
+
+# 20. Pricing engine
+
+We should build a dedicated pricing service.
+
+```text
+Base room rate
+× rooms
+× nights
+
++
+
+extra adults
+
++
+
+extra children
+
++
+
+add-ons
+
+-
+
+discount
+
++
+
+taxes
+
+=
+
+grand total
+```
+
+Do not calculate this independently in multiple frontend/backend locations.
+
+**Backend is authoritative.**
+
+Frontend can display the calculation, but final price must come from backend.
+
+---
+
+# 21. Extra guest pricing
+
+Admin configuration:
+
+```text
+Base occupancy: 2
+
+Extra adult:
+₹____ / night
+
+Extra child:
+₹____ / night
+```
+
+Potential future child rules:
+
+```text
+0–5
+6–11
+12+
+```
+
+But these remain configurable.
+
+---
+
+# 22. Tax engine
+
+Admin:
+
+```text
+GST
+Percentage
+Active
+```
+
+Potentially:
+
+```text
+Tax 1
+Tax 2
+```
+
+Each booking stores the actual tax applied.
+
+This is important because if tax changes later, **old bookings must not change**.
+
+---
+
+# 23. Price snapshot
+
+When booking is confirmed:
+
+```text
+AC rate = ₹X
+Extra guest = ₹Y
+Tax = Z%
+Discount = ₹A
+Total = ₹B
+```
+
+That snapshot is stored.
+
+If admin later changes the AC rate:
+
+> Existing booking remains unchanged.
+
+This is non-negotiable.
+
+---
+
+# 24. Cancellation policy
+
+Create:
+
+```text
+CancellationPolicy
+├── name
+├── rules
+├── active
+└── description
+```
+
+Initial client rule:
+
+```text
+Same-day cancellation
+→ 0% refund
+
+2+ days before
+→ 50% refund
+```
+
+But we should make this configurable.
+
+---
+
+# 25. Refund engine
+
+Cancellation:
+
+```text
+Customer requests cancellation
+        ↓
+Backend determines eligibility
+        ↓
+Calculate refund
+        ↓
+Create refund record
+        ↓
+Admin processes/approves if required
+        ↓
+Razorpay refund
+        ↓
+Webhook/status update
+        ↓
+Refunded
+```
+
+Admin should clearly see:
+
+```text
+REFUND REQUIRED
+
+Booking Amount: ₹10,000
+Refund Eligible: ₹5,000
+
+[Process Refund]
+```
+
+---
+
+# 26. Google authentication
+
+The customer flow:
+
+```text
+Customer
+   ↓
+Sign in with Google
+   ↓
+Google ID token
+   ↓
+Django verifies token
+   ↓
+Find/create Customer
+   ↓
+Create application session/token
+```
+
+Google explicitly recommends that the credential be sent to your backend and validated there; Google sign-in itself does not manage your application's session after authentication. ([Google for Developers][2])
+
+We'll therefore **never trust a Google email/name supplied directly by the browser**.
+
+---
+
+# 27. Admin authentication
+
+Admin should be completely separate from customer permissions.
+
+For example:
+
+```text
+/admin/login
+```
+
+Admin:
+
+```text
+email
+password
+```
+
+with:
+
+* secure password hashing
+* role permissions
+* session/token authentication
+* optional 2FA later
+
+Customer Google authentication should **not automatically grant admin access**.
+
+---
+
+# 28. Dynamic Content Management System
+
+This is one of the biggest requirements.
+
+Admin should eventually manage:
+
+### Homepage
+
+* Hero title
+* Hero subtitle
+* Hero image
+* CTA text
+* Location message
+* Highlights
+
+### Rooms
+
+* Room name
+* Description
+* Images
+* Pricing
+* Occupancy
+* Amenities
+* Policies
+
+### Amenities
+
+* Name
+* Description
+* Icon/image
+* Order
+
+### Gallery
+
+* Upload
+* Delete
+* Reorder
+* Category
+
+### About
+
+* Heading
+* Description
+* Images
+
+### Contact
+
+* Phone
+* Email
+* Address
+* Map
+* Social links
+
+### Corporate
+
+* Page content
+* Bulk booking message
+* Enquiry information
+
+This means the frontend becomes:
+
+```text
+Django CMS data
+      ↓
+REST API
+      ↓
+React
+```
+
+rather than:
+
+```text
+Developer edits JSX
+```
+
+---
+
+# 29. Media architecture
+
+Initially:
+
+```text
+Django Media/
+```
+
+For example:
+
+```text
+media/
+├── rooms/
+├── gallery/
+├── homepage/
+├── amenities/
+└── content/
+```
+
+Later we can move media to cloud/object storage without changing the content model.
+
+---
+
+# 30. Razorpay architecture
+
+The eventual flow:
+
+```text
+Customer
+   ↓
+Backend calculates final amount
+   ↓
+Backend creates Razorpay Order
+   ↓
+Razorpay Checkout
+   ↓
+Customer pays
+   ↓
+Razorpay returns payment information
+   ↓
+Backend verifies signature
+   ↓
+Webhook received
+   ↓
+Payment confirmed
+   ↓
+Booking confirmed
+   ↓
+Inventory committed
+```
+
+Razorpay's current documentation specifically requires server-side order creation and signature verification; it also recommends webhooks, supplemented by API verification where immediate confirmation is required. ([Razorpay][3])
+
+---
+
+# 31. Admin booking calendar
+
+Admin should have:
+
+```text
+September 2026
+
+              23  24  25  26  27
+AC Rooms      12  10   5   2   8
+Non-AC         6   4   3   1   5
+```
+
+And clicking a date:
+
+```text
+25 September
+
+AC
+Total: 20
+Booked: 15
+Held: 2
+Blocked: 1
+Available: 2
+
+Non-AC
+Total: 8
+Booked: 5
+Held: 1
+Blocked: 0
+Available: 2
+```
+
+---
+
+# 32. Admin room calendar
+
+Admin should be able to see physical room status:
+
+```text
+101  Available
+102  Occupied
+103  Maintenance
+104  Available
+105  Blocked
+```
+
+This is different from category availability.
+
+---
+
+# 33. Walk-in / phone bookings
+
+Admin must be able to create bookings manually.
+
+Sources:
+
+```text
+WEBSITE
+WALK_IN
+PHONE
+RECEPTION
+CORPORATE
+OTHER
+```
+
+This is critical because hotel inventory must be unified.
+
+If receptionist books:
+
+> 3 AC rooms
+
+then website availability must immediately decrease.
+
+---
+
+# 34. Corporate booking
+
+Customer:
+
+```text
+Corporate / Bulk Booking
+        ↓
+Enquiry
+```
+
+Admin:
+
+```text
+New enquiry
+        ↓
+Review
+        ↓
+Quote
+        ↓
+Customer accepts
+        ↓
+Create booking
+```
+
+---
+
+# 35. Notifications
+
+Eventually:
+
+### Customer
+
+* Booking confirmation
+* Payment confirmation
+* Cancellation
+* Refund
+* Reminder
+* Check-in reminder
+
+### Admin
+
+* New booking
+* Cancellation
+* Payment failure
+* Refund required
+* Corporate enquiry
+* Low availability
+
+Channels:
+
+```text
+Email
+WhatsApp via MSG91
+SMS if required
+```
+
+---
+
+# 36. Reports
+
+Admin:
+
+### Occupancy
+
+```text
+Today
+This week
+This month
+```
+
+### Revenue
+
+```text
+Room revenue
+Tax
+Discounts
+Refunds
+Net revenue
+```
+
+### Bookings
+
+```text
+Confirmed
+Cancelled
+No-show
+Completed
+```
+
+### Room performance
+
+```text
+AC
+Non-AC
+```
+
+---
+
+# 37. Audit log
+
+Record important admin actions:
+
+```text
+Admin changed AC price
+
+Old: ₹2,500
+New: ₹2,800
+
+Admin: X
+Date: X
+```
+
+Also:
+
+* booking changes
+* cancellations
+* refunds
+* room blocking
+* content changes
+* price changes
+
+---
+
+# 38. Security requirements
+
+We should explicitly build for:
+
+* CSRF protection
+* CORS configuration
+* secure cookies/token strategy
+* password hashing
+* permission checks
+* admin role isolation
+* server-side price calculation
+* server-side availability validation
+* payment signature verification
+* webhook verification
+* rate limiting where appropriate
+* upload validation
+* file-size limits
+* image type validation
+* API validation
+* no secrets in React
+* environment variables
+* audit logging
+
+---
+
+# 39. Critical rule: frontend is never authoritative
+
+This needs to be written into our architecture documentation.
+
+The React frontend can say:
+
+> ₹5,000
+
+but Django decides the real price.
+
+React can say:
+
+> 3 rooms available
+
+but Django decides availability.
+
+React can say:
+
+> Payment successful
+
+but Django/Razorpay verification decides whether payment actually succeeded.
+
+React can say:
+
+> Refund ₹5,000
+
+but Django calculates and records the refund.
+
+**The backend is the source of truth.**
+
+---
+
+# 40. High-level workflow
+
+## Customer booking
+
+```text
+HOME
+ ↓
+Search dates
+ ↓
+Backend availability
+ ↓
+Room selection
+ ↓
+Guest selection
+ ↓
+Backend price calculation
+ ↓
+Login
+ ↓
+Guest details
+ ↓
+Review
+ ↓
+Inventory hold
+ ↓
+Razorpay order
+ ↓
+Payment
+ ↓
+Server verification
+ ↓
+Webhook
+ ↓
+Booking confirmation
+ ↓
+Inventory committed
+ ↓
+Notification
+```
+
+---
+
+# 41. Admin workflow
+
+```text
+Admin Login
+ ↓
+Dashboard
+ ↓
+Bookings / Calendar / Rooms
+ ↓
+Manage inventory
+ ↓
+Manage pricing
+ ↓
+Manage content
+ ↓
+Manage customers
+ ↓
+Refunds
+ ↓
+Reports
+```
+
+---
+
+# 42. Development phases
+
+You asked for **as few phases as reasonably possible**, so I would not make 14 tiny phases.
+
+I'd use **7 major phases**.
+
+---
+
+## PHASE 1 — Django Foundation + Authentication
+
+### Backend
+
+* Django 5.2 LTS
+* DRF
+* SQLite
+* Environment configuration
+* CORS
+* API structure
+* Custom User model
+* Roles
+* Customer authentication
+* Google authentication
+* Admin authentication
+* Permissions
+
+### Frontend
+
+Connect existing React authentication screens to Django.
+
+### Testing
+
+**System**
+
+* migrations
+* API health
+* authentication
+* permissions
+* Google token validation
+
+**Manual**
+
+* Customer login
+* Logout
+* Google login
+* Admin login
+* Unauthorized admin access
+
+---
+
+# PHASE 2 — Admin Panel + Room/CMS Management
+
+Build admin first because it becomes the source of truth.
+
+### Room management
+
+* AC
+* Non-AC
+* Physical rooms
+* Images
+* Amenities
+* Details
+* Pricing configuration
+
+### CMS
+
+* Homepage
+* About
+* Gallery
+* Amenities
+* Contact
+* Corporate page
+
+### Admin dashboard foundation
+
+Testing:
+
+* CRUD
+* Image upload
+* Image replacement
+* Price editing
+* Room editing
+* Content editing
+* Permissions
+
+---
+
+# PHASE 3 — Inventory + Availability + Booking Engine
+
+This is the **most technically important phase**.
+
+Build:
+
+* Daily inventory
+* Room availability
+* Date calendar
+* Multi-room booking
+* Physical room allocation
+* Room blocking
+* Maintenance
+* Temporary holds
+* Concurrent booking protection
+* Booking statuses
+* Walk-in/admin bookings
+
+Testing:
+
+### System tests
+
+* overlapping bookings
+* last-room booking
+* two simultaneous customers
+* multiple rooms
+* multiple categories
+* checkout-date reuse
+* cancellation releasing inventory
+* hold expiration
+
+### Manual
+
+Actually create bookings through:
+
+* customer
+* admin
+* walk-in
+
+and verify inventory changes.
+
+---
+
+# PHASE 4 — Pricing + Cancellation + Customer Booking Account
+
+Build:
+
+* Base pricing
+* Extra guest pricing
+* Child pricing
+* Taxes
+* Misc charges
+* Discounts
+* Price snapshots
+* Cancellation policies
+* Refund calculations
+* Customer dashboard
+* My bookings
+* Booking details
+* Cancel booking
+
+Testing:
+
+* pricing combinations
+* tax
+* extra guest
+* cancellation timing
+* refund calculation
+* old booking after price change
+
+---
+
+# PHASE 5 — Razorpay + Payment + Refunds
+
+Integrate:
+
+* Razorpay test mode
+* Server-side orders
+* Checkout
+* Signature verification
+* Webhooks
+* Payment status
+* Payment failure
+* Payment retry
+* Refund API
+* Admin refund workflow
+
+Testing:
+
+* successful payment
+* failed payment
+* cancelled payment
+* duplicate callback
+* webhook
+* payment mismatch
+* refund
+* partial refund if supported/required
+* inventory after payment failure
+
+---
+
+# PHASE 6 — Notifications + Corporate + Reports
+
+Build:
+
+* Email
+* MSG91/WhatsApp
+* Booking confirmations
+* Cancellation messages
+* Refund notifications
+* Corporate enquiries
+* Corporate quotes/bookings
+* Dashboard reports
+* Occupancy
+* Revenue
+* Booking reports
+
+---
+
+# PHASE 7 — Production Hardening + Full QA
+
+Final:
+
+* security
+* permissions
+* API validation
+* uploads
+* performance
+* database integrity
+* concurrency
+* payment verification
+* responsive frontend
+* SEO
+* logging
+* backups
+* deployment
+* environment variables
+* production configuration
+
+---
+
+# 43. Testing strategy
+
+I agree completely with your idea:
+
+> **After every major phase → system testing + manual testing.**
+
+We should make this mandatory.
+
+Each phase ends with:
+
+```text
+IMPLEMENT
+    ↓
+BUILD
+    ↓
+AUTOMATED TESTS
+    ↓
+API TESTS
+    ↓
+MANUAL TEST
+    ↓
+BUG FIX
+    ↓
+RETEST
+    ↓
+PHASE APPROVED
+```
+
+And **we don't move to the next major phase until the current one is stable.**
+
+---
+
+# 44. Our first phase should NOT build bookings
+
+You specifically said:
+
+> "first we need to do auth, then admin panel, bookings..."
+
+I agree.
+
+The correct dependency chain is:
+
+```text
+AUTH
+ ↓
+ADMIN
+ ↓
+ROOM/CMS
+ ↓
+INVENTORY
+ ↓
+BOOKING
+ ↓
+PRICING/CANCELLATION
+ ↓
+PAYMENT
+ ↓
+NOTIFICATIONS/REPORTS
+ ↓
+PRODUCTION
+```
+
+This is much safer than building the booking engine first and then trying to bolt authentication/admin onto it.
+
+---
+
+# 45. One architectural decision I strongly recommend
+
+Although we're using:
+
+```text
+db.sqlite3
+```
+
+**do not use Django's built-in admin as the final hotel admin UI.**
+
+Django Admin can be extremely useful for developers and emergency management.
+
+But the client needs a purpose-built:
+
+```text
+/admin/dashboard
+```
+
+React admin interface with:
+
+* Dashboard
+* Calendar
+* Reservations
+* Rooms
+* Inventory
+* Pricing
+* Customers
+* Refunds
+* Content
+* Gallery
+* Corporate
+* Reports
+* Settings
+
+Django Admin can remain enabled privately as a developer/super-admin tool.
+
+---
+
+# 46. Final architecture
+
+So the finished system will look like:
+
+```text
+                 MANOHAR GRAND
+                       │
+          ┌────────────┴────────────┐
+          │                         │
+     CUSTOMER APP              ADMIN APP
+       React                    React
+          │                         │
+          └────────────┬────────────┘
+                       │
+                    REST API
+                       │
+              Django REST Framework
+                       │
+       ┌───────────────┼────────────────┐
+       │               │                │
+    Accounts        Booking          Content
+       │               │                │
+    Google          Inventory         CMS
+    Roles           Pricing           Images
+                    Payment           Gallery
+                       │
+                  Django ORM
+                       │
+                    SQLite
+                       │
+        ┌──────────────┼───────────────┐
+        │              │               │
+     Google         Razorpay         MSG91
+     Auth           Payments        WhatsApp
+```
+
+And later:
+
+```text
+SQLite → PostgreSQL
+Local media → Cloud storage
+```
+
+without redesigning the application.
+
+### One especially important point
+
+For the **real booking engine**, I don't want Antigravity to simply translate our current mock `MockAvailabilityService` into a Django endpoint. We need to replace it with a proper **transaction-safe inventory service**, because the difficult part of a hotel system isn't displaying a calendar—it is ensuring that **two customers, a receptionist, a cancellation, a payment failure, and a room block cannot corrupt the same inventory simultaneously**.
+
+That will be the centerpiece of Phase 3.
+
+---
+
+## Documentation we should create in the project
+
+Before we start Phase 1, I recommend putting these files into the backend/project folder:
+
+```text
+/docs
+   ├── PRD.md
+   ├── ARCHITECTURE.md
+   ├── WORKFLOW.md
+   ├── DATABASE_DESIGN.md
+   ├── BOOKING_ENGINE.md
+   ├── PRICING_ENGINE.md
+   ├── AUTHENTICATION.md
+   ├── PAYMENT_FLOW.md
+   ├── CANCELLATION_REFUND.md
+   ├── ADMIN_REQUIREMENTS.md
+   └── TESTING_STRATEGY.md
+```
+
+**Antigravity should read these documents before implementing anything.**
+
+Then Phase 1 becomes a tightly scoped **Django foundation + authentication implementation**, and after its automated/manual test report, we'll move to Phase 2.
+
+This gives us a much more reliable foundation than asking Antigravity to "build the backend" in one shot.
+
+[1]: https://www.djangoproject.com/download/?utm_source=chatgpt.com "Download Django | Django"
+[2]: https://developers.google.com/identity/gsi/web/guides/integrate?utm_source=chatgpt.com "Integration considerations  |  Web guides  |  Google for Developers"
+[3]: https://razorpay.com/docs/server-integration/python/test-app/?utm_source=chatgpt.com "Integration Steps | Python SDK | Razorpay Docs"
+[4]: https://www.django-rest-framework.org/api-guide/authentication/?utm_source=chatgpt.com "Authentication - Django REST framework"

@@ -26,3 +26,19 @@ dist-ssr
 # Environment variables
 .env
 .env.production
+.env.*
+!.env.example
+
+# Python & Django
+__pycache__/
+*.py[cod]
+*$py.class
+*.sqlite3
+*.sqlite3-journal
+.pytest_cache/
+htmlcov/
+.coverage
+*.egg-info/
+media/
+backend/media/
+
