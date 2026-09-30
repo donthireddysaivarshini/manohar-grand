@@ -1,15 +1,17 @@
+from decimal import Decimal
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from apps.rooms.models import RoomCategory, PhysicalRoom, Amenity, RoomCategoryAmenity, RoomImage
-from apps.cms.models import GalleryMedia
+from apps.pricing.models import RoomRatePlan, TaxRule
+from apps.cms.models import GalleryMedia, HotelConfiguration
 
 
 class Command(BaseCommand):
-    help = 'Seeds initial hotel room categories and verified master amenities (ZERO physical rooms, ZERO fake images).'
+    help = 'Seeds initial hotel room categories, verified master amenities, rate plans, tax rules, and hotel configuration.'
 
     @transaction.atomic
     def handle(self, *args, **options):
-        self.stdout.write(self.style.NOTICE("Seeding Phase 2 Master Data (Categories & Amenities)..."))
+        self.stdout.write(self.style.NOTICE("Seeding Phase 2 Master Data (Categories, Amenities, Rates, Tax & Configuration)..."))
 
         # 1. Categories (get_or_create to preserve existing admin edits)
         ac_category, ac_created = RoomCategory.objects.get_or_create(
@@ -190,7 +192,63 @@ class Command(BaseCommand):
                         }
                     )
 
-        # 3. Verification of Strict Boundaries
+        # 3. Baseline Room Rate Plans (Idempotent seed, preserve admin modifications)
+        ac_rate_plan, ac_rate_created = RoomRatePlan.objects.get_or_create(
+            category=ac_category,
+            name='Standard Tariff',
+            defaults={
+                'currency': 'INR',
+                'base_price_per_night': Decimal('1599.00'),
+                'extra_adult_charge': Decimal('350.00'),
+                'extra_child_charge': Decimal('300.00'),
+                'late_checkout_hourly_rate': Decimal('150.00'),
+                'is_active': True,
+            }
+        )
+        rate_status = "Created" if ac_rate_created else "Preserved Existing"
+        self.stdout.write(self.style.SUCCESS(
+            f"  - [{rate_status}] Rate Plan: AC Room Standard Tariff (₹{ac_rate_plan.base_price_per_night}/night)"
+        ))
+
+        nac_rate_plan, nac_rate_created = RoomRatePlan.objects.get_or_create(
+            category=nac_category,
+            name='Standard Tariff',
+            defaults={
+                'currency': 'INR',
+                'base_price_per_night': Decimal('1299.00'),
+                'extra_adult_charge': Decimal('350.00'),
+                'extra_child_charge': Decimal('300.00'),
+                'late_checkout_hourly_rate': Decimal('100.00'),
+                'is_active': True,
+            }
+        )
+        rate_status = "Created" if nac_rate_created else "Preserved Existing"
+        self.stdout.write(self.style.SUCCESS(
+            f"  - [{rate_status}] Rate Plan: Non-AC Room Standard Tariff (₹{nac_rate_plan.base_price_per_night}/night)"
+        ))
+
+        # 4. Tax Rules (GST 5% Baseline)
+        gst_rule, gst_created = TaxRule.objects.get_or_create(
+            name='GST (Accommodation)',
+            defaults={
+                'tax_rate': Decimal('5.00'),
+                'tax_type': 'percentage',
+                'is_active': True,
+            }
+        )
+        tax_status = "Created" if gst_created else "Preserved Existing"
+        self.stdout.write(self.style.SUCCESS(
+            f"  - [{tax_status}] Tax Rule: {gst_rule.name} ({gst_rule.tax_rate}%)"
+        ))
+
+        # 5. Hotel Configuration (Singleton)
+        hotel_config = HotelConfiguration.get_solo()
+        self.stdout.write(self.style.SUCCESS(
+            f"  - [Initialized Singleton] Hotel Configuration: {hotel_config.hotel_name} "
+            f"(Check-in: {hotel_config.standard_check_in_time}, Check-out: {hotel_config.standard_check_out_time}, Max Late: {hotel_config.max_late_checkout_hours}h)"
+        ))
+
+        # 6. Verification of Strict Boundaries
         physical_room_count = PhysicalRoom.objects.count()
         room_image_count = RoomImage.objects.count()
         gallery_count = GalleryMedia.objects.count()
@@ -199,8 +257,12 @@ class Command(BaseCommand):
             f"\nMaster Data Summary:\n"
             f"  - Total Room Categories: {RoomCategory.objects.count()}\n"
             f"  - Total Master Amenities: {Amenity.objects.count()}\n"
+            f"  - Total Room Rate Plans: {RoomRatePlan.objects.count()}\n"
+            f"  - Total Tax Rules: {TaxRule.objects.count()}\n"
+            f"  - Total Hotel Configurations: {HotelConfiguration.objects.count()} (Singleton)\n"
             f"  - Total Physical Rooms: {physical_room_count} (ZERO seeded as required)\n"
             f"  - Total Room Images: {room_image_count} (ZERO fake media seeded)\n"
             f"  - Total Gallery Media: {gallery_count} (ZERO fake media seeded)"
         ))
-        self.stdout.write(self.style.SUCCESS("Phase 2 Step 2 Master Data seeding complete."))
+        self.stdout.write(self.style.SUCCESS("Phase 2 Step 3 Master Data seeding complete."))
+

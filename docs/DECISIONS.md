@@ -74,4 +74,13 @@
 - **Decision**: `PhysicalRoom.operational_status` stores strictly the physical/housekeeping readiness (`operational`, `maintenance`, `blocked`, `inactive`). Reservation occupancy is NEVER stored as a static manual field on `PhysicalRoom`; it is computed dynamically by the availability engine from active bookings and temporary holds covering specific stay dates.
 - **Consequences**: Eliminates data desynchronization between front-desk room toggles and booking calendars; prevents accidental manual overwriting of active reservations.
 
+---
+
+## ADR 11: Effective-Dated Dynamic Pricing Master Data & Historical Versioning
+- **Status**: Approved.
+- **Context**: Hotel room tariffs (AC ₹1,599, Non-AC ₹1,299), extra occupant surcharges (Adult ₹350, Child ₹300), late checkout hourly rates (AC ₹150/hr, Non-AC ₹100/hr), and GST (5%) fluctuate over time. Changing current rates must not alter existing booking snapshots, past accounting reports, or historical pricing records.
+- **Decision**: Model `RoomRatePlan` and `TaxRule` as effective-dated version rows (`effective_from`, `effective_to`, `is_active`). When tariffs change, administrators create new rate plan records or bound existing ones rather than destructively mutating past rows in place. All booking transactions store an immutable `BookingPriceSnapshot` captured at confirmation time.
+- **Consequences**: Complete preservation of past pricing history; zero retroactivity bugs on existing transactions; cleanly supports future seasonal tariffs and GST regime adjustments.
+
+
 

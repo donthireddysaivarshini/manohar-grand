@@ -1,0 +1,3 @@
+"""
+Pricing test suite package.
+"""

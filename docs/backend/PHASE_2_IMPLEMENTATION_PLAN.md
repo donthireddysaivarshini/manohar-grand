@@ -466,11 +466,11 @@ Step 2: Room Categories & Physical Room Inventory (`apps.rooms`) [COMPLETED]
 Step 3: Amenities & Media Domain (`apps.rooms` & `apps.cms`) [COMPLETED - STEP 2 OF SPECIFICATION]
         - Implement Amenity, RoomCategoryAmenity, RoomImage (ImageField + validation + auto-primary demotion), GalleryMedia models, Django admin with inlines, idempotent amenity seeder.
 
-Step 4: Dynamic Pricing Master Data & History (`apps.pricing`) [PENDING STEP 3 APPROVAL]
-        - Implement RoomRatePlan (with effective dates), TaxRule models.
+Step 4: Dynamic Pricing, Tax & Hotel Configuration Master Data (`apps.pricing` & `apps.cms`) [COMPLETED - STEP 3 OF SPECIFICATION]
+        - Implement RoomRatePlan (with effective dates and non-negative constraints), TaxRule (GST 5% baseline), HotelConfiguration (singleton pattern), Django admin with RBAC & audit logging, expanded idempotent seeder.
 
-Step 5: Hotel Configuration & Headless CMS (`apps.cms`) [PENDING STEP 4 APPROVAL]
-        - Implement HotelConfiguration singleton, CMSSection, FAQ models.
+Step 5: Headless CMS Sections & FAQ (`apps.cms`) [PENDING STEP 4 APPROVAL]
+        - Implement CMSSection, FAQ models.
 
 Step 6: REST API Serializers, Views & Routers [PENDING PHASE 2 STEP 5 APPROVAL]
         - Public endpoints: `/api/v1/rooms/categories/`, `/api/v1/content/*`.
@@ -522,8 +522,25 @@ Step 10: Automated Test Suite & Quality Verification [PENDING PHASE 2 STEP 9 APP
   - `rooms.0003_amenity_roomcategoryamenity_roomcategory_amenities_and_more`
 - **Automated Test Results**:
   - `59/59 tests passed in 27.61s (100% pass rate)`.
+
+---
+
+## 14. Phase 2 Step 3 Completion Summary (Pricing, Tax & Hotel Configuration Master Data)
+
+- **Delivered**:
+  - `apps.pricing.models.RoomRatePlan`: UUID PK, `category` FK (PROTECT), `name`, `currency` (INR), `base_price_per_night`, `extra_adult_charge` (₹350), `extra_child_charge` (₹300), `late_checkout_hourly_rate` (AC: ₹150, Non-AC: ₹100), `effective_from`, `effective_to`, `is_active`. Non-negative price validators, date ordering validation, and historical rate version preservation.
+  - `apps.pricing.models.TaxRule`: UUID PK, `name`, `tax_rate` (5.00%), `tax_type` (percentage), `effective_from`, `effective_to`, `is_active`. Non-negative and maximum percentage validators, historical tax preservation.
+  - `apps.cms.models.HotelConfiguration`: Singleton model (`get_solo()`), operational settings (`hotel_name='Manohar Grand'`, `standard_check_in_time='11:00:00'`, `standard_check_out_time='11:00:00'`, `max_late_checkout_hours=3`, `cancellation_policy_text='Once booking/payment is confirmed, booking cannot be cancelled/refunded.'`).
+  - Django Admin & RBAC: `RoomRatePlanAdmin`, `TaxRuleAdmin`, `HotelConfigurationAdmin`. SuperAdmin has full modification access; Manager and Receptionist are restricted from mutating pricing/tax. All admin mutations create `AuditLog` records with before/after state diffs.
+  - Master Seed Extension: `seed_phase2_master_data` seeds AC rate (₹1,599), Non-AC rate (₹1,299), GST 5%, and singleton Hotel Configuration idempotently, preserving existing admin modifications and generating **0 fake rooms, 0 fake media, 0 fake URLs**.
+- **Migrations Applied**:
+  - `pricing.0001_initial`
+  - `cms.0002_hotelconfiguration`
+- **Automated Test Results**:
+  - `79/79 tests passed in 21.03s (100% pass rate)`.
   - `python manage.py check` $\to$ 0 issues identified.
   - `python manage.py makemigrations --check` $\to$ No changes detected.
-  - `npm run build` $\to$ React frontend built cleanly in 5.28s with 0 errors.
+  - `npm run build` $\to$ React frontend built cleanly in 6.69s with 0 errors.
+
 
 

@@ -52,8 +52,10 @@ INSTALLED_APPS = [
     'core',
     'apps.authentication.apps.AuthenticationConfig',
     'apps.rooms.apps.RoomsConfig',
+    'apps.pricing.apps.PricingConfig',
     'apps.cms.apps.CmsConfig',
 ]
+
 
 SITE_ID = 1
 

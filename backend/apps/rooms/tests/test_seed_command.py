@@ -1,8 +1,10 @@
 from io import StringIO
+from decimal import Decimal
 import pytest
 from django.core.management import call_command
 from apps.rooms.models import RoomCategory, PhysicalRoom, Amenity, RoomCategoryAmenity, RoomImage
-from apps.cms.models import GalleryMedia
+from apps.pricing.models import RoomRatePlan, TaxRule
+from apps.cms.models import GalleryMedia, HotelConfiguration
 
 
 @pytest.mark.django_db
@@ -17,6 +19,9 @@ class TestSeedPhase2MasterDataCommand:
         RoomCategoryAmenity.objects.all().delete()
         RoomImage.objects.all().delete()
         GalleryMedia.objects.all().delete()
+        RoomRatePlan.objects.all().delete()
+        TaxRule.objects.all().delete()
+        HotelConfiguration.objects.all().delete()
 
         out = StringIO()
         call_command('seed_phase2_master_data', stdout=out)
@@ -44,6 +49,32 @@ class TestSeedPhase2MasterDataCommand:
         assert ac.amenities.count() >= 5
         assert nac.amenities.count() >= 4
 
+        # Assert exactly 2 rate plans created with confirmed baseline
+        assert RoomRatePlan.objects.count() == 2
+        ac_rate = RoomRatePlan.objects.get(category=ac)
+        assert ac_rate.base_price_per_night == Decimal('1599.00')
+        assert ac_rate.extra_adult_charge == Decimal('350.00')
+        assert ac_rate.extra_child_charge == Decimal('300.00')
+        assert ac_rate.late_checkout_hourly_rate == Decimal('150.00')
+
+        nac_rate = RoomRatePlan.objects.get(category=nac)
+        assert nac_rate.base_price_per_night == Decimal('1299.00')
+        assert nac_rate.extra_adult_charge == Decimal('350.00')
+        assert nac_rate.extra_child_charge == Decimal('300.00')
+        assert nac_rate.late_checkout_hourly_rate == Decimal('100.00')
+
+        # Assert GST 5% tax rule created
+        assert TaxRule.objects.count() == 1
+        gst = TaxRule.objects.first()
+        assert gst.tax_rate == Decimal('5.00')
+        assert gst.tax_type == 'percentage'
+
+        # Assert Hotel Configuration singleton created
+        assert HotelConfiguration.objects.count() == 1
+        config = HotelConfiguration.get_solo()
+        assert config.hotel_name == 'Manohar Grand'
+        assert config.max_late_checkout_hours == 3
+
         # STRICT BOUNDARY CHECKS:
         assert PhysicalRoom.objects.count() == 0, "Seed must create ZERO physical rooms"
         assert RoomImage.objects.count() == 0, "Seed must create ZERO fake room images"
@@ -59,6 +90,9 @@ class TestSeedPhase2MasterDataCommand:
         # Assert exact counts remain unchanged
         assert RoomCategory.objects.count() == 2
         assert Amenity.objects.count() == 10
+        assert RoomRatePlan.objects.count() == 2
+        assert TaxRule.objects.count() == 1
+        assert HotelConfiguration.objects.count() == 1
         assert PhysicalRoom.objects.count() == 0
         assert RoomImage.objects.count() == 0
         assert GalleryMedia.objects.count() == 0
@@ -78,16 +112,26 @@ class TestSeedPhase2MasterDataCommand:
         wifi_amenity.description = 'Custom 500 Mbps Fiber Wi-Fi'
         wifi_amenity.save()
 
-        # 4. Run seed command again
+        # 4. Simulate admin updating AC rate plan to ₹1,799
+        ac = RoomCategory.objects.get(slug='ac-room')
+        ac_rate = RoomRatePlan.objects.get(category=ac)
+        ac_rate.base_price_per_night = Decimal('1799.00')
+        ac_rate.save()
+
+        # 5. Run seed command again
         out = StringIO()
         call_command('seed_phase2_master_data', stdout=out)
         output = out.getvalue()
         assert 'Preserved Existing' in output
 
-        # 5. Verify admin's customized data was NOT overwritten
+        # 6. Verify admin's customized data was NOT overwritten
         nac.refresh_from_db()
         assert nac.max_total_occupancy == 3
         assert nac.tagline == 'Custom Admin Updated Tagline'
 
         wifi_amenity.refresh_from_db()
         assert wifi_amenity.description == 'Custom 500 Mbps Fiber Wi-Fi'
+
+        ac_rate.refresh_from_db()
+        assert ac_rate.base_price_per_night == Decimal('1799.00')
+
