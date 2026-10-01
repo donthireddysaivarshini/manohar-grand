@@ -196,3 +196,131 @@ class HotelConfiguration(models.Model):
         super().save(*args, **kwargs)
 
 
+class CMSSection(models.Model):
+    """
+    Dynamic CMS Section model providing structured, headless content for website pages
+    (e.g., hero banner, welcome narrative, why-choose-us highlights, about section).
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    section_key = models.SlugField(
+        max_length=50,
+        unique=True,
+        db_index=True,
+        help_text="Unique identifier for the section (e.g., 'hero', 'welcome', 'why-choose-us', 'about', 'contact')"
+    )
+    title = models.CharField(
+        max_length=200,
+        help_text="Primary headline or section title"
+    )
+    subtitle = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Optional secondary subtitle or tagline"
+    )
+    body = models.TextField(
+        blank=True,
+        help_text="Main descriptive body text (plain text or structured markdown)"
+    )
+    metadata = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Structured JSON attributes (e.g. CTA button texts, highlight items, badges)"
+    )
+    display_order = models.PositiveIntegerField(
+        default=0,
+        help_text="Visual ordering sequence for page presentation"
+    )
+    is_active = models.BooleanField(
+        default=True,
+        db_index=True,
+        help_text="Publication toggle for this content section"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['display_order', 'section_key']
+        verbose_name = 'CMS Section'
+        verbose_name_plural = 'CMS Sections'
+
+    def __str__(self):
+        status = "Active" if self.is_active else "Inactive"
+        return f"{self.title} [{self.section_key}] ({status})"
+
+    def clean(self):
+        super().clean()
+        if self.section_key:
+            self.section_key = self.section_key.strip().lower()
+            if not self.section_key:
+                raise ValidationError({'section_key': 'Section key cannot be empty or whitespace.'})
+        if self.title:
+            self.title = self.title.strip()
+            if not self.title:
+                raise ValidationError({'title': 'Section title cannot be blank.'})
+
+
+class FAQ(models.Model):
+    """
+    Frequently Asked Questions (FAQ) model for hotel policies, booking guidelines,
+    and visitor information.
+    """
+    CATEGORY_CHOICES = [
+        ('general', 'General Hotel Info'),
+        ('booking', 'Reservations & Booking'),
+        ('checkin_checkout', 'Check-in & Check-out'),
+        ('amenities', 'Amenities & Services'),
+        ('cancellation_refunds', 'Cancellation & Non-Refund Policy'),
+        ('location', 'Location & Connectivity'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    question = models.CharField(
+        max_length=255,
+        help_text="The question prompt asked by visitors/guests"
+    )
+    answer = models.TextField(
+        help_text="Authoritative answer text"
+    )
+    category = models.CharField(
+        max_length=50,
+        choices=CATEGORY_CHOICES,
+        default='general',
+        db_index=True,
+        help_text="Classification for accordion grouping on the frontend"
+    )
+    display_order = models.PositiveIntegerField(
+        default=0,
+        help_text="Visual sorting sequence within category"
+    )
+    is_active = models.BooleanField(
+        default=True,
+        db_index=True,
+        help_text="Publication toggle for this FAQ item"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['display_order', 'created_at']
+        verbose_name = 'FAQ Item'
+        verbose_name_plural = 'FAQ Items'
+
+    def __str__(self):
+        status = "Active" if self.is_active else "Inactive"
+        return f"{self.question} ({self.get_category_display()}) [{status}]"
+
+    def clean(self):
+        super().clean()
+        if self.question:
+            self.question = self.question.strip()
+            if not self.question:
+                raise ValidationError({'question': 'Question cannot be blank.'})
+        if self.answer:
+            self.answer = self.answer.strip()
+            if not self.answer:
+                raise ValidationError({'answer': 'Answer cannot be blank.'})
+
+
+

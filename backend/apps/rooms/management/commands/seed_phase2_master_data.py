@@ -3,15 +3,15 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from apps.rooms.models import RoomCategory, PhysicalRoom, Amenity, RoomCategoryAmenity, RoomImage
 from apps.pricing.models import RoomRatePlan, TaxRule
-from apps.cms.models import GalleryMedia, HotelConfiguration
+from apps.cms.models import GalleryMedia, HotelConfiguration, CMSSection, FAQ
 
 
 class Command(BaseCommand):
-    help = 'Seeds initial hotel room categories, verified master amenities, rate plans, tax rules, and hotel configuration.'
+    help = 'Seeds initial hotel room categories, verified master amenities, rate plans, tax rules, hotel configuration, and structural CMS sections.'
 
     @transaction.atomic
     def handle(self, *args, **options):
-        self.stdout.write(self.style.NOTICE("Seeding Phase 2 Master Data (Categories, Amenities, Rates, Tax & Configuration)..."))
+        self.stdout.write(self.style.NOTICE("Seeding Phase 2 Master Data (Categories, Amenities, Rates, Tax, Configuration & CMS)..."))
 
         # 1. Categories (get_or_create to preserve existing admin edits)
         ac_category, ac_created = RoomCategory.objects.get_or_create(
@@ -248,10 +248,71 @@ class Command(BaseCommand):
             f"(Check-in: {hotel_config.standard_check_in_time}, Check-out: {hotel_config.standard_check_out_time}, Max Late: {hotel_config.max_late_checkout_hours}h)"
         ))
 
-        # 6. Verification of Strict Boundaries
+        # 6. Structural CMS Sections (Idempotent, preserves admin modifications)
+        cms_sections = [
+            {
+                'section_key': 'hero',
+                'title': 'Welcome to Manohar Grand',
+                'subtitle': 'Luxury Air-conditioned and Non A/c Rooms',
+                'body': '',
+                'metadata': {
+                    'connectivity_badge': 'Walkable distance from JNTU Metro Station',
+                    'cta_primary_text': 'Book Your Stay',
+                    'cta_secondary_text': 'Explore Rooms'
+                },
+                'display_order': 1,
+            },
+            {
+                'section_key': 'welcome',
+                'title': 'Redefines Luxury with Affordable Prices',
+                'subtitle': 'Located in the heart of Hyderabad',
+                'body': (
+                    'Located in the heart of Hyderabad, Manohar Grand blends comfort, luxury, '
+                    'and convenience for every traveler. Our elegantly designed rooms feature modern '
+                    'amenities like high-speed Wi-Fi, plush bedding, and close proximity to JNTU Metro Station.'
+                ),
+                'metadata': {},
+                'display_order': 2,
+            },
+            {
+                'section_key': 'why-choose-us',
+                'title': 'Why Choose Manohar Grand',
+                'subtitle': 'Unmatched Comfort & Premium Hospitality',
+                'body': '',
+                'metadata': {
+                    'highlights': [
+                        'WAKEFIT Memory Foam Mattresses in all bedrooms',
+                        '32" Smart TV with OTT apps',
+                        'Walkable distance from JNTU Metro Station',
+                        '24/7 Front desk & security',
+                        'On-site vehicle parking',
+                        '24/7 Hot & cold water'
+                    ]
+                },
+                'display_order': 3,
+            }
+        ]
+
+        for sec in cms_sections:
+            section, s_created = CMSSection.objects.get_or_create(
+                section_key=sec['section_key'],
+                defaults={
+                    'title': sec['title'],
+                    'subtitle': sec['subtitle'],
+                    'body': sec['body'],
+                    'metadata': sec['metadata'],
+                    'display_order': sec['display_order'],
+                    'is_active': True,
+                }
+            )
+            s_status = "Created" if s_created else "Preserved Existing"
+            self.stdout.write(self.style.SUCCESS(f"  - [{s_status}] CMS Section: {section.section_key} ({section.title})"))
+
+        # 7. Verification of Strict Boundaries
         physical_room_count = PhysicalRoom.objects.count()
         room_image_count = RoomImage.objects.count()
         gallery_count = GalleryMedia.objects.count()
+        faq_count = FAQ.objects.count()
 
         self.stdout.write(self.style.NOTICE(
             f"\nMaster Data Summary:\n"
@@ -260,9 +321,12 @@ class Command(BaseCommand):
             f"  - Total Room Rate Plans: {RoomRatePlan.objects.count()}\n"
             f"  - Total Tax Rules: {TaxRule.objects.count()}\n"
             f"  - Total Hotel Configurations: {HotelConfiguration.objects.count()} (Singleton)\n"
+            f"  - Total CMS Sections: {CMSSection.objects.count()}\n"
+            f"  - Total FAQ Items: {faq_count} (ZERO unconfirmed FAQs seeded)\n"
             f"  - Total Physical Rooms: {physical_room_count} (ZERO seeded as required)\n"
             f"  - Total Room Images: {room_image_count} (ZERO fake media seeded)\n"
             f"  - Total Gallery Media: {gallery_count} (ZERO fake media seeded)"
         ))
-        self.stdout.write(self.style.SUCCESS("Phase 2 Step 3 Master Data seeding complete."))
+        self.stdout.write(self.style.SUCCESS("Phase 2 Step 4 Master Data seeding complete."))
+
 

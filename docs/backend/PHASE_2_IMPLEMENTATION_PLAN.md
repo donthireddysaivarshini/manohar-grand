@@ -469,8 +469,8 @@ Step 3: Amenities & Media Domain (`apps.rooms` & `apps.cms`) [COMPLETED - STEP 2
 Step 4: Dynamic Pricing, Tax & Hotel Configuration Master Data (`apps.pricing` & `apps.cms`) [COMPLETED - STEP 3 OF SPECIFICATION]
         - Implement RoomRatePlan (with effective dates and non-negative constraints), TaxRule (GST 5% baseline), HotelConfiguration (singleton pattern), Django admin with RBAC & audit logging, expanded idempotent seeder.
 
-Step 5: Headless CMS Sections & FAQ (`apps.cms`) [PENDING STEP 4 APPROVAL]
-        - Implement CMSSection, FAQ models.
+Step 5: Headless CMS Sections & FAQ (`apps.cms`) [COMPLETED - STEP 4 OF SPECIFICATION]
+        - Implement CMSSection, FAQ models, Django admin with RBAC & audit logging, structural CMS seeder with zero fake data.
 
 Step 6: REST API Serializers, Views & Routers [PENDING PHASE 2 STEP 5 APPROVAL]
         - Public endpoints: `/api/v1/rooms/categories/`, `/api/v1/content/*`.
@@ -538,9 +538,24 @@ Step 10: Automated Test Suite & Quality Verification [PENDING PHASE 2 STEP 9 APP
   - `cms.0002_hotelconfiguration`
 - **Automated Test Results**:
   - `79/79 tests passed in 21.03s (100% pass rate)`.
+
+---
+
+## 15. Phase 2 Step 4 Completion Summary (Dynamic CMS & Hotel Content Master Data)
+
+- **Delivered**:
+  - `apps.cms.models.CMSSection`: UUID PK, unique `section_key`, `title`, `subtitle`, `body`, structured `metadata` JSON, `display_order`, `is_active`. Non-blank validation, whitespace cleaning, and deterministic ordering.
+  - `apps.cms.models.FAQ`: UUID PK, `question`, `answer`, `category` choices (`general`, `booking`, `checkin_checkout`, `amenities`, `cancellation_refunds`, `location`), `display_order`, `is_active`. Non-blank validation and category-level ordering.
+  - Django Admin & RBAC: `CMSSectionAdmin` and `FAQAdmin`. SuperAdmin and Manager have full add/change access (SuperAdmin for delete); Receptionist is Denied (403). All admin mutations emit `AuditLog` records capturing before/after diffs with zero secrets.
+  - Master Seed Extension: `seed_phase2_master_data` seeds structural CMS sections (`hero`, `welcome`, `why-choose-us`) idempotently with client-confirmed details ("Walkable distance from JNTU Metro Station"). Zero unconfirmed FAQs seeded. Zero fake contact/social details.
+- **Migrations Applied**:
+  - `cms.0003_cmssection_faq`
+- **Automated Test Results**:
+  - `93/93 tests passed in 57.61s (100% pass rate)`.
   - `python manage.py check` $\to$ 0 issues identified.
   - `python manage.py makemigrations --check` $\to$ No changes detected.
-  - `npm run build` $\to$ React frontend built cleanly in 6.69s with 0 errors.
+  - `npm run build` $\to$ React frontend built cleanly in 21.00s with 0 errors.
+
 
 
 

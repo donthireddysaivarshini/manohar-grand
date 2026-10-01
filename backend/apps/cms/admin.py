@@ -1,6 +1,7 @@
 from django.contrib import admin
 from core.services import record_audit_log
-from .models import GalleryMedia, HotelConfiguration
+from .models import GalleryMedia, HotelConfiguration, CMSSection, FAQ
+
 
 
 @admin.register(GalleryMedia)
@@ -77,4 +78,133 @@ class HotelConfigurationAdmin(admin.ModelAdmin):
             new_values=new_values,
             reason="Updated hotel operational configuration via Django admin",
         )
+
+
+@admin.register(CMSSection)
+class CMSSectionAdmin(admin.ModelAdmin):
+    list_display = ['section_key', 'title', 'subtitle', 'display_order', 'is_active', 'updated_at']
+    list_filter = ['is_active']
+    search_fields = ['section_key', 'title', 'subtitle', 'body']
+    readonly_fields = ['id', 'created_at', 'updated_at']
+
+    def has_change_permission(self, request, obj=None):
+        if not request.user.is_authenticated:
+            return False
+        if request.user.is_superuser:
+            return True
+        if hasattr(request.user, 'staff_profile') and request.user.staff_profile:
+            return request.user.staff_profile.role in ('superadmin', 'manager')
+        return False
+
+    def has_add_permission(self, request):
+        return self.has_change_permission(request)
+
+    def has_delete_permission(self, request, obj=None):
+        if not request.user.is_authenticated:
+            return False
+        if request.user.is_superuser:
+            return True
+        if hasattr(request.user, 'staff_profile') and request.user.staff_profile:
+            return request.user.staff_profile.role == 'superadmin'
+        return False
+
+    def save_model(self, request, obj, form, change):
+        old_values = {}
+        action = 'update' if change else 'create'
+        if change and obj.pk:
+            try:
+                old_instance = CMSSection.objects.get(pk=obj.pk)
+                old_values = {
+                    'section_key': old_instance.section_key,
+                    'title': old_instance.title,
+                    'subtitle': old_instance.subtitle,
+                    'is_active': old_instance.is_active,
+                    'display_order': old_instance.display_order,
+                }
+            except CMSSection.DoesNotExist:
+                pass
+
+        super().save_model(request, obj, form, change)
+
+        new_values = {
+            'section_key': obj.section_key,
+            'title': obj.title,
+            'subtitle': obj.subtitle,
+            'is_active': obj.is_active,
+            'display_order': obj.display_order,
+        }
+
+        record_audit_log(
+            action=action,
+            resource_type='CMSSection',
+            resource_id=str(obj.id),
+            actor=request.user,
+            old_values=old_values,
+            new_values=new_values,
+            reason=f"CMS section '{obj.section_key}' updated via admin" if change else f"CMS section '{obj.section_key}' created via admin",
+        )
+
+
+@admin.register(FAQ)
+class FAQAdmin(admin.ModelAdmin):
+    list_display = ['question', 'category', 'display_order', 'is_active', 'updated_at']
+    list_filter = ['category', 'is_active']
+    search_fields = ['question', 'answer']
+    readonly_fields = ['id', 'created_at', 'updated_at']
+
+    def has_change_permission(self, request, obj=None):
+        if not request.user.is_authenticated:
+            return False
+        if request.user.is_superuser:
+            return True
+        if hasattr(request.user, 'staff_profile') and request.user.staff_profile:
+            return request.user.staff_profile.role in ('superadmin', 'manager')
+        return False
+
+    def has_add_permission(self, request):
+        return self.has_change_permission(request)
+
+    def has_delete_permission(self, request, obj=None):
+        if not request.user.is_authenticated:
+            return False
+        if request.user.is_superuser:
+            return True
+        if hasattr(request.user, 'staff_profile') and request.user.staff_profile:
+            return request.user.staff_profile.role == 'superadmin'
+        return False
+
+    def save_model(self, request, obj, form, change):
+        old_values = {}
+        action = 'update' if change else 'create'
+        if change and obj.pk:
+            try:
+                old_instance = FAQ.objects.get(pk=obj.pk)
+                old_values = {
+                    'question': old_instance.question,
+                    'category': old_instance.category,
+                    'is_active': old_instance.is_active,
+                    'display_order': old_instance.display_order,
+                }
+            except FAQ.DoesNotExist:
+                pass
+
+        super().save_model(request, obj, form, change)
+
+        new_values = {
+            'question': obj.question,
+            'category': obj.category,
+            'is_active': obj.is_active,
+            'display_order': obj.display_order,
+        }
+
+        record_audit_log(
+            action=action,
+            resource_type='FAQ',
+            resource_id=str(obj.id),
+            actor=request.user,
+            old_values=old_values,
+            new_values=new_values,
+            reason=f"FAQ item updated via admin" if change else f"FAQ item created via admin",
+        )
+
 

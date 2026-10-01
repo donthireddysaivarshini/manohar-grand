@@ -82,5 +82,14 @@
 - **Decision**: Model `RoomRatePlan` and `TaxRule` as effective-dated version rows (`effective_from`, `effective_to`, `is_active`). When tariffs change, administrators create new rate plan records or bound existing ones rather than destructively mutating past rows in place. All booking transactions store an immutable `BookingPriceSnapshot` captured at confirmation time.
 - **Consequences**: Complete preservation of past pricing history; zero retroactivity bugs on existing transactions; cleanly supports future seasonal tariffs and GST regime adjustments.
 
+---
+
+## ADR 12: Headless CMS Architecture & Structured Content Boundaries
+- **Status**: Approved.
+- **Context**: Dynamic public website content (hero banner narratives, welcome copy, why-choose-us highlights, FAQs) must be configurable by staff via Django Admin without modifying React source code or requiring redeployments.
+- **Decision**: Implement generic `CMSSection` with stable unique keys (`section_key`) and structured JSON `metadata` for component-level attributes, alongside categorized `FAQ` items. Content fields describe text and structured items; visual styling and page layout remain strictly controlled by the React frontend. Unconfirmed client marketing copy, phone numbers, addresses, and fake FAQs are strictly excluded from master seed data.
+- **Consequences**: Complete backend content configurability without hardcoded React strings; clean separation of presentation layout from dynamic data; safe against XSS and unverified client marketing claims.
+
+
 
 

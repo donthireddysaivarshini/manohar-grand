@@ -4,7 +4,7 @@ import pytest
 from django.core.management import call_command
 from apps.rooms.models import RoomCategory, PhysicalRoom, Amenity, RoomCategoryAmenity, RoomImage
 from apps.pricing.models import RoomRatePlan, TaxRule
-from apps.cms.models import GalleryMedia, HotelConfiguration
+from apps.cms.models import GalleryMedia, HotelConfiguration, CMSSection, FAQ
 
 
 @pytest.mark.django_db
@@ -22,6 +22,8 @@ class TestSeedPhase2MasterDataCommand:
         RoomRatePlan.objects.all().delete()
         TaxRule.objects.all().delete()
         HotelConfiguration.objects.all().delete()
+        CMSSection.objects.all().delete()
+        FAQ.objects.all().delete()
 
         out = StringIO()
         call_command('seed_phase2_master_data', stdout=out)
@@ -75,7 +77,14 @@ class TestSeedPhase2MasterDataCommand:
         assert config.hotel_name == 'Manohar Grand'
         assert config.max_late_checkout_hours == 3
 
+        # Assert structural CMS sections created
+        assert CMSSection.objects.count() == 3
+        hero = CMSSection.objects.get(section_key='hero')
+        assert hero.title == 'Welcome to Manohar Grand'
+        assert hero.metadata['connectivity_badge'] == 'Walkable distance from JNTU Metro Station'
+
         # STRICT BOUNDARY CHECKS:
+        assert FAQ.objects.count() == 0, "Seed must create ZERO unconfirmed FAQs"
         assert PhysicalRoom.objects.count() == 0, "Seed must create ZERO physical rooms"
         assert RoomImage.objects.count() == 0, "Seed must create ZERO fake room images"
         assert GalleryMedia.objects.count() == 0, "Seed must create ZERO fake gallery media"
@@ -93,6 +102,8 @@ class TestSeedPhase2MasterDataCommand:
         assert RoomRatePlan.objects.count() == 2
         assert TaxRule.objects.count() == 1
         assert HotelConfiguration.objects.count() == 1
+        assert CMSSection.objects.count() == 3
+        assert FAQ.objects.count() == 0
         assert PhysicalRoom.objects.count() == 0
         assert RoomImage.objects.count() == 0
         assert GalleryMedia.objects.count() == 0
@@ -118,13 +129,18 @@ class TestSeedPhase2MasterDataCommand:
         ac_rate.base_price_per_night = Decimal('1799.00')
         ac_rate.save()
 
-        # 5. Run seed command again
+        # 5. Simulate admin updating hero title
+        hero = CMSSection.objects.get(section_key='hero')
+        hero.title = 'Custom Luxury Experience at Manohar Grand'
+        hero.save()
+
+        # 6. Run seed command again
         out = StringIO()
         call_command('seed_phase2_master_data', stdout=out)
         output = out.getvalue()
         assert 'Preserved Existing' in output
 
-        # 6. Verify admin's customized data was NOT overwritten
+        # 7. Verify admin's customized data was NOT overwritten
         nac.refresh_from_db()
         assert nac.max_total_occupancy == 3
         assert nac.tagline == 'Custom Admin Updated Tagline'
@@ -134,4 +150,8 @@ class TestSeedPhase2MasterDataCommand:
 
         ac_rate.refresh_from_db()
         assert ac_rate.base_price_per_night == Decimal('1799.00')
+
+        hero.refresh_from_db()
+        assert hero.title == 'Custom Luxury Experience at Manohar Grand'
+
 
