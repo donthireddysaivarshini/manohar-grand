@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'apps.cms.apps.CmsConfig',
     'apps.inventory.apps.InventoryConfig',
     'apps.bookings.apps.BookingsConfig',
+    'apps.availability.apps.AvailabilityConfig',
 ]
 
 BOOKING_HOLD_DURATION_MINUTES = 15
