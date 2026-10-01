@@ -361,7 +361,7 @@ Permissions explicitly reflect client-confirmed access vs. unconfirmed capabilit
 | **Modify Base Rates & Surcharges** | **Yes** | **Pending Confirmation (Default: Denied)** | **Denied (403)** | Denied (403) |
 | **Modify GST Tax Rules** | Yes | Denied (403) | Denied (403) | Denied (403) |
 | **Update Hotel Configuration & Timings** | Yes | Denied (403) | Denied (403) | Denied (403) |
-| **Manage CMS Sections & Media** | Yes | Yes | Denied (403) | Denied (403) |
+| **Manage CMS Sections & Media** | Yes | Pending Confirmation (Default: Read-Only) | Denied (403) | Denied (403) |
 | **Manage Amenities** | Yes | Yes | Denied (403) | Denied (403) |
 | **Inspect System Audit Logs** | Yes | Yes (Read-Only) | Denied (403) | Denied (403) |
 
@@ -451,6 +451,7 @@ IMPLEMENT -> BUILD -> UNIT/MODEL TESTS -> API TESTS -> RBAC TESTS -> MANUAL SMOK
 | 2 | **Actual Room Numbers** | Exact physical room numbers not yet provided. | **No fake room numbers seeded.** Real numbers entered via admin setup. |
 | 3 | **Manager Rate Editing** | Manager role confirmed as *"partial access"*; rate editing unconfirmed. | **Manager Rate Editing = Denied by default** (pending client confirmation). |
 | 4 | **Manager Physical Room Setup** | Adding/decommissioning physical rooms unconfirmed for Manager. | **Manager Room Setup = Denied by default** (SuperAdmin only). |
+| 5 | **Manager CMS Content Editing** | `10.ADMIN_PANEL_REQUIREMENTS.md` Table 3 designates CMS editing as SuperAdmin/Owner only; Manager editing unconfirmed. | **Manager CMS Editing = Read-Only** (pending client confirmation; SuperAdmin full access). |
 
 ---
 
@@ -546,7 +547,7 @@ Step 10: Automated Test Suite & Quality Verification [PENDING PHASE 2 STEP 9 APP
 - **Delivered**:
   - `apps.cms.models.CMSSection`: UUID PK, unique `section_key`, `title`, `subtitle`, `body`, structured `metadata` JSON, `display_order`, `is_active`. Non-blank validation, whitespace cleaning, and deterministic ordering.
   - `apps.cms.models.FAQ`: UUID PK, `question`, `answer`, `category` choices (`general`, `booking`, `checkin_checkout`, `amenities`, `cancellation_refunds`, `location`), `display_order`, `is_active`. Non-blank validation and category-level ordering.
-  - Django Admin & RBAC: `CMSSectionAdmin` and `FAQAdmin`. SuperAdmin and Manager have full add/change access (SuperAdmin for delete); Receptionist is Denied (403). All admin mutations emit `AuditLog` records capturing before/after diffs with zero secrets.
+  - Django Admin & RBAC: `CMSSectionAdmin` and `FAQAdmin`. SuperAdmin has full add/change/delete access; Manager has read-only view access per `10.ADMIN_PANEL_REQUIREMENTS.md` Table 3 (pending confirmation baseline); Receptionist is Denied (403). All admin mutations emit `AuditLog` records capturing before/after diffs with zero secrets.
   - Master Seed Extension: `seed_phase2_master_data` seeds structural CMS sections (`hero`, `welcome`, `why-choose-us`) idempotently with client-confirmed details ("Walkable distance from JNTU Metro Station"). Zero unconfirmed FAQs seeded. Zero fake contact/social details.
 - **Migrations Applied**:
   - `cms.0003_cmssection_faq`

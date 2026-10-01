@@ -87,8 +87,8 @@
 ## ADR 12: Headless CMS Architecture & Structured Content Boundaries
 - **Status**: Approved.
 - **Context**: Dynamic public website content (hero banner narratives, welcome copy, why-choose-us highlights, FAQs) must be configurable by staff via Django Admin without modifying React source code or requiring redeployments.
-- **Decision**: Implement generic `CMSSection` with stable unique keys (`section_key`) and structured JSON `metadata` for component-level attributes, alongside categorized `FAQ` items. Content fields describe text and structured items; visual styling and page layout remain strictly controlled by the React frontend. Unconfirmed client marketing copy, phone numbers, addresses, and fake FAQs are strictly excluded from master seed data.
-- **Consequences**: Complete backend content configurability without hardcoded React strings; clean separation of presentation layout from dynamic data; safe against XSS and unverified client marketing claims.
+- **Decision**: Implement generic `CMSSection` with stable unique keys (`section_key`) and structured JSON `metadata` for component-level attributes, alongside categorized `FAQ` items. Content fields describe text and structured items; visual styling and page layout remain strictly controlled by the React frontend. Unconfirmed client marketing copy, phone numbers, addresses, and fake FAQs are strictly excluded from master seed data. In Django Admin, full CMS modification is restricted to `SUPER_ADMIN` (Owner) per `10.ADMIN_PANEL_REQUIREMENTS.md` Table 3; `MANAGER` has read-only access (pending client confirmation baseline); `RECEPTIONIST` is strictly denied.
+- **Consequences**: Complete backend content configurability without hardcoded React strings; clean separation of presentation layout from dynamic data; safe against XSS and unverified client marketing claims; strict principle-of-least-privilege RBAC alignment.
 
 
 

@@ -87,7 +87,7 @@ class CMSSectionAdmin(admin.ModelAdmin):
     search_fields = ['section_key', 'title', 'subtitle', 'body']
     readonly_fields = ['id', 'created_at', 'updated_at']
 
-    def has_change_permission(self, request, obj=None):
+    def has_module_permission(self, request):
         if not request.user.is_authenticated:
             return False
         if request.user.is_superuser:
@@ -96,17 +96,24 @@ class CMSSectionAdmin(admin.ModelAdmin):
             return request.user.staff_profile.role in ('superadmin', 'manager')
         return False
 
-    def has_add_permission(self, request):
-        return self.has_change_permission(request)
+    def has_view_permission(self, request, obj=None):
+        return self.has_module_permission(request)
 
-    def has_delete_permission(self, request, obj=None):
+    def has_change_permission(self, request, obj=None):
         if not request.user.is_authenticated:
             return False
         if request.user.is_superuser:
             return True
         if hasattr(request.user, 'staff_profile') and request.user.staff_profile:
+            # Per 10.ADMIN_PANEL_REQUIREMENTS.md Table 3: CMS Content Management is SuperAdmin/Owner only
             return request.user.staff_profile.role == 'superadmin'
         return False
+
+    def has_add_permission(self, request):
+        return self.has_change_permission(request)
+
+    def has_delete_permission(self, request, obj=None):
+        return self.has_change_permission(request, obj)
 
     def save_model(self, request, obj, form, change):
         old_values = {}
@@ -152,7 +159,7 @@ class FAQAdmin(admin.ModelAdmin):
     search_fields = ['question', 'answer']
     readonly_fields = ['id', 'created_at', 'updated_at']
 
-    def has_change_permission(self, request, obj=None):
+    def has_module_permission(self, request):
         if not request.user.is_authenticated:
             return False
         if request.user.is_superuser:
@@ -161,17 +168,24 @@ class FAQAdmin(admin.ModelAdmin):
             return request.user.staff_profile.role in ('superadmin', 'manager')
         return False
 
-    def has_add_permission(self, request):
-        return self.has_change_permission(request)
+    def has_view_permission(self, request, obj=None):
+        return self.has_module_permission(request)
 
-    def has_delete_permission(self, request, obj=None):
+    def has_change_permission(self, request, obj=None):
         if not request.user.is_authenticated:
             return False
         if request.user.is_superuser:
             return True
         if hasattr(request.user, 'staff_profile') and request.user.staff_profile:
+            # Per 10.ADMIN_PANEL_REQUIREMENTS.md Table 3: CMS Content Management is SuperAdmin/Owner only
             return request.user.staff_profile.role == 'superadmin'
         return False
+
+    def has_add_permission(self, request):
+        return self.has_change_permission(request)
+
+    def has_delete_permission(self, request, obj=None):
+        return self.has_change_permission(request, obj)
 
     def save_model(self, request, obj, form, change):
         old_values = {}

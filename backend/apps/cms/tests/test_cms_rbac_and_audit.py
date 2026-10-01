@@ -61,41 +61,69 @@ class TestCMSRBACAndAudit:
         )
         return user
 
-    def test_superadmin_has_full_cms_section_permissions(self, superadmin_user):
+    def test_superadmin_has_full_cms_section_and_faq_permissions(self, superadmin_user):
         site = AdminSite()
-        admin_obj = CMSSectionAdmin(CMSSection, site)
+        cms_admin = CMSSectionAdmin(CMSSection, site)
+        faq_admin = FAQAdmin(FAQ, site)
         rf = RequestFactory()
 
         request = rf.get('/admin/')
         request.user = superadmin_user
 
-        assert admin_obj.has_change_permission(request) is True
-        assert admin_obj.has_add_permission(request) is True
-        assert admin_obj.has_delete_permission(request) is True
+        assert cms_admin.has_module_permission(request) is True
+        assert cms_admin.has_view_permission(request) is True
+        assert cms_admin.has_change_permission(request) is True
+        assert cms_admin.has_add_permission(request) is True
+        assert cms_admin.has_delete_permission(request) is True
 
-    def test_manager_can_change_and_add_cms_sections_but_not_delete(self, manager_user):
+        assert faq_admin.has_module_permission(request) is True
+        assert faq_admin.has_view_permission(request) is True
+        assert faq_admin.has_change_permission(request) is True
+        assert faq_admin.has_add_permission(request) is True
+        assert faq_admin.has_delete_permission(request) is True
+
+    def test_manager_has_readonly_access_to_cms_sections_and_faqs(self, manager_user):
         site = AdminSite()
-        admin_obj = CMSSectionAdmin(CMSSection, site)
+        cms_admin = CMSSectionAdmin(CMSSection, site)
+        faq_admin = FAQAdmin(FAQ, site)
         rf = RequestFactory()
 
         request = rf.get('/admin/')
         request.user = manager_user
 
-        assert admin_obj.has_change_permission(request) is True
-        assert admin_obj.has_add_permission(request) is True
-        assert admin_obj.has_delete_permission(request) is False
+        # Manager has read/view permissions but denied mutation per 10.ADMIN_PANEL_REQUIREMENTS.md Table 3
+        assert cms_admin.has_module_permission(request) is True
+        assert cms_admin.has_view_permission(request) is True
+        assert cms_admin.has_change_permission(request) is False
+        assert cms_admin.has_add_permission(request) is False
+        assert cms_admin.has_delete_permission(request) is False
 
-    def test_receptionist_cannot_modify_cms_sections(self, receptionist_user):
+        assert faq_admin.has_module_permission(request) is True
+        assert faq_admin.has_view_permission(request) is True
+        assert faq_admin.has_change_permission(request) is False
+        assert faq_admin.has_add_permission(request) is False
+        assert faq_admin.has_delete_permission(request) is False
+
+    def test_receptionist_cannot_access_or_modify_cms(self, receptionist_user):
         site = AdminSite()
-        admin_obj = CMSSectionAdmin(CMSSection, site)
+        cms_admin = CMSSectionAdmin(CMSSection, site)
+        faq_admin = FAQAdmin(FAQ, site)
         rf = RequestFactory()
 
         request = rf.get('/admin/')
         request.user = receptionist_user
 
-        assert admin_obj.has_change_permission(request) is False
-        assert admin_obj.has_add_permission(request) is False
-        assert admin_obj.has_delete_permission(request) is False
+        assert cms_admin.has_module_permission(request) is False
+        assert cms_admin.has_view_permission(request) is False
+        assert cms_admin.has_change_permission(request) is False
+        assert cms_admin.has_add_permission(request) is False
+        assert cms_admin.has_delete_permission(request) is False
+
+        assert faq_admin.has_module_permission(request) is False
+        assert faq_admin.has_view_permission(request) is False
+        assert faq_admin.has_change_permission(request) is False
+        assert faq_admin.has_add_permission(request) is False
+        assert faq_admin.has_delete_permission(request) is False
 
     def test_cms_section_mutation_produces_audit_log(self, superadmin_user):
         site = AdminSite()
@@ -136,13 +164,13 @@ class TestCMSRBACAndAudit:
         assert update_entry.old_values['title'] == 'The Manohar Experience'
         assert update_entry.new_values['title'] == 'The Luxury Experience'
 
-    def test_faq_mutation_produces_audit_log(self, manager_user):
+    def test_faq_mutation_produces_audit_log(self, superadmin_user):
         site = AdminSite()
         admin_obj = FAQAdmin(FAQ, site)
         rf = RequestFactory()
 
         request = rf.post('/admin/cms/faq/add/')
-        request.user = manager_user
+        request.user = superadmin_user
 
         faq = FAQ(
             question='Is parking available on site?',
@@ -156,7 +184,7 @@ class TestCMSRBACAndAudit:
 
         audit_entry = AuditLog.objects.filter(resource_type='FAQ', resource_id=str(faq.id)).first()
         assert audit_entry is not None
-        assert audit_entry.actor == manager_user
-        assert audit_entry.actor_role == 'manager'
+        assert audit_entry.actor == superadmin_user
+        assert audit_entry.actor_role == 'superadmin'
         assert audit_entry.action == 'create'
         assert audit_entry.new_values['question'] == 'Is parking available on site?'
