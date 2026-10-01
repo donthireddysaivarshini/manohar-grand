@@ -54,8 +54,11 @@ INSTALLED_APPS = [
     'apps.rooms.apps.RoomsConfig',
     'apps.pricing.apps.PricingConfig',
     'apps.cms.apps.CmsConfig',
+    'apps.inventory.apps.InventoryConfig',
+    'apps.bookings.apps.BookingsConfig',
 ]
 
+BOOKING_HOLD_DURATION_MINUTES = 15
 
 SITE_ID = 1
 

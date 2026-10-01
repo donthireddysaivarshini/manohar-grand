@@ -90,6 +90,23 @@
 - **Decision**: Implement generic `CMSSection` with stable unique keys (`section_key`) and structured JSON `metadata` for component-level attributes, alongside categorized `FAQ` items. Content fields describe text and structured items; visual styling and page layout remain strictly controlled by the React frontend. Unconfirmed client marketing copy, phone numbers, addresses, and fake FAQs are strictly excluded from master seed data. In Django Admin, full CMS modification is restricted to `SUPER_ADMIN` (Owner) per `10.ADMIN_PANEL_REQUIREMENTS.md` Table 3; `MANAGER` has read-only access (pending client confirmation baseline); `RECEPTIONIST` is strictly denied.
 - **Consequences**: Complete backend content configurability without hardcoded React strings; clean separation of presentation layout from dynamic data; safe against XSS and unverified client marketing claims; strict principle-of-least-privilege RBAC alignment.
 
+---
+
+## ADR 13: Unified Inventory Authority & Category-Level Reservation Architecture
+- **Status**: Approved.
+- **Context**: The booking platform supports multi-channel reservations (Online Website, Front Desk Walk-In, Phone, WhatsApp, Reception, Corporate Deals). Inventory must be consistent across all channels without double-booking or desynchronization.
+- **Decision**:
+  1. **Authoritative Inventory Unit**: `PhysicalRoom` is the sole authoritative unit of physical inventory (`operational`, `maintenance`, `blocked`, `inactive`). No second editable inventory counter or duplicate integer exists.
+  2. **RoomNightInventory Status**: Not implemented as an independent manual data store. Inventory availability is calculated dynamically across stay night intervals `[check_in, check_out)` against active physical rooms, confirmed reservations, unexpired holds, and operational blocks (`RoomBlock`, `MaintenanceBlock`).
+  3. **Category-Level Reservation vs Room Assignment**: Customers reserve accommodation at the `RoomCategory` level (`BookingRoom`). Physical room door units (`physical_room`) remain nullable initially and are assigned by front desk receptionists prior to or upon check-in, supporting partial and staged assignment.
+  4. **Strict Booking State Machine**: Booking lifecycle transitions are strictly enforced (`HELD` -> `CONFIRMED`/`EXPIRED`/`CANCELLED`; `CONFIRMED` -> `CHECKED_IN`/`CANCELLED`/`NO_SHOW`; `CHECKED_IN` -> `CHECKED_OUT`/`CANCELLED`). Direct mutation is prevented; transitions trigger append-only `AuditLog` records.
+  5. **Temporary Hold Foundation**: Configurable hold duration (`BOOKING_HOLD_DURATION_MINUTES = 15`) with lazy invalidation in availability calculations and automatic expiration mechanics.
+  6. **PostgreSQL Concurrency Boundary**: Concurrency protection in production utilizes PostgreSQL row-level locks (`select_for_update()`) on target `RoomCategory` rows inside atomic transactions (`@transaction.atomic`). SQLite in development/testing does not simulate multi-connection PostgreSQL row locking; true concurrent production validation requires PostgreSQL.
+  7. **Overbooking Override Foundation**: Explicit `is_overbooking` and mandatory `overbooking_reason` fields allow authorized Owner/Admin overrides without silent overbooking.
+- **Consequences**: Complete prevention of inventory split-brain; seamless front-desk operational assignment; robust protection against double-booking under high concurrent checkout traffic; full auditability of overrides.
+
+
+
 
 
 
