@@ -1,8 +1,20 @@
+import json
 from typing import Optional, Any, Dict
+from django.core.serializers.json import DjangoJSONEncoder
 from django.contrib.auth import get_user_model
 from .models import AuditLog
 
 User = get_user_model()
+
+
+def _sanitize_audit_data(data: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """Ensures all data in audit payload (UUIDs, Decimals, dates) is cleanly JSON serializable."""
+    if not data:
+        return {}
+    try:
+        return json.loads(json.dumps(data, cls=DjangoJSONEncoder))
+    except Exception:
+        return {str(k): str(v) for k, v in data.items()}
 
 
 def record_audit_log(
@@ -37,8 +49,8 @@ def record_audit_log(
         action=action,
         resource_type=resource_type,
         resource_id=str(resource_id),
-        old_values=old_values or {},
-        new_values=new_values or {},
+        old_values=_sanitize_audit_data(old_values),
+        new_values=_sanitize_audit_data(new_values),
         reason=reason,
         ip_address=ip_address,
     )

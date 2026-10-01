@@ -557,6 +557,36 @@ Step 10: Automated Test Suite & Quality Verification [PENDING PHASE 2 STEP 9 APP
   - `python manage.py makemigrations --check` $\to$ No changes detected.
   - `npm run build` $\to$ React frontend built cleanly in 21.00s with 0 errors.
 
+---
+
+## 16. Phase 2 Step 5 Completion Summary (REST API Foundation)
+
+- **Delivered**:
+  - **Public Room APIs** (`/api/v1/rooms/`):
+    - `GET /api/v1/rooms/categories/`: Active room categories list with derived operational physical room counts, active amenities, active imagery, and active base rate pricing.
+    - `GET /api/v1/rooms/categories/<slug>/`: Detailed specification including full rate breakdown (`pricing_details`).
+    - `GET /api/v1/rooms/amenities/`: Active property amenities list.
+  - **Public Headless CMS Content APIs** (`/api/v1/content/`):
+    - `GET /api/v1/content/sections/` & `GET /api/v1/content/sections/<key>/`: Active marketing sections with structured JSON metadata.
+    - `GET /api/v1/content/gallery/`: Active photo gallery items with `?category=` and `?featured=true` filters.
+    - `GET /api/v1/content/faqs/`: Active FAQ accordion list with `?category=` filter.
+    - `GET /api/v1/content/hotel-config/`: Public-safe singleton hotel operational configuration.
+  - **Public Pricing & Tax APIs** (`/api/v1/pricing/`):
+    - `GET /api/v1/pricing/rates/`: Public active room rate plans.
+    - `GET /api/v1/pricing/taxes/`: Public active GST tax rules.
+  - **Staff Admin APIs with RBAC & Audit Logging** (`/api/v1/admin/`):
+    - `/api/v1/admin/rooms/physical-rooms/`: Staff list & SuperAdmin creation/deletion, Manager operational status update.
+    - `/api/v1/admin/pricing/rates/` & `/api/v1/admin/pricing/taxes/`: Staff read-only view; SuperAdmin mutation.
+    - `/api/v1/admin/content/sections/` & `/api/v1/admin/content/faqs/`: Manager read-only view; SuperAdmin mutation.
+    - `/api/v1/admin/content/gallery/`: Manager & SuperAdmin media management.
+    - `/api/v1/admin/content/hotel-config/`: Staff read-only view; SuperAdmin operational config updates.
+    - `/api/v1/admin/audit-logs/`: Manager & SuperAdmin read-only audit inspection (strictly immutable).
+- **Automated Test Results**:
+  - `105/105 tests passed in 23.49s (100% pass rate)`.
+  - `python manage.py check` $\to$ 0 issues identified.
+  - `python manage.py makemigrations --check` $\to$ No changes detected.
+  - `npm run build` $\to$ React frontend built cleanly in 6.15s with 0 errors.
+
 
 
 
