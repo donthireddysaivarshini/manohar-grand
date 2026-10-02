@@ -103,7 +103,26 @@
   5. **Temporary Hold Foundation**: Configurable hold duration (`BOOKING_HOLD_DURATION_MINUTES = 15`) with lazy invalidation in availability calculations and automatic expiration mechanics.
   6. **PostgreSQL Concurrency Boundary**: Concurrency protection in production utilizes PostgreSQL row-level locks (`select_for_update()`) on target `RoomCategory` rows inside atomic transactions (`@transaction.atomic`). SQLite in development/testing does not simulate multi-connection PostgreSQL row locking; true concurrent production validation requires PostgreSQL.
   7. **Overbooking Override Foundation**: Explicit `is_overbooking` and mandatory `overbooking_reason` fields allow authorized Owner/Admin overrides without silent overbooking.
-- **Consequences**: Complete prevention of inventory split-brain; seamless front-desk operational assignment; robust protection against double-booking under high concurrent checkout traffic; full auditability of overrides.
+## ADR 14: Front-Desk Physical Room Assignment, Check-In Validation & Customer Booking Ownership
+- **Status**: Approved.
+- **Context**: Customers reserve accommodation at the room category level. Front-desk staff must assign physical room units (`PhysicalRoom`) prior to or at check-in, ensure check-in occurs only when fully assigned, support offline walk-ins and SuperAdmin overbookings, and secure customer booking lookup against unauthorized inspection.
+- **Decision**:
+  1. **Physical Room Assignment Service (`assign_physical_rooms`)**:
+     - Locks candidate `PhysicalRoom` rows using `select_for_update()` inside `transaction.atomic()`.
+     - Validates category matching, operational readiness (`operational_status == 'operational'`), absence of active `RoomBlock` and `MaintenanceBlock` overlapping stay dates, and absence of overlapping active bookings.
+     - Supports staged/partial assignments with explicit metrics (`assigned_quantity`, `required_quantity`, `remaining_quantity`).
+     - Allows clearing assignments by providing an empty list, cleanly preserving category-level reservation quantities.
+  2. **Check-In Validation Service (`admin_check_in_booking`)**:
+     - Re-verifies room assignment completeness (`is_fully_assigned == True`) before allowing status transition to `CHECKED_IN`.
+     - Re-checks operational status and blocks on assigned units inside transaction.
+  3. **Authenticated Customer Booking Ownership**:
+     - `GET /api/v1/bookings/` derives ownership strictly from `request.user` when authenticated.
+     - Ignores or rejects client query parameters (`?customer_id=`) attempting to spoof ownership.
+     - Public lookup (`GET /api/v1/bookings/{booking_reference}/`) requires either authenticated customer ownership, valid unguessable `access_token` (query param `?token=` or header `X-Booking-Token`), or staff role. Guessing reference alone returns HTTP 403 Forbidden.
+  4. **Staff Roles & Offline Operations**:
+     - `RECEPTIONIST`, `MANAGER`, `SUPER_ADMIN` can list bookings, view details, assign physical rooms, check in, check out, and create offline walk-in bookings.
+     - `SUPER_ADMIN` exclusively holds the overbooking override capability (`POST /api/v1/admin/bookings/overbooking/`), requiring mandatory justification and emitting an immutable `AuditLog` record.
+- **Consequences**: Zero risk of room double-assignment; front-desk operational flexibility; complete guest PII protection; strict audit trail of all staff interventions.
 
 
 

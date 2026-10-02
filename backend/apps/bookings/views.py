@@ -7,13 +7,14 @@ from django.shortcuts import get_object_or_404
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from .models import Booking
 from .serializers import (
     BookingHoldCreateSerializer,
     BookingDetailSerializer,
+    CustomerBookingListSerializer,
 )
 from .services import (
     create_booking_hold,
@@ -210,6 +211,28 @@ def booking_hold_release(request, booking_reference):
 
     return Response({
         "success": True,
+        "data": serializer.data,
+        "meta": {
+            "timestamp": timezone.now().isoformat()
+        }
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def customer_booking_list(request):
+    """
+    GET /api/v1/bookings/
+    Authenticated customer views ONLY their own reservations.
+    Derives customer ownership strictly from request.user.
+    """
+    user = request.user
+    bookings = Booking.objects.filter(customer=user).prefetch_related('rooms__category').order_by('-created_at')
+
+    serializer = CustomerBookingListSerializer(bookings, many=True)
+    return Response({
+        "success": True,
+        "count": len(serializer.data),
         "data": serializer.data,
         "meta": {
             "timestamp": timezone.now().isoformat()

@@ -13,5 +13,6 @@ urlpatterns = [
     path('rooms/', include('apps.rooms.admin_urls')),
     path('pricing/', include('apps.pricing.admin_urls')),
     path('content/', include('apps.cms.admin_urls')),
+    path('bookings/', include('apps.bookings.admin_urls')),
     path('audit-logs/', AuditLogAdminListView.as_view(), name='admin-audit-logs'),
 ]

@@ -5,7 +5,7 @@ Handles temporary checkout hold creation, booking retrieval, and state inspectio
 from datetime import date, timedelta
 from rest_framework import serializers
 
-from apps.rooms.models import RoomCategory
+from apps.rooms.models import RoomCategory, PhysicalRoom
 from .models import Booking, BookingRoom
 
 
@@ -189,3 +189,228 @@ class BookingDetailSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
         ]
+
+
+class CustomerBookingListSerializer(serializers.ModelSerializer):
+    """
+    Serializer for authenticated customer booking list (GET /api/v1/bookings/).
+    Exposes customer-relevant reservation data without internal staff notes.
+    """
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    source_display = serializers.CharField(source='get_source_display', read_only=True)
+    is_hold_valid = serializers.BooleanField(read_only=True)
+    nights_count = serializers.IntegerField(read_only=True)
+    total_rooms_count = serializers.IntegerField(read_only=True)
+    rooms = BookingRoomDetailSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Booking
+        fields = [
+            'booking_reference',
+            'access_token',
+            'status',
+            'status_display',
+            'is_hold_valid',
+            'hold_expires_at',
+            'check_in_date',
+            'check_out_date',
+            'nights_count',
+            'total_adults',
+            'total_children',
+            'total_rooms_count',
+            'guest_name',
+            'guest_phone',
+            'guest_email',
+            'source',
+            'source_display',
+            'rooms',
+            'created_at',
+        ]
+
+
+class PhysicalRoomAssignmentSerializer(serializers.Serializer):
+    """
+    Validates payload for staff assigning physical rooms to a booking.
+    Accepts physical_room_ids (list of UUIDs/room numbers) or physical_room_id (single).
+    """
+    physical_room_ids = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        default=list,
+        help_text="List of physical room IDs or room numbers to assign (empty list clears assignments)"
+    )
+    physical_room_id = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        help_text="Single physical room ID or room number to assign"
+    )
+
+    def validate(self, attrs):
+        raw_list = list(attrs.get('physical_room_ids', []))
+        single_val = attrs.get('physical_room_id')
+
+        if single_val and str(single_val).strip():
+            raw_list.append(str(single_val).strip())
+
+        attrs['resolved_room_identifiers'] = raw_list
+        return attrs
+
+
+class PhysicalRoomBriefSerializer(serializers.ModelSerializer):
+    """
+    Staff-facing serializer for PhysicalRoom metadata on assignments.
+    """
+    class Meta:
+        model = PhysicalRoom
+        fields = [
+            'id',
+            'room_number',
+            'floor',
+            'operational_status',
+        ]
+
+
+class BookingRoomStaffSerializer(serializers.ModelSerializer):
+    """
+    Staff-facing serializer for Booked Room Items with physical room assignments.
+    """
+    category_id = serializers.UUIDField(source='category.id', read_only=True)
+    category_name = serializers.CharField(source='category.name', read_only=True)
+    category_slug = serializers.CharField(source='category.slug', read_only=True)
+    physical_room = PhysicalRoomBriefSerializer(read_only=True)
+    assigned_by_username = serializers.CharField(source='assigned_by.username', read_only=True)
+
+    class Meta:
+        model = BookingRoom
+        fields = [
+            'id',
+            'category_id',
+            'category_name',
+            'category_slug',
+            'room_quantity',
+            'physical_room',
+            'assigned_at',
+            'assigned_by_username',
+            'created_at',
+        ]
+
+
+class BookingAdminStaffListSerializer(serializers.ModelSerializer):
+    """
+    Staff-facing serializer for reservations data grid.
+    """
+    id = serializers.UUIDField(read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    source_display = serializers.CharField(source='get_source_display', read_only=True)
+    nights_count = serializers.IntegerField(read_only=True)
+    total_rooms_count = serializers.IntegerField(read_only=True)
+    assigned_rooms_count = serializers.IntegerField(read_only=True)
+    is_fully_assigned = serializers.BooleanField(read_only=True)
+    rooms = BookingRoomStaffSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Booking
+        fields = [
+            'id',
+            'booking_reference',
+            'status',
+            'status_display',
+            'check_in_date',
+            'check_out_date',
+            'nights_count',
+            'guest_name',
+            'guest_phone',
+            'guest_email',
+            'total_adults',
+            'total_children',
+            'total_rooms_count',
+            'assigned_rooms_count',
+            'is_fully_assigned',
+            'source',
+            'source_display',
+            'is_overbooking',
+            'rooms',
+            'created_at',
+            'updated_at',
+        ]
+
+
+class BookingAdminStaffDetailSerializer(serializers.ModelSerializer):
+    """
+    Staff-facing detailed serializer for a single reservation.
+    Exposes full operational details, internal notes, audit fields, and assignment summary.
+    """
+    id = serializers.UUIDField(read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    source_display = serializers.CharField(source='get_source_display', read_only=True)
+    is_hold_valid = serializers.BooleanField(read_only=True)
+    nights_count = serializers.IntegerField(read_only=True)
+    total_rooms_count = serializers.IntegerField(read_only=True)
+    assigned_rooms_count = serializers.IntegerField(read_only=True)
+    is_fully_assigned = serializers.BooleanField(read_only=True)
+    assignment_summary = serializers.DictField(read_only=True)
+    rooms = BookingRoomStaffSerializer(many=True, read_only=True)
+    created_by_username = serializers.CharField(source='created_by.username', read_only=True)
+
+    class Meta:
+        model = Booking
+        fields = [
+            'id',
+            'booking_reference',
+            'access_token',
+            'status',
+            'status_display',
+            'is_hold_valid',
+            'hold_expires_at',
+            'check_in_date',
+            'check_out_date',
+            'nights_count',
+            'total_adults',
+            'total_children',
+            'total_rooms_count',
+            'assigned_rooms_count',
+            'is_fully_assigned',
+            'guest_name',
+            'guest_phone',
+            'guest_email',
+            'special_requests',
+            'internal_notes',
+            'is_overbooking',
+            'overbooking_reason',
+            'source',
+            'source_display',
+            'created_by_username',
+            'assignment_summary',
+            'rooms',
+            'created_at',
+            'updated_at',
+        ]
+
+
+class AdminWalkInCreateSerializer(BookingHoldCreateSerializer):
+    """
+    Serializer for staff creating an offline booking (walk_in, phone, whatsapp, reception, corporate).
+    """
+    source = serializers.ChoiceField(
+        choices=[
+            ('walk_in', 'Front Desk Walk-In'),
+            ('phone', 'Phone Reservation'),
+            ('whatsapp', 'WhatsApp Direct'),
+            ('reception', 'Front Desk Offline'),
+            ('corporate', 'Corporate Bulk Deal'),
+        ],
+        default='walk_in'
+    )
+    internal_notes = serializers.CharField(required=False, allow_blank=True, default="")
+    physical_room_ids = serializers.ListField(child=serializers.CharField(), required=False, default=list)
+
+
+class AdminOverbookingCreateSerializer(AdminWalkInCreateSerializer):
+    """
+    Serializer for SuperAdmin overbooking override with mandatory justification.
+    """
+    overbooking_reason = serializers.CharField(
+        required=True,
+        allow_blank=False,
+        help_text="Mandatory justification note for administrative capacity override"
+    )

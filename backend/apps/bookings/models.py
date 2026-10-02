@@ -180,6 +180,52 @@ class Booking(models.Model):
     def total_rooms_count(self) -> int:
         return sum(room.room_quantity for room in self.rooms.all())
 
+    @property
+    def assigned_rooms_count(self) -> int:
+        return self.rooms.filter(physical_room__isnull=False).count()
+
+    @property
+    def is_fully_assigned(self) -> bool:
+        total = self.total_rooms_count
+        return total > 0 and self.assigned_rooms_count >= total
+
+    @property
+    def assignment_summary(self) -> dict:
+        """Returns structured metrics of physical room assignments for staff consoles."""
+        by_cat = {}
+        # Aggregate required quantities by category
+        for br in self.rooms.all():
+            cat_id = str(br.category_id)
+            if cat_id not in by_cat:
+                by_cat[cat_id] = {
+                    'category_id': cat_id,
+                    'category_name': br.category.name,
+                    'category_slug': br.category.slug,
+                    'required_quantity': 0,
+                    'assigned_quantity': 0,
+                    'assigned_rooms': [],
+                }
+            by_cat[cat_id]['required_quantity'] += br.room_quantity
+            if br.physical_room:
+                by_cat[cat_id]['assigned_quantity'] += 1
+                by_cat[cat_id]['assigned_rooms'].append({
+                    'id': str(br.physical_room.id),
+                    'room_number': br.physical_room.room_number,
+                    'floor': br.physical_room.floor,
+                    'operational_status': br.physical_room.operational_status,
+                })
+
+        for cat_info in by_cat.values():
+            cat_info['remaining_quantity'] = max(0, cat_info['required_quantity'] - cat_info['assigned_quantity'])
+
+        return {
+            'total_required': self.total_rooms_count,
+            'total_assigned': self.assigned_rooms_count,
+            'remaining_to_assign': max(0, self.total_rooms_count - self.assigned_rooms_count),
+            'is_fully_assigned': self.is_fully_assigned,
+            'categories': list(by_cat.values()),
+        }
+
     def clean(self):
         super().clean()
         if self.check_in_date and self.check_out_date:
