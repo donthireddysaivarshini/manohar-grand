@@ -11,7 +11,6 @@ from django.utils import timezone
 from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
 from apps.inventory.services import get_stay_nights, calculate_nights_count
-from .services import generate_booking_reference
 
 
 class Booking(models.Model):
@@ -39,6 +38,12 @@ class Booking(models.Model):
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    access_token = models.UUIDField(
+        default=uuid.uuid4,
+        editable=False,
+        db_index=True,
+        help_text="Cryptographic unguessable access token for unauthenticated customer lookup and hold release"
+    )
     booking_reference = models.CharField(
         max_length=30,
         unique=True,
@@ -189,6 +194,7 @@ class Booking(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.booking_reference:
+            from .services import generate_booking_reference
             self.booking_reference = generate_booking_reference()
         self.full_clean()
         super().save(*args, **kwargs)
