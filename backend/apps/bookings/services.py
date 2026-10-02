@@ -865,3 +865,167 @@ def admin_create_overbooking(
     booking.refresh_from_db()
     return booking
 
+
+@transaction.atomic
+def update_booking_guest_info(
+    booking,
+    data: Dict[str, Any],
+    actor=None,
+    ip_address: Optional[str] = None,
+):
+    """
+    Updates lead guest contact details, special requests, and guest roster for a booking.
+    Validates booking state and room capacity.
+    Strictly forbids mutating rates, dates, room categories, or pricing snapshots.
+    """
+    from .models import BookingGuest
+
+    # 1. State check: only editable in 'held' or 'confirmed' status
+    if booking.status not in ('held', 'confirmed'):
+        raise ValidationError({
+            "status": f"Cannot update guest information for reservation in '{booking.status}' status."
+        })
+
+    old_values = {}
+    new_values = {}
+
+    # 2. Update primary contact fields
+    if 'guest_name' in data and data['guest_name']:
+        new_name = str(data['guest_name']).strip()
+        if new_name:
+            old_values['guest_name'] = booking.guest_name
+            booking.guest_name = new_name
+            new_values['guest_name'] = new_name
+
+    if 'guest_phone' in data:
+        new_phone = str(data['guest_phone']).strip()
+        old_values['guest_phone'] = booking.guest_phone
+        booking.guest_phone = new_phone
+        new_values['guest_phone'] = new_phone
+
+    if 'guest_email' in data:
+        new_email = str(data['guest_email']).strip()
+        old_values['guest_email'] = booking.guest_email
+        booking.guest_email = new_email
+        new_values['guest_email'] = new_email
+
+    if 'special_requests' in data:
+        new_requests = str(data['special_requests']).strip()
+        old_values['special_requests'] = booking.special_requests
+        booking.special_requests = new_requests
+        new_values['special_requests'] = new_requests
+
+    booking.save()
+
+    # 3. Process guest roster if provided
+    if 'guests' in data and data['guests'] is not None:
+        guest_list = data['guests']
+
+        # Validate capacity
+        max_capacity = sum(
+            br.category.max_total_occupancy * br.room_quantity
+            for br in booking.rooms.all()
+        )
+        if len(guest_list) > max_capacity:
+            raise ValidationError({
+                "guests": f"Total guests ({len(guest_list)}) exceeds maximum allowable capacity ({max_capacity}) for booked rooms."
+            })
+
+        # Replace guest roster
+        BookingGuest.objects.filter(booking=booking).delete()
+        created_guests = []
+        for g_data in guest_list:
+            bg = BookingGuest.objects.create(
+                booking=booking,
+                full_name=str(g_data.get('full_name', '')).strip(),
+                guest_type=g_data.get('guest_type', 'adult'),
+                age=g_data.get('age'),
+                phone=g_data.get('phone', '') or '',
+                email=g_data.get('email', '') or '',
+                is_primary=g_data.get('is_primary', False),
+            )
+            created_guests.append(bg)
+
+        # Ensure at least one primary guest if roster is non-empty
+        if created_guests and not any(g.is_primary for g in created_guests):
+            created_guests[0].is_primary = True
+            created_guests[0].save(update_fields=['is_primary'])
+
+        new_values['guest_roster_count'] = len(created_guests)
+
+    # 4. Emits immutable AuditLog
+    record_audit_log(
+        action='update',
+        resource_type='Booking',
+        resource_id=str(booking.id),
+        actor=actor,
+        old_values=old_values,
+        new_values=new_values,
+        reason=f"Updated stay guest information for {booking.booking_reference}",
+        ip_address=ip_address,
+    )
+
+    booking.refresh_from_db()
+    return booking
+
+
+@transaction.atomic
+def cancel_booking(
+    booking,
+    actor=None,
+    reason: str = "",
+    ip_address: Optional[str] = None
+):
+    """
+    Evaluates and executes reservation cancellation adhering to Manohar Grand business rules:
+    1. 'held' status: Releasable by customer, access token holder, or staff.
+    2. 'confirmed' status:
+       - Customer / guest cancellation is STRICTLY FORBIDDEN (Strict Non-Refundable Policy).
+       - Receptionist cancellation is forbidden.
+       - Manager / SuperAdmin administrative emergency cancellation is permitted with mandatory reason.
+    3. Terminal states cannot be cancelled.
+    4. Preserves BookingPriceSnapshot immutability.
+    """
+    # 1. State validation
+    if booking.status in ('cancelled', 'checked_out', 'expired'):
+        raise ValidationError({
+            "status": f"Cannot cancel booking {booking.booking_reference} in '{booking.status}' status."
+        })
+
+    # 2. Handle temporary held bookings
+    if booking.status == 'held':
+        return release_booking_hold(
+            booking=booking,
+            actor=actor,
+            reason=reason or f"Temporary hold cancelled for {booking.booking_reference}",
+            ip_address=ip_address,
+        )
+
+    # 3. Handle confirmed / checked_in / no_show reservations
+    is_superadmin = bool(
+        actor and (getattr(actor, 'is_superuser', False) or getattr(actor, 'role', None) == 'superadmin')
+    )
+    is_manager = bool(
+        actor and (getattr(actor, 'role', None) == 'manager')
+    )
+
+    if not (is_superadmin or is_manager):
+        # Customer or receptionist attempting to cancel confirmed booking
+        raise ValidationError({
+            "cancellation": "Confirmed reservations are strictly non-cancellable and non-refundable per hotel policy."
+        })
+
+    # Manager / SuperAdmin authorized override requires mandatory justification
+    if not reason or not str(reason).strip():
+        raise ValidationError({
+            "reason": "An explicit administrative justification reason is mandatory to cancel a confirmed booking."
+        })
+
+    return transition_booking_status(
+        booking=booking,
+        target_status='cancelled',
+        actor=actor,
+        reason=str(reason).strip(),
+        ip_address=ip_address,
+    )
+

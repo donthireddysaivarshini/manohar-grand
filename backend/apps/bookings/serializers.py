@@ -6,7 +6,49 @@ from datetime import date, timedelta
 from rest_framework import serializers
 
 from apps.rooms.models import RoomCategory, PhysicalRoom
-from .models import Booking, BookingRoom
+from apps.cms.models import HotelConfiguration
+from .models import Booking, BookingRoom, BookingGuest
+
+
+class BookingGuestSerializer(serializers.ModelSerializer):
+    """
+    Serializer for individual stay guest occupants.
+    """
+    class Meta:
+        model = BookingGuest
+        fields = [
+            'id',
+            'full_name',
+            'guest_type',
+            'age',
+            'phone',
+            'email',
+            'is_primary',
+            'created_at',
+        ]
+        read_only_fields = ['id', 'created_at']
+
+    def validate_full_name(self, value):
+        if not value or not str(value).strip():
+            raise serializers.ValidationError("Guest full name cannot be blank.")
+        return str(value).strip()
+
+
+class BookingStayInfoUpdateSerializer(serializers.Serializer):
+    """
+    Serializer for updating stay guest details (contact info, special requests, guest roster).
+    Strictly forbids mutating prices, dates, room categories, or booking status.
+    """
+    guest_name = serializers.CharField(max_length=150, required=False)
+    guest_phone = serializers.CharField(max_length=20, required=False, allow_blank=True)
+    guest_email = serializers.EmailField(required=False, allow_blank=True)
+    special_requests = serializers.CharField(required=False, allow_blank=True)
+    guests = BookingGuestSerializer(many=True, required=False)
+
+    def validate_guest_name(self, value):
+        if value is not None and not str(value).strip():
+            raise serializers.ValidationError("Primary guest name cannot be blank.")
+        return value
 
 
 class BookingRoomItemInputSerializer(serializers.Serializer):
@@ -163,7 +205,9 @@ class BookingDetailSerializer(serializers.ModelSerializer):
     nights_count = serializers.IntegerField(read_only=True)
     total_rooms_count = serializers.IntegerField(read_only=True)
     rooms = BookingRoomDetailSerializer(many=True, read_only=True)
+    guests = BookingGuestSerializer(source='guest_roster', many=True, read_only=True)
     pricing = serializers.SerializerMethodField(read_only=True)
+    cancellation_policy = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Booking
@@ -187,7 +231,9 @@ class BookingDetailSerializer(serializers.ModelSerializer):
             'source',
             'source_display',
             'rooms',
+            'guests',
             'pricing',
+            'cancellation_policy',
             'created_at',
             'updated_at',
         ]
@@ -198,11 +244,15 @@ class BookingDetailSerializer(serializers.ModelSerializer):
             return BookingPriceSnapshotSerializer(obj.price_snapshot).data
         return None
 
+    def get_cancellation_policy(self, obj):
+        config = HotelConfiguration.get_solo()
+        return config.cancellation_policy_text
+
 
 class CustomerBookingListSerializer(serializers.ModelSerializer):
     """
     Serializer for authenticated customer booking list (GET /api/v1/bookings/).
-    Exposes customer-relevant reservation data without internal staff notes.
+    Exposes customer-relevant reservation data without internal staff notes or access tokens.
     """
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     source_display = serializers.CharField(source='get_source_display', read_only=True)
@@ -211,12 +261,12 @@ class CustomerBookingListSerializer(serializers.ModelSerializer):
     total_rooms_count = serializers.IntegerField(read_only=True)
     rooms = BookingRoomDetailSerializer(many=True, read_only=True)
     pricing = serializers.SerializerMethodField(read_only=True)
+    cancellation_policy = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Booking
         fields = [
             'booking_reference',
-            'access_token',
             'status',
             'status_display',
             'is_hold_valid',
@@ -234,6 +284,7 @@ class CustomerBookingListSerializer(serializers.ModelSerializer):
             'source_display',
             'rooms',
             'pricing',
+            'cancellation_policy',
             'created_at',
         ]
 
@@ -242,6 +293,11 @@ class CustomerBookingListSerializer(serializers.ModelSerializer):
             from apps.pricing.serializers import BookingPriceSnapshotSerializer
             return BookingPriceSnapshotSerializer(obj.price_snapshot).data
         return None
+
+    def get_cancellation_policy(self, obj):
+        config = HotelConfiguration.get_solo()
+        return config.cancellation_policy_text
+
 
 
 

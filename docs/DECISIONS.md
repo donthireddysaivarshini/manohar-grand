@@ -134,6 +134,29 @@
   6. **Unified Engine**: Shared identically by public quote calculation (`POST /api/v1/pricing/calculate/`), checkout holds (`POST /api/v1/bookings/hold/`), and staff offline reservations (`walk-in` / `overbooking`).
 - **Consequences**: Zero floating-point rounding errors; complete protection against client price tampering; absolute historical financial reproducibility; unified pricing behavior across all booking channels.
 
+---
+
+## ADR 16: Customer Booking Management, Stay Guest Roster & Authoritative Cancellation Rules
+- **Status**: Approved.
+- **Context**: Phase 4 Step 2 requires authenticated customer account management, secure reservation history/detail lookup, stay guest information and roster management, and authoritative enforcement of hotel cancellation policy rules.
+- **Decision**:
+  1. **Customer Profile & Ownership Isolation**:
+     - Customer details retrieval (`GET /api/v1/auth/me/`) and profile updates (`PATCH /api/v1/auth/profile/`) allow modifying only non-critical demographic fields (`first_name`, `last_name`, `phone`, `city`, `state`). Customer cannot alter `role`, `is_staff`, `is_superuser`, `is_active`, `auth_provider`, or audit fields.
+     - Customer booking history (`GET /api/v1/bookings/`) strictly filters by `customer=request.user`, disallowing client-supplied owner spoofing. Supports query filters (`?status=`, `?view=upcoming`, `?view=past`).
+     - Access tokens are omitted from customer list responses to prevent accidental token leakage.
+  2. **Stay Guest Roster & Stay Information Updates (`BookingGuest`)**:
+     - Introduces `BookingGuest` model (`booking`, `full_name`, `guest_type` ['adult', 'child'], `age`, `phone`, `email`, `is_primary`) to distinguish the account holder from individual staying guests.
+     - Stay info updates (`PATCH /api/v1/bookings/{ref}/` and `/guests/`) allow booking owner or valid token holder to update contact details, special requests, and guest roster.
+     - Allowed only when booking is in `held` or `confirmed` status.
+     - Enforces total guest count against maximum allowable capacity of booked rooms (`max_total_occupancy`).
+     - Strictly forbids mutating rates, stay dates, room quantities, categories, discounts, or price snapshots. Emits `AuditLog` records.
+  3. **Authoritative Cancellation Rules**:
+     - **Temporary Holds (`held`)**: Customer, token holder, or staff can cancel/release hold via `POST /api/v1/bookings/{ref}/cancel/` or `/release/`, transitioning status to `cancelled` and immediately freeing temporary inventory.
+     - **Confirmed Reservations (`confirmed`)**: Customers CANNOT cancel or refund confirmed reservations per client-confirmed policy (Strict Non-Refundable 0% policy). Customer cancellation requests are rejected with HTTP 400 (`CANCELLATION_NOT_PERMITTED`). Receptionists cannot cancel confirmed reservations.
+     - **Staff Administrative Override**: Only `MANAGER` and `SUPER_ADMIN` can perform emergency administrative cancellations on confirmed reservations with mandatory justification reason.
+     - **Financial Immutability**: Cancellation never mutates `BookingPriceSnapshot` and never creates unauthorized refund records.
+- **Consequences**: Strict customer data isolation; zero risk of customer-side booking tampering; exact alignment with client-confirmed non-refundable policy while maintaining administrative emergency flexibility.
+
 
 
 

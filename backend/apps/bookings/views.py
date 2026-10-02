@@ -15,10 +15,13 @@ from .serializers import (
     BookingHoldCreateSerializer,
     BookingDetailSerializer,
     CustomerBookingListSerializer,
+    BookingStayInfoUpdateSerializer,
 )
 from .services import (
     create_booking_hold,
     release_booking_hold,
+    cancel_booking,
+    update_booking_guest_info,
     InsufficientInventoryException,
 )
 
@@ -126,16 +129,20 @@ def booking_create_hold(request):
     }, status=status.HTTP_201_CREATED)
 
 
-@api_view(['GET'])
+@api_view(['GET', 'PATCH'])
 @permission_classes([AllowAny])
 def booking_detail_lookup(request, booking_reference):
     """
     GET /api/v1/bookings/{booking_reference}/
     Secure retrieval of reservation details.
     Requires ?token=<access_token> or authenticated customer ownership / staff role.
+
+    PATCH /api/v1/bookings/{booking_reference}/
+    Customer updates stay guest contact details or guest roster.
+    Never allows modifying pricing, rates, dates, or booking status.
     """
     try:
-        booking = Booking.objects.prefetch_related('rooms__category').get(
+        booking = Booking.objects.prefetch_related('rooms__category', 'guest_roster').get(
             booking_reference__iexact=booking_reference.strip()
         )
     except Booking.DoesNotExist:
@@ -152,14 +159,46 @@ def booking_detail_lookup(request, booking_reference):
             "success": False,
             "error": {
                 "code": "PERMISSION_DENIED",
-                "message": "Valid access token or authenticated customer ownership is required to view this booking."
+                "message": "Valid access token or authenticated customer ownership is required to access this booking."
             }
         }, status=status.HTTP_403_FORBIDDEN)
 
-    serializer = BookingDetailSerializer(booking)
+    if request.method == 'PATCH':
+        serializer = BookingStayInfoUpdateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response({
+                "success": False,
+                "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid guest stay details payload.",
+                    "details": serializer.errors
+                }
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        ip_address = _get_client_ip(request)
+        actor = request.user if request.user.is_authenticated else None
+
+        try:
+            booking = update_booking_guest_info(
+                booking=booking,
+                data=serializer.validated_data,
+                actor=actor,
+                ip_address=ip_address,
+            )
+        except DjangoValidationError as exc:
+            return Response({
+                "success": False,
+                "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Failed to update guest details.",
+                    "details": exc.message_dict if hasattr(exc, 'message_dict') else str(exc)
+                }
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+    detail_serializer = BookingDetailSerializer(booking)
     return Response({
         "success": True,
-        "data": serializer.data,
+        "data": detail_serializer.data,
         "meta": {
             "timestamp": timezone.now().isoformat()
         }
@@ -170,7 +209,7 @@ def booking_detail_lookup(request, booking_reference):
 @permission_classes([AllowAny])
 def booking_hold_release(request, booking_reference):
     """
-    POST /api/v1/bookings/{booking_reference}/release/ or /cancel/
+    POST /api/v1/bookings/{booking_reference}/release/
     Explicitly releases an active temporary hold, making room capacity immediately available.
     Requires ?token=<access_token> or authenticated ownership.
     """
@@ -218,6 +257,70 @@ def booking_hold_release(request, booking_reference):
     })
 
 
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def booking_cancel(request, booking_reference):
+    """
+    POST /api/v1/bookings/{booking_reference}/cancel/
+    Authoritative cancellation endpoint.
+    - HELD bookings: Releasable by customer/token holder/staff.
+    - CONFIRMED bookings: Strictly non-cancellable for customers/receptionists.
+      Only Manager and SuperAdmin may execute administrative emergency cancellation with reason.
+    """
+    try:
+        booking = Booking.objects.get(booking_reference__iexact=booking_reference.strip())
+    except Booking.DoesNotExist:
+        return Response({
+            "success": False,
+            "error": {
+                "code": "NOT_FOUND",
+                "message": f"Booking '{booking_reference}' was not found."
+            }
+        }, status=status.HTTP_404_NOT_FOUND)
+
+    if not _check_booking_authorization(booking, request):
+        return Response({
+            "success": False,
+            "error": {
+                "code": "PERMISSION_DENIED",
+                "message": "Valid access token or authenticated customer ownership is required to cancel this reservation."
+            }
+        }, status=status.HTTP_403_FORBIDDEN)
+
+    ip_address = _get_client_ip(request)
+    actor = request.user if request.user.is_authenticated else None
+    reason = request.data.get('reason', '') if isinstance(request.data, dict) else ''
+
+    try:
+        booking = cancel_booking(
+            booking=booking,
+            actor=actor,
+            reason=reason,
+            ip_address=ip_address,
+        )
+    except DjangoValidationError as exc:
+        details = exc.message_dict if hasattr(exc, 'message_dict') else str(exc)
+        code = "CANCELLATION_NOT_PERMITTED" if "cancellation" in details else "INVALID_STATE"
+        msg = details.get("cancellation", [str(exc)])[0] if isinstance(details, dict) and "cancellation" in details else str(exc)
+        return Response({
+            "success": False,
+            "error": {
+                "code": code,
+                "message": msg,
+                "details": details
+            }
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    serializer = BookingDetailSerializer(booking)
+    return Response({
+        "success": True,
+        "data": serializer.data,
+        "meta": {
+            "timestamp": timezone.now().isoformat()
+        }
+    })
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def customer_booking_list(request):
@@ -225,11 +328,33 @@ def customer_booking_list(request):
     GET /api/v1/bookings/
     Authenticated customer views ONLY their own reservations.
     Derives customer ownership strictly from request.user.
+    Supports filters:
+    - ?status=<status> (e.g. confirmed, held, cancelled, checked_out)
+    - ?view=upcoming (active future stays)
+    - ?view=past (completed or cancelled stays)
     """
     user = request.user
-    bookings = Booking.objects.filter(customer=user).prefetch_related('rooms__category').order_by('-created_at')
+    queryset = Booking.objects.filter(customer=user).prefetch_related('rooms__category', 'guest_roster').order_by('-created_at')
 
-    serializer = CustomerBookingListSerializer(bookings, many=True)
+    # Status filter
+    status_filter = request.query_params.get('status')
+    if status_filter:
+        queryset = queryset.filter(status=status_filter.lower().strip())
+
+    # View filter (upcoming vs past)
+    view_filter = request.query_params.get('view')
+    today = timezone.now().date()
+    if view_filter == 'upcoming':
+        queryset = queryset.filter(
+            check_out_date__gte=today
+        ).exclude(status__in=['cancelled', 'expired', 'checked_out'])
+    elif view_filter == 'past':
+        from django.db.models import Q
+        queryset = queryset.filter(
+            Q(check_out_date__lt=today) | Q(status__in=['checked_out', 'cancelled', 'expired'])
+        )
+
+    serializer = CustomerBookingListSerializer(queryset, many=True)
     return Response({
         "success": True,
         "count": len(serializer.data),

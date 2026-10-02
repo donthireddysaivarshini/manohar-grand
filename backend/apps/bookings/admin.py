@@ -2,8 +2,14 @@
 Django Admin interface for Booking and BookingRoom models with audit logging.
 """
 from django.contrib import admin
-from .models import Booking, BookingRoom
+from .models import Booking, BookingRoom, BookingGuest
 from core.services import record_audit_log
+
+
+class BookingGuestInline(admin.TabularInline):
+    model = BookingGuest
+    extra = 0
+    readonly_fields = ['created_at', 'updated_at']
 
 
 class BookingRoomInline(admin.TabularInline):
@@ -31,7 +37,7 @@ class BookingAdmin(admin.ModelAdmin):
     list_filter = ['status', 'source', 'is_overbooking', 'check_in_date', 'check_out_date']
     search_fields = ['booking_reference', 'guest_name', 'guest_phone', 'guest_email']
     readonly_fields = ['id', 'booking_reference', 'created_at', 'updated_at']
-    inlines = [BookingRoomInline]
+    inlines = [BookingRoomInline, BookingGuestInline]
 
     def save_model(self, request, obj, form, change):
         if not obj.created_by and request.user.is_authenticated:

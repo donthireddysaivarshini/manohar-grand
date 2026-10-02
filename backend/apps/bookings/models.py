@@ -314,3 +314,73 @@ class BookingRoom(models.Model):
                 raise ValidationError({
                     'physical_room': f"Physical room {self.physical_room.room_number} belongs to {self.physical_room.category.name}, not {self.category.name}."
                 })
+
+
+class BookingGuest(models.Model):
+    """
+    Stay guest model representing individual guest occupants staying on a booking reservation.
+    Separates the customer account holder from the actual physical stay guests.
+    """
+    GUEST_TYPE_CHOICES = [
+        ('adult', 'Adult'),
+        ('child', 'Child'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    booking = models.ForeignKey(
+        Booking,
+        on_delete=models.CASCADE,
+        related_name='guest_roster',
+        help_text="Associated booking reservation"
+    )
+    full_name = models.CharField(
+        max_length=150,
+        help_text="Full name of the stay guest"
+    )
+    guest_type = models.CharField(
+        max_length=10,
+        choices=GUEST_TYPE_CHOICES,
+        default='adult',
+        help_text="Classification as adult or child"
+    )
+    age = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Optional age in years"
+    )
+    phone = models.CharField(
+        max_length=20,
+        blank=True,
+        help_text="Optional contact phone number"
+    )
+    email = models.EmailField(
+        blank=True,
+        help_text="Optional contact email address"
+    )
+    is_primary = models.BooleanField(
+        default=False,
+        help_text="Flag indicating whether this is the primary stay guest"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-is_primary', 'created_at']
+        indexes = [
+            models.Index(fields=['booking', 'guest_type']),
+        ]
+        verbose_name = 'Stay Guest'
+        verbose_name_plural = 'Stay Guests'
+
+    def __str__(self):
+        primary_str = " (Primary)" if self.is_primary else ""
+        return f"{self.full_name} [{self.get_guest_type_display()}]{primary_str} - {self.booking.booking_reference}"
+
+    def clean(self):
+        super().clean()
+        if self.full_name:
+            self.full_name = self.full_name.strip()
+            if not self.full_name:
+                raise ValidationError({'full_name': 'Guest full name cannot be blank.'})
+

@@ -7,6 +7,7 @@ from .views import (
     booking_create_hold,
     booking_detail_lookup,
     booking_hold_release,
+    booking_cancel,
 )
 
 app_name = 'bookings'
@@ -15,6 +16,7 @@ urlpatterns = [
     path('', customer_booking_list, name='customer-booking-list'),
     path('hold/', booking_create_hold, name='booking-create-hold'),
     path('<str:booking_reference>/', booking_detail_lookup, name='booking-detail-lookup'),
+    path('<str:booking_reference>/guests/', booking_detail_lookup, name='booking-guests-update'),
     path('<str:booking_reference>/release/', booking_hold_release, name='booking-hold-release'),
-    path('<str:booking_reference>/cancel/', booking_hold_release, name='booking-hold-cancel'),
+    path('<str:booking_reference>/cancel/', booking_cancel, name='booking-cancel'),
 ]
