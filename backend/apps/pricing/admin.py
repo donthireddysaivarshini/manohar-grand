@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.forms.models import model_to_dict
 from core.services import record_audit_log
-from .models import RoomRatePlan, TaxRule
+from .models import RoomRatePlan, TaxRule, BookingPriceSnapshot
 
 
 @admin.register(RoomRatePlan)
@@ -136,3 +136,52 @@ class TaxRuleAdmin(admin.ModelAdmin):
             new_values=new_values,
             reason="Modified via Django admin interface" if change else "Created via Django admin interface",
         )
+
+
+@admin.register(BookingPriceSnapshot)
+class BookingPriceSnapshotAdmin(admin.ModelAdmin):
+    list_display = (
+        'booking',
+        'currency',
+        'room_subtotal',
+        'extra_guest_total',
+        'late_checkout_total',
+        'tax_amount',
+        'gross_total',
+        'advance_amount_due',
+        'balance_amount_due',
+        'created_at',
+    )
+    search_fields = ('booking__booking_reference', 'booking__guest_name', 'booking__guest_email')
+    readonly_fields = [
+        'id',
+        'booking',
+        'currency',
+        'room_subtotal',
+        'extra_guest_total',
+        'late_checkout_total',
+        'miscellaneous_charges',
+        'discount_amount',
+        'taxable_subtotal',
+        'tax_rule_name',
+        'tax_rate_percent',
+        'tax_amount',
+        'gross_total',
+        'advance_amount_due',
+        'balance_amount_due',
+        'itemized_breakdown',
+        'created_at',
+        'updated_at',
+    ]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        if not request.user.is_authenticated:
+            return False
+        return request.user.is_superuser
+

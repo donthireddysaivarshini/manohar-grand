@@ -266,8 +266,13 @@ def create_booking_hold(
             room_quantity=item.get('room_quantity', 1)
         )
 
-    # 8. Record audit trail
+    # 8. Create authoritative BookingPriceSnapshot
+    from apps.pricing.services import create_booking_price_snapshot
+    create_booking_price_snapshot(booking)
+
+    # 9. Record audit trail
     record_audit_log(
+
         action='create',
         resource_type='Booking',
         resource_id=str(booking.id),
@@ -735,6 +740,10 @@ def admin_create_walkin_booking(
             room_quantity=item.get('room_quantity', 1)
         )
 
+    # Authoritative BookingPriceSnapshot
+    from apps.pricing.services import create_booking_price_snapshot
+    create_booking_price_snapshot(booking)
+
     # Optional physical room assignment at creation
     if physical_room_ids:
         assign_physical_rooms(
@@ -828,6 +837,10 @@ def admin_create_overbooking(
             room_quantity=item.get('room_quantity', 1)
         )
 
+    # Authoritative BookingPriceSnapshot
+    from apps.pricing.services import create_booking_price_snapshot
+    create_booking_price_snapshot(booking)
+
     record_audit_log(
         action='overbooking_override',
         resource_type='Booking',
@@ -851,3 +864,4 @@ def admin_create_overbooking(
 
     booking.refresh_from_db()
     return booking
+

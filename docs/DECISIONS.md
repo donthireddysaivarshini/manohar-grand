@@ -122,7 +122,18 @@
   4. **Staff Roles & Offline Operations**:
      - `RECEPTIONIST`, `MANAGER`, `SUPER_ADMIN` can list bookings, view details, assign physical rooms, check in, check out, and create offline walk-in bookings.
      - `SUPER_ADMIN` exclusively holds the overbooking override capability (`POST /api/v1/admin/bookings/overbooking/`), requiring mandatory justification and emitting an immutable `AuditLog` record.
-- **Consequences**: Zero risk of room double-assignment; front-desk operational flexibility; complete guest PII protection; strict audit trail of all staff interventions.
+## ADR 15: Authoritative Backend Pricing Engine & Immutable Financial Snapshots
+- **Status**: Approved.
+- **Context**: The Manohar Grand hotel booking system requires authoritative calculation of room tariffs, extra guest fees, late checkout surcharges, and dynamic GST. Client-submitted prices or totals cannot be trusted, and subsequent tariff or tax rate changes must never retroactively alter historical booking financials.
+- **Decision**:
+  1. **Backend as Sole Pricing Authority**: The calculation pipeline (`calculate_booking_quote`) strictly derives all subtotals, extra guest charges, late checkout fees, GST (5%), and 50% advance / 50% balance splits on the server using `Decimal` arithmetic. Client-submitted prices, subtotals, discounts, or taxes are strictly ignored.
+  2. **Deterministic Rate Plan Resolution (`resolve_rate_plan`)**: Resolves active `RoomRatePlan` records based on stay dates and category. Rejects missing active rates and fails clearly on ambiguous overlapping rates.
+  3. **Occupancy Ceiling Validations**: Enforces `max_total_occupancy` (AC: 4 PAX; Non-AC: 2 PAX working baseline pending client confirmation) and optional adult ceilings.
+  4. **Late Checkout Window**: Enforces `HotelConfiguration.max_late_checkout_hours` (3 hours maximum) and applies hourly rates (AC: ₹150/hr, Non-AC: ₹100/hr).
+  5. **Immutable Price Snapshots (`BookingPriceSnapshot`)**: Persisted as a `OneToOneField` on `Booking`. Stores both summary totals and complete structured itemized breakdowns (`itemized_breakdown` JSONField). Future rate or tax modifications do not alter existing snapshots.
+  6. **Unified Engine**: Shared identically by public quote calculation (`POST /api/v1/pricing/calculate/`), checkout holds (`POST /api/v1/bookings/hold/`), and staff offline reservations (`walk-in` / `overbooking`).
+- **Consequences**: Zero floating-point rounding errors; complete protection against client price tampering; absolute historical financial reproducibility; unified pricing behavior across all booking channels.
+
 
 
 

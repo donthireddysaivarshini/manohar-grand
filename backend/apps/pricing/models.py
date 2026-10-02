@@ -181,3 +181,123 @@ class TaxRule(models.Model):
                 raise ValidationError({
                     'effective_to': 'Effective end date cannot be earlier than effective start date.'
                 })
+
+
+class BookingPriceSnapshot(models.Model):
+    """
+    Immutable financial pricing snapshot created for a Booking reservation.
+    Preserves authoritative room tariffs, extra guest fees, taxes, discounts, and advance/balance splits
+    so historical bookings remain invariant to future tariff or tax rule modifications.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    booking = models.OneToOneField(
+        'bookings.Booking',
+        on_delete=models.CASCADE,
+        related_name='price_snapshot',
+        help_text="Associated booking reservation"
+    )
+    currency = models.CharField(
+        max_length=3,
+        default='INR',
+        help_text="ISO 4217 Currency Code (default: INR)"
+    )
+    room_subtotal = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))],
+        help_text="Total base room accommodation tariff before extra guests, surcharges, and taxes"
+    )
+    extra_guest_total = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))],
+        help_text="Total surcharges for extra adult and child occupants beyond included occupancy"
+    )
+    late_checkout_total = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))],
+        help_text="Total hourly late checkout charges"
+    )
+    miscellaneous_charges = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))],
+        help_text="Other authorized charges or surcharges"
+    )
+    discount_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))],
+        help_text="Authorized discount amount deducted from taxable subtotal"
+    )
+    taxable_subtotal = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))],
+        help_text="Total taxable accommodation amount (Room + Extra Guests + Late Checkout + Misc - Discount)"
+    )
+    tax_rule_name = models.CharField(
+        max_length=100,
+        default='GST',
+        help_text="Name of the applied tax rule (e.g., 'GST (Accommodation 5%)')"
+    )
+    tax_rate_percent = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal('5.00'),
+        validators=[MinValueValidator(Decimal('0.00'))],
+        help_text="Tax percentage applied"
+    )
+    tax_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))],
+        help_text="Calculated tax amount (e.g., GST 5%)"
+    )
+    gross_total = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))],
+        help_text="Authoritative total payable amount (Taxable Subtotal + Tax Amount)"
+    )
+    advance_amount_due = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))],
+        help_text="50% advance deposit due online via Razorpay"
+    )
+    balance_amount_due = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))],
+        help_text="Remaining 50% balance payable at front desk prior to room key handover"
+    )
+    itemized_breakdown = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Complete structured breakdown of nightly rates, occupancy, surcharges, and tax calculations"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Booking Price Snapshot'
+        verbose_name_plural = 'Booking Price Snapshots'
+
+    def __str__(self):
+        ref = getattr(self.booking, 'booking_reference', str(self.booking_id))
+        return f"Snapshot for {ref}: ₹{self.gross_total} ({self.currency})"
+

@@ -163,6 +163,7 @@ class BookingDetailSerializer(serializers.ModelSerializer):
     nights_count = serializers.IntegerField(read_only=True)
     total_rooms_count = serializers.IntegerField(read_only=True)
     rooms = BookingRoomDetailSerializer(many=True, read_only=True)
+    pricing = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Booking
@@ -186,9 +187,16 @@ class BookingDetailSerializer(serializers.ModelSerializer):
             'source',
             'source_display',
             'rooms',
+            'pricing',
             'created_at',
             'updated_at',
         ]
+
+    def get_pricing(self, obj):
+        if hasattr(obj, 'price_snapshot') and obj.price_snapshot:
+            from apps.pricing.serializers import BookingPriceSnapshotSerializer
+            return BookingPriceSnapshotSerializer(obj.price_snapshot).data
+        return None
 
 
 class CustomerBookingListSerializer(serializers.ModelSerializer):
@@ -202,6 +210,7 @@ class CustomerBookingListSerializer(serializers.ModelSerializer):
     nights_count = serializers.IntegerField(read_only=True)
     total_rooms_count = serializers.IntegerField(read_only=True)
     rooms = BookingRoomDetailSerializer(many=True, read_only=True)
+    pricing = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Booking
@@ -224,8 +233,16 @@ class CustomerBookingListSerializer(serializers.ModelSerializer):
             'source',
             'source_display',
             'rooms',
+            'pricing',
             'created_at',
         ]
+
+    def get_pricing(self, obj):
+        if hasattr(obj, 'price_snapshot') and obj.price_snapshot:
+            from apps.pricing.serializers import BookingPriceSnapshotSerializer
+            return BookingPriceSnapshotSerializer(obj.price_snapshot).data
+        return None
+
 
 
 class PhysicalRoomAssignmentSerializer(serializers.Serializer):
@@ -351,6 +368,7 @@ class BookingAdminStaffDetailSerializer(serializers.ModelSerializer):
     assignment_summary = serializers.DictField(read_only=True)
     rooms = BookingRoomStaffSerializer(many=True, read_only=True)
     created_by_username = serializers.CharField(source='created_by.username', read_only=True)
+    pricing = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Booking
@@ -382,9 +400,17 @@ class BookingAdminStaffDetailSerializer(serializers.ModelSerializer):
             'created_by_username',
             'assignment_summary',
             'rooms',
+            'pricing',
             'created_at',
             'updated_at',
         ]
+
+    def get_pricing(self, obj):
+        if hasattr(obj, 'price_snapshot') and obj.price_snapshot:
+            from apps.pricing.serializers import BookingPriceSnapshotSerializer
+            return BookingPriceSnapshotSerializer(obj.price_snapshot).data
+        return None
+
 
 
 class AdminWalkInCreateSerializer(BookingHoldCreateSerializer):

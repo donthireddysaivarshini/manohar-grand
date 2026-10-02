@@ -9,13 +9,19 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import RoomRatePlan, TaxRule
+from django.core.exceptions import ValidationError as DjangoValidationError
+from rest_framework.exceptions import ValidationError as DRFValidationError
+from apps.rooms.models import RoomCategory
+from .models import RoomRatePlan, TaxRule, BookingPriceSnapshot
 from .serializers import (
     RoomRatePlanPublicSerializer,
     RoomRatePlanAdminSerializer,
     TaxRulePublicSerializer,
     TaxRuleAdminSerializer,
+    PricingQuoteRequestSerializer,
+    BookingPriceSnapshotSerializer,
 )
+from .services import calculate_booking_quote
 from apps.authentication.permissions import (
     IsReceptionistOrAbove,
     IsSuperAdmin,
@@ -61,6 +67,114 @@ def public_tax_rules_list(request):
             "total_count": taxes.count()
         }
     })
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def public_calculate_pricing_quote(request):
+    """
+    Authoritative server-side price calculation endpoint.
+    Computes base room tariff, extra guest charges, late checkout fees, GST (5%),
+    and 50% advance / 50% balance payment splits.
+    
+    Accepts:
+    - check_in_date (YYYY-MM-DD)
+    - check_out_date (YYYY-MM-DD)
+    - rooms (List of {category: UUID or slug, room_quantity: int})
+    - total_adults (int, default 1)
+    - total_children (int, default 0)
+    - late_checkout_hours (int, default 0, max 3)
+    """
+    serializer = PricingQuoteRequestSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response({
+            "success": False,
+            "error": {
+                "code": "VALIDATION_ERROR",
+                "message": "Invalid pricing calculation parameters.",
+                "details": serializer.errors
+            },
+            "meta": {
+                "timestamp": timezone.now().isoformat()
+            }
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    validated = serializer.validated_data
+
+    # Resolve RoomCategory instances
+    rooms_request = []
+    for item in validated['rooms']:
+        cat_identifier = str(item['category']).strip()
+        cat = None
+        # Try UUID first
+        try:
+            cat = RoomCategory.objects.filter(id=cat_identifier, is_active=True).first()
+        except Exception:
+            pass
+        # Try slug
+        if not cat:
+            cat = RoomCategory.objects.filter(slug__iexact=cat_identifier, is_active=True).first()
+
+        if not cat:
+            return Response({
+                "success": False,
+                "error": {
+                    "code": "CATEGORY_NOT_FOUND",
+                    "message": f"Room category '{cat_identifier}' does not exist or is inactive.",
+                    "details": {"category": cat_identifier}
+                },
+                "meta": {
+                    "timestamp": timezone.now().isoformat()
+                }
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        rooms_request.append({
+            'category': cat,
+            'room_quantity': item.get('room_quantity', 1),
+        })
+
+    try:
+        quote_result = calculate_booking_quote(
+            rooms_request=rooms_request,
+            check_in_date=validated['check_in_date'],
+            check_out_date=validated['check_out_date'],
+            total_adults=validated.get('total_adults', 1),
+            total_children=validated.get('total_children', 0),
+            late_checkout_hours=validated.get('late_checkout_hours', 0),
+        )
+        return Response({
+            "success": True,
+            "data": quote_result,
+            "meta": {
+                "timestamp": timezone.now().isoformat()
+            }
+        }, status=status.HTTP_200_OK)
+    except (DjangoValidationError, DRFValidationError) as err:
+        error_dict = err.message_dict if hasattr(err, 'message_dict') else {'error': err.messages if hasattr(err, 'messages') else str(err)}
+        return Response({
+            "success": False,
+            "error": {
+                "code": "PRICING_CALCULATION_ERROR",
+                "message": "Pricing calculation failed due to invalid constraints.",
+                "details": error_dict
+            },
+            "meta": {
+                "timestamp": timezone.now().isoformat()
+            }
+        }, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as err:
+        return Response({
+            "success": False,
+            "error": {
+                "code": "PRICING_ENGINE_ERROR",
+                "message": str(err),
+                "details": {}
+            },
+            "meta": {
+                "timestamp": timezone.now().isoformat()
+            }
+        }, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 # ==========================================
