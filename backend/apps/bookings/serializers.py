@@ -207,6 +207,7 @@ class BookingDetailSerializer(serializers.ModelSerializer):
     rooms = BookingRoomDetailSerializer(many=True, read_only=True)
     guests = BookingGuestSerializer(source='guest_roster', many=True, read_only=True)
     pricing = serializers.SerializerMethodField(read_only=True)
+    payment_status = serializers.SerializerMethodField(read_only=True)
     cancellation_policy = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
@@ -216,6 +217,7 @@ class BookingDetailSerializer(serializers.ModelSerializer):
             'access_token',
             'status',
             'status_display',
+            'payment_status',
             'is_hold_valid',
             'hold_expires_at',
             'check_in_date',
@@ -238,6 +240,16 @@ class BookingDetailSerializer(serializers.ModelSerializer):
             'updated_at',
         ]
 
+    def get_payment_status(self, obj) -> str:
+        if obj.status in ('confirmed', 'checked_in', 'checked_out'):
+            return 'advance_paid'
+        if hasattr(obj, 'payment_orders'):
+            if obj.payment_orders.filter(status='captured').exists():
+                return 'advance_paid'
+            if obj.payment_orders.filter(status='failed').exists():
+                return 'failed'
+        return 'unpaid'
+
     def get_pricing(self, obj):
         if hasattr(obj, 'price_snapshot') and obj.price_snapshot:
             from apps.pricing.serializers import BookingPriceSnapshotSerializer
@@ -256,6 +268,7 @@ class CustomerBookingListSerializer(serializers.ModelSerializer):
     """
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     source_display = serializers.CharField(source='get_source_display', read_only=True)
+    payment_status = serializers.SerializerMethodField(read_only=True)
     is_hold_valid = serializers.BooleanField(read_only=True)
     nights_count = serializers.IntegerField(read_only=True)
     total_rooms_count = serializers.IntegerField(read_only=True)
@@ -269,6 +282,7 @@ class CustomerBookingListSerializer(serializers.ModelSerializer):
             'booking_reference',
             'status',
             'status_display',
+            'payment_status',
             'is_hold_valid',
             'hold_expires_at',
             'check_in_date',
@@ -287,6 +301,16 @@ class CustomerBookingListSerializer(serializers.ModelSerializer):
             'cancellation_policy',
             'created_at',
         ]
+
+    def get_payment_status(self, obj) -> str:
+        if obj.status in ('confirmed', 'checked_in', 'checked_out'):
+            return 'advance_paid'
+        if hasattr(obj, 'payment_orders'):
+            if obj.payment_orders.filter(status='captured').exists():
+                return 'advance_paid'
+            if obj.payment_orders.filter(status='failed').exists():
+                return 'failed'
+        return 'unpaid'
 
     def get_pricing(self, obj):
         if hasattr(obj, 'price_snapshot') and obj.price_snapshot:
@@ -307,6 +331,7 @@ class BookingCheckoutSummarySerializer(serializers.ModelSerializer):
     """
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     source_display = serializers.CharField(source='get_source_display', read_only=True)
+    payment_status = serializers.SerializerMethodField(read_only=True)
     is_hold_valid = serializers.BooleanField(read_only=True)
     nights_count = serializers.IntegerField(read_only=True)
     total_rooms_count = serializers.IntegerField(read_only=True)
@@ -322,6 +347,7 @@ class BookingCheckoutSummarySerializer(serializers.ModelSerializer):
             'booking_reference',
             'status',
             'status_display',
+            'payment_status',
             'is_hold_valid',
             'hold_expires_at',
             'check_in_date',
@@ -343,6 +369,16 @@ class BookingCheckoutSummarySerializer(serializers.ModelSerializer):
             'hotel_info',
             'created_at',
         ]
+
+    def get_payment_status(self, obj) -> str:
+        if obj.status in ('confirmed', 'checked_in', 'checked_out'):
+            return 'advance_paid'
+        if hasattr(obj, 'payment_orders'):
+            if obj.payment_orders.filter(status='captured').exists():
+                return 'advance_paid'
+            if obj.payment_orders.filter(status='failed').exists():
+                return 'failed'
+        return 'unpaid'
 
     def get_pricing(self, obj):
         if hasattr(obj, 'price_snapshot') and obj.price_snapshot:
@@ -475,7 +511,7 @@ class BookingAdminStaffListSerializer(serializers.ModelSerializer):
 class BookingAdminStaffDetailSerializer(serializers.ModelSerializer):
     """
     Staff-facing detailed serializer for a single reservation.
-    Exposes full operational details, internal notes, audit fields, and assignment summary.
+    Exposes full operational details, internal notes, audit fields, assignment summary, and payment orders.
     """
     id = serializers.UUIDField(read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
@@ -489,6 +525,7 @@ class BookingAdminStaffDetailSerializer(serializers.ModelSerializer):
     rooms = BookingRoomStaffSerializer(many=True, read_only=True)
     created_by_username = serializers.CharField(source='created_by.username', read_only=True)
     pricing = serializers.SerializerMethodField(read_only=True)
+    payment_orders = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Booking
@@ -521,6 +558,7 @@ class BookingAdminStaffDetailSerializer(serializers.ModelSerializer):
             'assignment_summary',
             'rooms',
             'pricing',
+            'payment_orders',
             'created_at',
             'updated_at',
         ]
@@ -530,6 +568,11 @@ class BookingAdminStaffDetailSerializer(serializers.ModelSerializer):
             from apps.pricing.serializers import BookingPriceSnapshotSerializer
             return BookingPriceSnapshotSerializer(obj.price_snapshot).data
         return None
+
+    def get_payment_orders(self, obj):
+        from apps.payments.serializers import PaymentOrderStaffSummarySerializer
+        return PaymentOrderStaffSummarySerializer(obj.payment_orders.all(), many=True).data
+
 
 
 

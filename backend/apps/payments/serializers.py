@@ -3,7 +3,7 @@ Serializers for Payment domain (/api/v1/payments/).
 """
 from rest_framework import serializers
 from django.conf import settings
-from .models import PaymentOrder
+from .models import PaymentOrder, WebhookEventLog
 
 
 class PaymentOrderCreateSerializer(serializers.Serializer):
@@ -60,6 +60,34 @@ class PaymentOrderResponseSerializer(serializers.ModelSerializer):
     def get_razorpay_key_id(self, obj) -> str:
         """Returns the public Razorpay Key ID for client checkout initialization."""
         return getattr(settings, 'RAZORPAY_KEY_ID', '')
+
+
+class PaymentOrderStaffSummarySerializer(serializers.ModelSerializer):
+    """
+    Staff and Admin serializer for viewing PaymentOrder records.
+    Read-only, sanitized financial representation.
+    """
+    booking_reference = serializers.CharField(source='booking.booking_reference', read_only=True)
+    payment_id = serializers.UUIDField(source='id', read_only=True)
+    amount = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
+
+    class Meta:
+        model = PaymentOrder
+        fields = [
+            'payment_id',
+            'booking_reference',
+            'purpose',
+            'amount',
+            'amount_paise',
+            'currency',
+            'razorpay_order_id',
+            'razorpay_payment_id',
+            'status',
+            'provider',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = fields
 
 
 class PaymentVerificationSerializer(serializers.Serializer):
@@ -122,3 +150,27 @@ class PaymentVerificationResponseSerializer(serializers.ModelSerializer):
         if hasattr(obj.booking, 'price_snapshot') and obj.booking.price_snapshot:
             return str(obj.booking.price_snapshot.balance_amount_due)
         return "0.00"
+
+
+class PaymentReconciliationRequestSerializer(serializers.Serializer):
+    """
+    Input serializer for administrative payment state reconciliation.
+    """
+    booking_reference = serializers.CharField(
+        max_length=30,
+        required=False,
+        allow_blank=True,
+        help_text="Optional single booking reference to reconcile"
+    )
+    auto_resolve = serializers.BooleanField(
+        default=True,
+        required=False,
+        help_text="Whether to auto-resolve safe unambiguous discrepancies"
+    )
+    limit = serializers.IntegerField(
+        default=50,
+        min_value=1,
+        max_value=200,
+        required=False,
+        help_text="Max candidate bookings to check in batch mode"
+    )

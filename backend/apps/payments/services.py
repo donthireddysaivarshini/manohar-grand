@@ -1,17 +1,18 @@
 """
 Payment services and Razorpay provider abstraction.
 Handles Razorpay order generation, cryptographic signature verifications,
-idempotent payment verification, webhook event logging, and atomic booking confirmation.
+idempotent payment verification, webhook event logging, atomic booking confirmation,
+and payment state reconciliation.
 """
 import hmac
 import hashlib
 import logging
-from typing import Dict, Any, Optional, Union
+from typing import Dict, Any, Optional, Union, List
 from decimal import Decimal
 
 import razorpay
 from django.conf import settings
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 
@@ -104,6 +105,25 @@ class RazorpayPaymentProvider:
             logger.error(f"Failed to fetch payment {razorpay_payment_id} from Razorpay: {exc}", exc_info=True)
             raise PaymentProviderException(
                 f"Unable to fetch payment details from gateway: {exc}",
+                code="PAYMENT_PROVIDER_ERROR",
+                original_exception=exc
+            )
+
+    @classmethod
+    def fetch_order(cls, razorpay_order_id: str) -> Dict[str, Any]:
+        """
+        Fetches live order entity from Razorpay to verify server-side status and payments.
+        """
+        if not razorpay_order_id:
+            raise PaymentProviderException("Order ID is required.", code="INVALID_ORDER_ID")
+        try:
+            client = cls.get_client()
+            order_data = client.order.fetch(razorpay_order_id)
+            return order_data
+        except Exception as exc:
+            logger.error(f"Failed to fetch order {razorpay_order_id} from Razorpay: {exc}", exc_info=True)
+            raise PaymentProviderException(
+                f"Unable to fetch order details from gateway: {exc}",
                 code="PAYMENT_PROVIDER_ERROR",
                 original_exception=exc
             )
@@ -285,6 +305,7 @@ def confirm_booking_after_verified_payment(
     Unified logic executed by both:
     1. Direct client verification endpoint (/api/v1/payments/verify/)
     2. Asynchronous Razorpay webhook handler (/api/v1/payments/webhook/razorpay/)
+    3. Safe reconciliation service (PaymentReconciliationService)
 
     Strict Checkpoints:
     1. Locks target PaymentOrder row with select_for_update().
@@ -366,7 +387,7 @@ def confirm_booking_after_verified_payment(
         )
         raise ValidationError({
             "code": "HOLD_EXPIRED",
-            "booking": f"The 15-minute hold for booking {booking.booking_reference} expired at {booking.hold_expires_at.isoformat()}."
+            "booking": f"The hold for booking {booking.booking_reference} expired at {booking.hold_expires_at.isoformat()}."
         })
 
     # 5. Financial & Price Snapshot Consistency
@@ -392,7 +413,7 @@ def confirm_booking_after_verified_payment(
             "payment": f"Verified currency '{verified_currency}' does not match booking currency '{expected_currency}'."
         })
 
-    # 6. Update PaymentOrder to 'captured'
+    # 6. Update PaymentOrder to 'captured' (supports retries from 'created' or 'failed')
     old_payment_status = payment_order.status
     payment_order.status = 'captured'
     payment_order.razorpay_payment_id = razorpay_payment_id
@@ -450,9 +471,12 @@ def handle_failed_payment(
     - Does NOT confirm booking.
     - Emits AuditLog.
     """
+    old_status = payment_order.status
     payment_order.status = 'failed'
     if razorpay_payment_id:
         payment_order.razorpay_payment_id = razorpay_payment_id
+    if not isinstance(payment_order.metadata, dict):
+        payment_order.metadata = {}
     payment_order.metadata['failure_details'] = {
         'error_code': error_code,
         'error_description': error_description,
@@ -465,7 +489,7 @@ def handle_failed_payment(
         resource_type='PaymentOrder',
         resource_id=str(payment_order.id),
         actor=actor,
-        old_values={'status': 'created'},
+        old_values={'status': old_status},
         new_values={
             'status': 'failed',
             'error_code': error_code,
@@ -507,35 +531,44 @@ def process_razorpay_webhook_event(
             "webhook": "Missing required event 'id' or 'event' field."
         })
 
-    # 2. Idempotency / Deduplication check
-    existing_log = WebhookEventLog.objects.filter(provider='razorpay', event_id=event_id).first()
-    if existing_log and existing_log.status == 'processed':
-        logger.info(f"Webhook event {event_id} ({event_type}) was already processed. Acknowledging HTTP 200.")
-        return {"status": "already_processed", "event_id": event_id}
+    # 2. Idempotency / Deduplication check with row locking
+    with transaction.atomic():
+        try:
+            event_log, created = WebhookEventLog.objects.select_for_update().get_or_create(
+                provider='razorpay',
+                event_id=event_id,
+                defaults={
+                    'event_type': event_type,
+                    'status': 'received',
+                    'payload': payload,
+                }
+            )
+        except IntegrityError:
+            event_log = WebhookEventLog.objects.select_for_update().get(provider='razorpay', event_id=event_id)
+            created = False
 
-    event_log, _ = WebhookEventLog.objects.get_or_create(
-        provider='razorpay',
-        event_id=event_id,
-        defaults={
-            'event_type': event_type,
-            'status': 'received',
-            'payload': payload,
-        }
-    )
+        if not created and event_log.status == 'processed':
+            logger.info(f"Webhook event {event_id} ({event_type}) was already processed. Acknowledging HTTP 200.")
+            return {"status": "already_processed", "event_id": event_id}
 
     # 3. Process Supported Events
     try:
         if event_type in ('payment.captured', 'order.paid'):
             payment_entity = payload.get('payload', {}).get('payment', {}).get('entity', {})
-            order_id = payment_entity.get('order_id')
-            payment_id = payment_entity.get('id')
-            amount_paise = payment_entity.get('amount')
-            currency = payment_entity.get('currency')
+            order_entity = payload.get('payload', {}).get('order', {}).get('entity', {})
 
-            if not order_id:
-                # Try getting order_id from order entity
-                order_entity = payload.get('payload', {}).get('order', {}).get('entity', {})
-                order_id = order_entity.get('id')
+            order_id = payment_entity.get('order_id') or order_entity.get('id')
+            payment_id = payment_entity.get('id')
+            amount_paise = payment_entity.get('amount') or order_entity.get('amount_paid') or order_entity.get('amount')
+            currency = payment_entity.get('currency') or order_entity.get('currency')
+
+            if not payment_id and order_id:
+                # If order.paid arrived without payment entity, lookup existing payment_id from payment order
+                existing_po = PaymentOrder.objects.filter(razorpay_order_id=order_id).first()
+                if existing_po and existing_po.razorpay_payment_id:
+                    payment_id = existing_po.razorpay_payment_id
+                else:
+                    payment_id = f"pay_webhook_order_{order_id[-8:]}"
 
             if order_id and payment_id:
                 confirm_booking_after_verified_payment(
@@ -550,7 +583,7 @@ def process_razorpay_webhook_event(
 
             event_log.status = 'processed'
             event_log.processed_at = timezone.now()
-            event_log.save()
+            event_log.save(update_fields=['status', 'processed_at'])
             return {"status": "processed", "event_id": event_id}
 
         elif event_type == 'payment.failed':
@@ -574,19 +607,180 @@ def process_razorpay_webhook_event(
 
             event_log.status = 'processed'
             event_log.processed_at = timezone.now()
-            event_log.save()
+            event_log.save(update_fields=['status', 'processed_at'])
             return {"status": "processed", "event_id": event_id}
 
         else:
             # Unhandled / Ignored event types
             event_log.status = 'ignored'
             event_log.processed_at = timezone.now()
-            event_log.save()
+            event_log.save(update_fields=['status', 'processed_at'])
             return {"status": "ignored", "event_id": event_id}
 
     except Exception as exc:
         event_log.status = 'failed'
         event_log.error_message = str(exc)
-        event_log.save()
+        event_log.save(update_fields=['status', 'error_message'])
         logger.error(f"Webhook processing failed for event {event_id}: {exc}", exc_info=True)
         raise exc
+
+
+class PaymentReconciliationService:
+    """
+    Authoritative backend reconciliation service for detecting and resolving financial/booking state discrepancies.
+    Non-destructive by default: only auto-resolves unambiguous states and flags ambiguous cases for administrative review.
+    """
+
+    @classmethod
+    @transaction.atomic
+    def reconcile_booking(
+        cls,
+        booking: Booking,
+        auto_resolve: bool = True,
+        actor=None,
+        ip_address: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Reconciles payment and booking state for a single reservation.
+        """
+        booking = Booking.objects.select_for_update().select_related('customer', 'price_snapshot').get(id=booking.id)
+        payment_orders = list(PaymentOrder.objects.select_for_update().filter(booking=booking).order_by('-created_at'))
+
+        captured_orders = [po for po in payment_orders if po.status == 'captured']
+        created_orders = [po for po in payment_orders if po.status == 'created']
+        failed_orders = [po for po in payment_orders if po.status == 'failed']
+
+        result = {
+            "booking_reference": booking.booking_reference,
+            "booking_status": booking.status,
+            "captured_count": len(captured_orders),
+            "created_count": len(created_orders),
+            "failed_count": len(failed_orders),
+            "discrepancies": [],
+            "action_taken": "none",
+            "resolved": True,
+        }
+
+        # Case 1: Payment captured but Booking is still HELD
+        if captured_orders and booking.status == 'held':
+            target_order = captured_orders[0]
+            now = timezone.now()
+            if booking.hold_expires_at and booking.hold_expires_at <= now:
+                # Hold expired but payment was captured -> Requires admin review (cannot auto-confirm without inventory re-validation)
+                result["discrepancies"].append({
+                    "code": "DISCREPANCY_EXPIRED_HOLD_CAPTURED",
+                    "message": f"Payment {target_order.razorpay_payment_id} was captured for booking {booking.booking_reference}, but the hold expired at {booking.hold_expires_at.isoformat()}.",
+                    "severity": "high",
+                })
+                result["resolved"] = False
+                result["action_taken"] = "flagged_for_admin_review"
+
+                record_audit_log(
+                    action='discrepancy_detected',
+                    resource_type='PaymentReconciliation',
+                    resource_id=str(target_order.id),
+                    actor=actor,
+                    old_values={'booking_status': booking.status, 'payment_status': target_order.status},
+                    new_values={'flag': 'DISCREPANCY_EXPIRED_HOLD_CAPTURED'},
+                    reason=f"Payment captured on expired hold for {booking.booking_reference}. Flagged for review.",
+                    ip_address=ip_address,
+                )
+            else:
+                # Hold is still active -> Safe to auto-confirm
+                if auto_resolve:
+                    try:
+                        confirm_booking_after_verified_payment(
+                            razorpay_order_id=target_order.razorpay_order_id,
+                            razorpay_payment_id=target_order.razorpay_payment_id or "pay_reconciled",
+                            actor=actor,
+                            ip_address=ip_address,
+                            source='reconciliation_auto_confirm'
+                        )
+                        result["action_taken"] = "auto_confirmed_booking"
+                        result["booking_status"] = "confirmed"
+                    except Exception as exc:
+                        result["discrepancies"].append({
+                            "code": "RECONCILIATION_CONFIRM_FAILED",
+                            "message": f"Auto-confirmation failed during reconciliation: {exc}",
+                            "severity": "high",
+                        })
+                        result["resolved"] = False
+
+        # Case 2: Booking CONFIRMED but active PaymentOrder is still 'created'
+        elif booking.status == 'confirmed' and created_orders and not captured_orders:
+            result["discrepancies"].append({
+                "code": "DISCREPANCY_CONFIRMED_UNPAID",
+                "message": f"Booking {booking.booking_reference} is confirmed but has no captured PaymentOrder.",
+                "severity": "medium",
+            })
+            result["resolved"] = False
+            result["action_taken"] = "flagged_for_admin_review"
+
+        # Case 3: Stale 'created' PaymentOrder on expired or cancelled booking
+        elif booking.status in ('expired', 'cancelled') and created_orders:
+            if auto_resolve:
+                cancelled_count = 0
+                for po in created_orders:
+                    po.status = 'cancelled'
+                    po.metadata['cancellation_reason'] = f"Auto-cancelled during reconciliation because booking is {booking.status}"
+                    po.save(update_fields=['status', 'metadata', 'updated_at'])
+                    cancelled_count += 1
+                result["action_taken"] = f"cancelled_{cancelled_count}_stale_payment_orders"
+
+        # Case 4: Superseded created orders when a captured order exists
+        elif captured_orders and created_orders:
+            if auto_resolve:
+                for po in created_orders:
+                    po.status = 'cancelled'
+                    po.metadata['cancellation_reason'] = "Superseded by captured payment order"
+                    po.save(update_fields=['status', 'metadata', 'updated_at'])
+                result["action_taken"] = "cancelled_superseded_payment_orders"
+
+        return result
+
+    @classmethod
+    def reconcile_all(
+        cls,
+        limit: int = 100,
+        auto_resolve: bool = True,
+        actor=None,
+        ip_address: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Runs batch reconciliation across reservations with pending or recently modified payment orders.
+        """
+        # Select candidate bookings: recently created/updated bookings with payment orders
+        candidate_booking_ids = Booking.objects.filter(
+            payment_orders__isnull=False
+        ).distinct().order_by('-updated_at')[:limit].values_list('id', flat=True)
+
+        total_checked = 0
+        reconciled_count = 0
+        flagged_count = 0
+        details = []
+
+        for booking_id in candidate_booking_ids:
+            try:
+                booking = Booking.objects.get(id=booking_id)
+                rec_res = cls.reconcile_booking(
+                    booking=booking,
+                    auto_resolve=auto_resolve,
+                    actor=actor,
+                    ip_address=ip_address
+                )
+                total_checked += 1
+                if rec_res.get('discrepancies'):
+                    flagged_count += 1
+                elif rec_res.get('action_taken') != 'none':
+                    reconciled_count += 1
+                details.append(rec_res)
+            except Exception as exc:
+                logger.error(f"Reconciliation error on booking {booking_id}: {exc}", exc_info=True)
+
+        return {
+            "total_checked": total_checked,
+            "reconciled_count": reconciled_count,
+            "flagged_count": flagged_count,
+            "details": details,
+            "timestamp": timezone.now().isoformat(),
+        }

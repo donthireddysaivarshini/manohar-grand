@@ -103,6 +103,9 @@
   5. **Temporary Hold Foundation**: Configurable hold duration (`BOOKING_HOLD_DURATION_MINUTES = 15`) with lazy invalidation in availability calculations and automatic expiration mechanics.
   6. **PostgreSQL Concurrency Boundary**: Concurrency protection in production utilizes PostgreSQL row-level locks (`select_for_update()`) on target `RoomCategory` rows inside atomic transactions (`@transaction.atomic`). SQLite in development/testing does not simulate multi-connection PostgreSQL row locking; true concurrent production validation requires PostgreSQL.
   7. **Overbooking Override Foundation**: Explicit `is_overbooking` and mandatory `overbooking_reason` fields allow authorized Owner/Admin overrides without silent overbooking.
+
+---
+
 ## ADR 14: Front-Desk Physical Room Assignment, Check-In Validation & Customer Booking Ownership
 - **Status**: Approved.
 - **Context**: Customers reserve accommodation at the room category level. Front-desk staff must assign physical room units (`PhysicalRoom`) prior to or at check-in, ensure check-in occurs only when fully assigned, support offline walk-ins and SuperAdmin overbookings, and secure customer booking lookup against unauthorized inspection.
@@ -122,6 +125,9 @@
   4. **Staff Roles & Offline Operations**:
      - `RECEPTIONIST`, `MANAGER`, `SUPER_ADMIN` can list bookings, view details, assign physical rooms, check in, check out, and create offline walk-in bookings.
      - `SUPER_ADMIN` exclusively holds the overbooking override capability (`POST /api/v1/admin/bookings/overbooking/`), requiring mandatory justification and emitting an immutable `AuditLog` record.
+
+---
+
 ## ADR 15: Authoritative Backend Pricing Engine & Immutable Financial Snapshots
 - **Status**: Approved.
 - **Context**: The Manohar Grand hotel booking system requires authoritative calculation of room tariffs, extra guest fees, late checkout surcharges, and dynamic GST. Client-submitted prices or totals cannot be trusted, and subsequent tariff or tax rate changes must never retroactively alter historical booking financials.
@@ -250,13 +256,35 @@
      - Unauthenticated guests attempting to create a hold are routed to Django session-backed Google sign-in.
 - **Consequences**: Zero mock data in production flows; absolute financial alignment with server-side snapshots; seamless Razorpay test/live checkout user experience.
 
+---
 
-
-
-
-
-
-
-
-
-
+## ADR 21: Payment Lifecycle Hardening, Webhook Reliability & State Reconciliation
+- **Status**: Approved.
+- **Context**: Phase 5 Step 4 hardens the payment domain against concurrency anomalies, duplicate webhooks, out-of-order events, retry storms, hold expiration boundaries, and state drift.
+- **Decision**:
+  1. **Authoritative State Decoupling**:
+     - `PaymentOrder` is the authoritative record of financial transactions (`created`, `captured`, `failed`, `cancelled`, `refunded`).
+     - `Booking` is the authoritative record of reservation and inventory state (`held`, `confirmed`, `expired`, `cancelled`, `checked_in`, `checked_out`).
+     - A booking transitions from `held` -> `confirmed` **strictly** inside `confirm_booking_after_verified_payment` when cryptographic signatures and monetary amounts are validated.
+  2. **Webhook Idempotency & Concurrency Hardening**:
+     - Webhook verification computes HMAC-SHA256 signature against `RAZORPAY_WEBHOOK_SECRET` over the raw request body before parsing.
+     - `process_razorpay_webhook_event` locks `WebhookEventLog` using `select_for_update()`, deduplicating repeated webhook deliveries and returning `already_processed` cleanly.
+     - Handles `order.paid` and `payment.captured` idempotently without duplicate audit log entries or side-effects.
+  3. **Direct Verification & Webhook Race Resolution**:
+     - Both verification endpoints execute with `select_for_update()` row locks on `PaymentOrder`, `Booking`, and `RoomCategory`.
+     - Whichever transaction commits first transitions the booking to `confirmed`; the concurrent or subsequent verification returns `already_confirmed: True` with HTTP 200.
+  4. **Hold Expiry Boundary Invariance**:
+     - Both direct verification and webhooks re-evaluate `hold_expires_at <= timezone.now()` prior to confirmation.
+     - Payments arriving after hold expiration transition the booking to `expired` and are rejected, preventing overbooking or invalid confirmation of released inventory.
+  5. **Payment Retry Support**:
+     - When an initial payment attempt fails (`handle_failed_payment`), `PaymentOrder.status = 'failed'` is recorded with error details, while the booking remains in `held` status (if within the 15-minute window).
+     - Retrying with a valid payment under the same gateway order transitions `PaymentOrder` from `failed` -> `captured` and confirms the reservation.
+  6. **Payment Reconciliation Engine (`PaymentReconciliationService`)**:
+     - Inspects payment and booking states to detect anomalies (captured order on held booking, confirmed booking with unpaid order, stale created orders on expired bookings).
+     - Non-destructive: auto-resolves safe unambiguous states (auto-confirms held bookings if hold is active; cancels stale orders on expired bookings).
+     - Flags ambiguous discrepancies (such as payments captured on expired holds) with `DISCREPANCY_EXPIRED_HOLD_CAPTURED` and audit logs for administrative staff review without dangerous blind mutations.
+     - Provides staff/admin API `POST /api/v1/payments/reconcile/`.
+  7. **Sanitized Payment Visibility**:
+     - Customer serializers expose `payment_status` (`unpaid`, `advance_paid`, `failed`).
+     - Staff serializers expose read-only `payment_orders` without leaking gateway secrets.
+- **Consequences**: Rock-solid resilience against payment retries, network race conditions, and webhook replays; full auditability of financial lifecycle events; zero security exposure.

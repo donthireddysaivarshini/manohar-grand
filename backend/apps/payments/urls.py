@@ -6,6 +6,7 @@ from .views import (
     payment_order_create,
     payment_verify,
     razorpay_webhook,
+    payment_reconcile,
 )
 
 app_name = 'payments'
@@ -15,4 +16,5 @@ urlpatterns = [
     path('verify/', payment_verify, name='payment-verify'),
     path('webhook/razorpay/', razorpay_webhook, name='payment-webhook-razorpay'),
     path('webhook/', razorpay_webhook, name='payment-webhook-alias'),
+    path('reconcile/', payment_reconcile, name='payment-reconcile'),
 ]

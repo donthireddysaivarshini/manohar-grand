@@ -1,6 +1,7 @@
 """
 Views for Payment domain (/api/v1/payments/).
-Handles Razorpay order creation, payment verification, and asynchronous webhooks.
+Handles Razorpay order creation, payment verification, asynchronous webhooks,
+and administrative state reconciliation.
 """
 import json
 import logging
@@ -9,7 +10,7 @@ from django.shortcuts import get_object_or_404
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
 
 from apps.bookings.models import Booking
@@ -21,12 +22,14 @@ from .serializers import (
     PaymentOrderResponseSerializer,
     PaymentVerificationSerializer,
     PaymentVerificationResponseSerializer,
+    PaymentReconciliationRequestSerializer,
 )
 from .services import (
     RazorpayPaymentProvider,
     create_advance_payment_order,
     confirm_booking_after_verified_payment,
     process_razorpay_webhook_event,
+    PaymentReconciliationService,
     PaymentProviderException,
 )
 
@@ -291,3 +294,53 @@ def razorpay_webhook(request):
                 "message": "Internal error processing webhook event."
             }
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAdminUser])
+def payment_reconcile(request):
+    """
+    POST /api/v1/payments/reconcile/
+    Administrative endpoint for reconciling payment and booking state discrepancies.
+    Restricted to authenticated staff / admin users.
+    """
+    serializer = PaymentReconciliationRequestSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response({
+            "success": False,
+            "error": {
+                "code": "VALIDATION_ERROR",
+                "message": "Invalid reconciliation parameters.",
+                "details": serializer.errors
+            }
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    booking_reference = serializer.validated_data.get('booking_reference', '').strip().upper()
+    auto_resolve = serializer.validated_data.get('auto_resolve', True)
+    limit = serializer.validated_data.get('limit', 50)
+    actor = request.user
+    ip_address = _get_client_ip(request)
+
+    if booking_reference:
+        booking = get_object_or_404(Booking, booking_reference=booking_reference)
+        result = PaymentReconciliationService.reconcile_booking(
+            booking=booking,
+            auto_resolve=auto_resolve,
+            actor=actor,
+            ip_address=ip_address
+        )
+        return Response({
+            "success": True,
+            "data": result
+        }, status=status.HTTP_200_OK)
+    else:
+        result = PaymentReconciliationService.reconcile_all(
+            limit=limit,
+            auto_resolve=auto_resolve,
+            actor=actor,
+            ip_address=ip_address
+        )
+        return Response({
+            "success": True,
+            "data": result
+        }, status=status.HTTP_200_OK)
