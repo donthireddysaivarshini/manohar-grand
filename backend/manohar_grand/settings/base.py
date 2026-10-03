@@ -57,7 +57,14 @@ INSTALLED_APPS = [
     'apps.inventory.apps.InventoryConfig',
     'apps.bookings.apps.BookingsConfig',
     'apps.availability.apps.AvailabilityConfig',
+    'apps.payments.apps.PaymentsConfig',
 ]
+
+# Razorpay Payment Gateway Configuration
+RAZORPAY_KEY_ID = os.environ.get('RAZORPAY_KEY_ID', 'rzp_test_placeholder_key_id')
+RAZORPAY_KEY_SECRET = os.environ.get('RAZORPAY_KEY_SECRET', 'placeholder_secret_never_commit')
+RAZORPAY_WEBHOOK_SECRET = os.environ.get('RAZORPAY_WEBHOOK_SECRET', 'placeholder_webhook_secret')
+RAZORPAY_CURRENCY = os.environ.get('RAZORPAY_CURRENCY', 'INR')
 
 BOOKING_HOLD_DURATION_MINUTES = 15
 

@@ -22,6 +22,7 @@ urlpatterns = [
     path('api/v1/pricing/', include('apps.pricing.urls')),
     path('api/v1/availability/', include('apps.availability.urls')),
     path('api/v1/bookings/', include('apps.bookings.urls')),
+    path('api/v1/payments/', include('apps.payments.urls')),
     path('api/v1/admin/', include('core.admin_urls')),
 ]
 

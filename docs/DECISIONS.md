@@ -179,6 +179,32 @@
      - Confirmed matrix: `SUPER_ADMIN` has exclusive mutation permissions on Room Rates and Tax Rules. `MANAGER` and `RECEPTIONIST` have read-only access (mutations return HTTP 403 Forbidden).
 - **Consequences**: Zero risk of client price or date tampering; clean separation between pre-payment readiness (Phase 4 Step 3) and Razorpay execution/verification (Phase 5); robust hold expiry enforcement.
 
+---
+
+## ADR 18: Razorpay Payment Foundation & Authoritative Order Creation
+- **Status**: Approved.
+- **Context**: Phase 5 Step 1 introduces the backend Razorpay integration foundation for the 50% advance deposit. The backend must remain the sole financial authority, preventing client amount tampering, ensuring idempotency, and isolating third-party gateway dependencies.
+- **Decision**:
+  1. **Isolated Provider Architecture (`RazorpayPaymentProvider`)**:
+     - The core booking engine and REST APIs never interact with the Razorpay SDK directly.
+     - `RazorpayPaymentProvider` encapsulates order creation (`client.order.create`), HMAC-SHA256 payment signature verification, and webhook signature verification.
+     - Gateway credentials (`RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`) remain strictly server-side. Public `RAZORPAY_KEY_ID` is exposed to clients; secrets are never logged or returned in responses.
+  2. **Authoritative Monetary Calculation**:
+     - Payable amount is strictly derived from `BookingPriceSnapshot.advance_amount_due` in Decimal INR and converted to integer paise (`advance_amount_due * 100`).
+     - Client-submitted `amount`, `currency`, or `purpose` fields are completely ignored.
+  3. **Order Creation Endpoint (`POST /api/v1/payments/orders/`)**:
+     - Accepts `{ "booking_reference": "..." }`.
+     - Validates booking ownership (authenticated user or valid access token), runs `validate_booking_for_checkout`, verifies `held` status and hold expiry.
+     - Returns public checkout parameters (`payment_id`, `razorpay_order_id`, `razorpay_key_id`, `amount` in paise, `currency`, `purpose`, `status`).
+  4. **Idempotency & State Invariance**:
+     - Re-requests for an active created order return the existing `PaymentOrder` without spawning duplicate gateway orders.
+     - Creating a payment order **NEVER transitions booking status to `confirmed`**; the reservation strictly remains in `held` status until verified payment processing (Phase 5 Step 2).
+  5. **Payment Domain Model (`PaymentOrder`)**:
+     - Distinguishes internal UUID primary key from Razorpay `order_id` and `payment_id`.
+     - Maintains immutable audit trail of payment order generations.
+- **Consequences**: Complete protection against client price tampering; zero duplicate order creation; safe, testable gateway abstraction with full signature verification utilities ready for subsequent verification and webhook phases.
+
+
 
 
 
