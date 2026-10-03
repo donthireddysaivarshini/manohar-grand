@@ -1,3 +1,4 @@
+import React from 'react';
 import { Users, Bed, Wind, Plus, Minus, Check } from 'lucide-react';
 import { Card, CardContent } from '../common/Card';
 import { Badge } from '../common/Badge';
@@ -19,13 +20,14 @@ export const RoomSelectionCard: React.FC<RoomSelectionCardProps> = ({
   nightsCount,
 }) => {
   const isSelected = currentQuantity > 0;
-  const isAcRoom = availability.categoryId === 'ac-room';
+  const isAcRoom = availability.slug.toLowerCase().includes('ac') && !availability.slug.toLowerCase().includes('non-ac');
   const maxAvailable = availability.availableQuantity;
 
-  // Placeholder images mapped cleanly
-  const roomImage = isAcRoom
-    ? 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=80'
-    : 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=800&q=80';
+  const roomImage =
+    availability.primaryImage ||
+    (isAcRoom
+      ? 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=80'
+      : 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=800&q=80');
 
   return (
     <Card
@@ -40,7 +42,7 @@ export const RoomSelectionCard: React.FC<RoomSelectionCardProps> = ({
           <div className="md:col-span-4 relative aspect-[16/10] md:aspect-auto min-h-[180px] bg-neutral-100 overflow-hidden">
             <img
               src={roomImage}
-              alt={`${availability.categoryName} preview (Demo Stock)`}
+              alt={`${availability.categoryName} preview`}
               loading="lazy"
               className="w-full h-full object-cover"
             />
@@ -68,11 +70,17 @@ export const RoomSelectionCard: React.FC<RoomSelectionCardProps> = ({
                   </h3>
                   <div className="flex flex-wrap items-center gap-2 mt-1">
                     <span className="text-xs text-neutral-secondary font-medium">
-                      {availability.totalInventory} Rooms Total Inventory (Confirmed)
+                      {availability.totalInventory} Rooms Total Inventory
                     </span>
                     <span className="text-neutral-300">•</span>
-                    <Badge variant="success" size="sm" className="text-[10px] font-bold">
-                      {availability.availableQuantity} Available for stay dates
+                    <Badge
+                      variant={availability.availableQuantity > 0 ? 'success' : 'error'}
+                      size="sm"
+                      className="text-[10px] font-bold"
+                    >
+                      {availability.availableQuantity > 0
+                        ? `${availability.availableQuantity} Available for stay dates`
+                        : 'Sold Out on Selected Dates'}
                     </Badge>
                   </div>
                 </div>
@@ -80,7 +88,7 @@ export const RoomSelectionCard: React.FC<RoomSelectionCardProps> = ({
                 {/* Price Display */}
                 <div className="text-left sm:text-right mt-2 sm:mt-0">
                   <span className="text-[11px] text-neutral-secondary font-medium block">
-                    Starting from
+                    Base tariff
                   </span>
                   <div className="flex items-baseline sm:justify-end gap-1">
                     <span className="text-2xl font-black text-brand">
@@ -88,7 +96,7 @@ export const RoomSelectionCard: React.FC<RoomSelectionCardProps> = ({
                     </span>
                     <span className="text-xs text-neutral-secondary font-medium">/ night</span>
                   </div>
-                  <span className="text-[10px] text-neutral-400 block -mt-0.5">Demo Rate</span>
+                  <span className="text-[10px] text-neutral-400 block -mt-0.5">Excl. 5% GST</span>
                 </div>
               </div>
 
@@ -96,11 +104,11 @@ export const RoomSelectionCard: React.FC<RoomSelectionCardProps> = ({
               <div className="flex flex-wrap items-center gap-3 text-xs text-neutral-secondary py-2 border-y border-neutral-border/60">
                 <span className="flex items-center gap-1.5 font-medium">
                   <Users className="w-3.5 h-3.5 text-brand" />
-                  Up to {availability.maxAdultsPerRoom} Guests per room
+                  Up to {availability.maxAdultsPerRoom || availability.maxTotalOccupancy || 2} Guests per room
                 </span>
                 <span className="flex items-center gap-1.5 font-medium">
                   <Bed className="w-3.5 h-3.5 text-brand" />
-                  Double Bed (Demo)
+                  Double Bed (Wakefit Foam)
                 </span>
                 {isAcRoom ? (
                   <span className="flex items-center gap-1.5 font-medium text-feedback-success">
@@ -116,9 +124,10 @@ export const RoomSelectionCard: React.FC<RoomSelectionCardProps> = ({
               </div>
 
               <p className="text-xs text-neutral-secondary leading-relaxed">
-                {isAcRoom
-                  ? 'Spacious climate-controlled room with private attached bathroom, hot water amenities, and daily housekeeping.'
-                  : 'Practical, well-ventilated accommodation with ceiling fan cooling, attached private bathroom, and daily housekeeping.'}
+                {availability.description ||
+                  (isAcRoom
+                    ? 'Spacious climate-controlled room with private attached bathroom, hot water amenities, and daily housekeeping.'
+                    : 'Practical, well-ventilated accommodation with ceiling fan cooling, attached private bathroom, and daily housekeeping.')}
               </p>
             </div>
 
@@ -154,7 +163,7 @@ export const RoomSelectionCard: React.FC<RoomSelectionCardProps> = ({
                   </button>
                 </div>
 
-                {currentQuantity >= maxAvailable && (
+                {currentQuantity >= maxAvailable && maxAvailable > 0 && (
                   <span className="text-[11px] text-amber-700 font-medium">
                     Max available reached ({maxAvailable})
                   </span>
@@ -167,10 +176,11 @@ export const RoomSelectionCard: React.FC<RoomSelectionCardProps> = ({
                   type="button"
                   variant="outline"
                   size="md"
+                  disabled={maxAvailable <= 0}
                   onClick={() => onQuantityChange(1)}
-                  className="font-bold border-brand text-brand hover:bg-brand hover:text-white transition-colors"
+                  className="font-bold border-brand text-brand hover:bg-brand hover:text-white transition-colors disabled:opacity-50"
                 >
-                  Select 1 Room
+                  {maxAvailable > 0 ? 'Select 1 Room' : 'Sold Out'}
                 </Button>
               ) : (
                 <div className="text-right">

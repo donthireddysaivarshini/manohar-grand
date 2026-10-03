@@ -10,6 +10,7 @@ import {
   Phone,
   Mail,
   Hotel,
+  Loader2,
 } from 'lucide-react';
 import { Container } from '../../components/common/Container';
 import { Section } from '../../components/common/Section';
@@ -19,40 +20,56 @@ import { Card, CardContent } from '../../components/common/Card';
 import { Logo } from '../../components/common/Logo';
 import { CheckoutProgress } from '../../components/checkout/CheckoutProgress';
 import { useBooking } from '../../store/BookingContext';
-import { paymentService } from '../../services';
-import { BookingSnapshot } from '../../types/checkout';
+import { bookingApiService } from '../../services/api/bookingApiService';
+import { ApiBookingDetail } from '../../types/booking';
 import { formatDateDisplay } from '../../utils/dateUtils';
 import { formatCurrencyINR } from '../../utils/formatters';
 
 export const ConfirmationPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { currentSnapshot, resetBookingFlow } = useBooking();
+  const { resetBookingFlow } = useBooking();
 
-  const [snapshot, setSnapshot] = useState<BookingSnapshot | null>(currentSnapshot);
-  const [isLoading, setIsLoading] = useState(!currentSnapshot);
+  const [booking, setBooking] = useState<ApiBookingDetail | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    document.title = 'Demo Booking Voucher | Manohar Grand Hotel';
+    document.title = 'Reservation Voucher | Manohar Grand Hotel';
 
-    const fetchSnapshot = async () => {
-      if (currentSnapshot && currentSnapshot.bookingReference === id) {
-        setSnapshot(currentSnapshot);
-        setIsLoading(false);
-        return;
-      }
-
-      if (id) {
-        const found = await paymentService.getBookingSnapshot(id);
-        setSnapshot(found);
-      }
+    if (!id) {
+      setError('No booking reference provided in URL.');
       setIsLoading(false);
-    };
+      return;
+    }
 
-    fetchSnapshot();
-  }, [id, currentSnapshot]);
+    bookingApiService
+      .getBookingDetail(id)
+      .then((data) => {
+        setBooking(data);
+        setError(null);
+      })
+      .catch((err) => {
+        console.error('Failed to load booking voucher:', err);
+        setError(err?.message || 'Unable to load reservation voucher from server.');
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, [id]);
 
-  // Invalid / Direct URL access with missing snapshot
-  if (!isLoading && !snapshot) {
+  if (isLoading) {
+    return (
+      <div className="py-24 flex flex-col items-center justify-center gap-4">
+        <Loader2 className="w-10 h-10 text-brand animate-spin" />
+        <span className="text-sm font-semibold text-neutral-secondary">
+          Loading reservation voucher from Manohar Grand...
+        </span>
+      </div>
+    );
+  }
+
+  // Not Found / Error State
+  if (error || !booking) {
     return (
       <div className="py-16 flex-1 flex items-center justify-center">
         <Container size="md">
@@ -61,20 +78,20 @@ export const ConfirmationPage: React.FC = () => {
               <Hotel className="w-7 h-7" />
             </div>
 
-            <Badge variant="default" size="md">
+            <Badge variant="error" size="md">
               Voucher Not Found
             </Badge>
 
             <h1 className="text-2xl font-extrabold text-neutral-dark">
-              Reservation Session Expired
+              Reservation Not Found
             </h1>
 
             <p className="text-xs sm:text-sm text-neutral-secondary leading-relaxed">
-              No active demo reservation was found matching reference <strong>{id}</strong>.
+              {error || `No active reservation was found matching reference ${id}.`}
             </p>
 
-            <Link to="/booking">
-              <Button variant="primary" size="md" className="font-bold shadow-sm">
+            <Link to="/booking" onClick={resetBookingFlow}>
+              <Button variant="primary" size="md" className="font-bold shadow-sm cursor-pointer">
                 Start a New Reservation
               </Button>
             </Link>
@@ -84,17 +101,19 @@ export const ConfirmationPage: React.FC = () => {
     );
   }
 
-  if (isLoading || !snapshot) {
-    return (
-      <div className="py-20 flex justify-center items-center">
-        <div className="h-40 w-full max-w-md bg-neutral-200 animate-pulse rounded-card" />
-      </div>
-    );
-  }
-
   const handlePrint = () => {
     window.print();
   };
+
+  const pricing = booking.pricing;
+  const grossTotal = pricing ? parseFloat(String(pricing.gross_total)) : 0;
+  const advancePaid = pricing ? parseFloat(String(pricing.advance_amount_due)) : 0;
+  const balanceDue = pricing ? parseFloat(String(pricing.balance_amount_due)) : 0;
+  const roomSubtotal = pricing ? parseFloat(String(pricing.room_subtotal)) : 0;
+  const taxAmount = pricing ? parseFloat(String(pricing.tax_amount)) : 0;
+  const taxRate = pricing ? pricing.tax_rate_percent : 5;
+
+  const isConfirmed = booking.status === 'confirmed' || booking.status === 'checked_in';
 
   return (
     <div className="flex flex-col w-full print:bg-white print:p-0">
@@ -112,27 +131,31 @@ export const ConfirmationPage: React.FC = () => {
                 <CheckCircle2 className="w-9 h-9" />
               </div>
 
-              <Badge variant="success" size="md" className="font-bold tracking-wider px-3 py-1">
-                Demo Booking Confirmed
+              <Badge
+                variant={isConfirmed ? 'success' : 'brand'}
+                size="md"
+                className="font-bold tracking-wider px-3 py-1"
+              >
+                {isConfirmed ? 'Booking Confirmed' : `Status: ${booking.status_display || booking.status}`}
               </Badge>
 
               <h1 className="text-2xl sm:text-3xl font-extrabold text-neutral-dark">
-                Thank you, {snapshot.guest.fullName}!
+                Thank you, {booking.guest_name}!
               </h1>
 
               <p className="text-xs sm:text-sm text-neutral-secondary max-w-lg leading-relaxed">
-                Your simulated reservation has been recorded in the demo environment. A confirmation voucher has been generated below.
+                Your reservation at Manohar Grand is confirmed. A summary voucher has been generated below for your records.
               </p>
 
               <div className="p-3 bg-neutral-light rounded-lg border border-neutral-border text-xs flex flex-col sm:flex-row items-center gap-2 sm:gap-6">
                 <div>
-                  <span className="text-neutral-secondary">Demo Booking Reference: </span>
-                  <span className="font-mono font-black text-brand text-sm">{snapshot.bookingReference}</span>
+                  <span className="text-neutral-secondary">Booking Reference: </span>
+                  <span className="font-mono font-black text-brand text-sm">{booking.booking_reference}</span>
                 </div>
                 <div className="hidden sm:block text-neutral-300">|</div>
                 <div>
-                  <span className="text-neutral-secondary">Simulated Transaction: </span>
-                  <span className="font-mono font-bold text-neutral-dark">{snapshot.payment.transactionId}</span>
+                  <span className="text-neutral-secondary">Advance Paid: </span>
+                  <span className="font-mono font-bold text-emerald-700">{formatCurrencyINR(advancePaid)}</span>
                 </div>
               </div>
             </div>
@@ -146,14 +169,14 @@ export const ConfirmationPage: React.FC = () => {
                     <Logo size="sm" />
                     <span className="hidden sm:inline-block h-6 w-px bg-neutral-border" />
                     <span className="text-[10px] uppercase tracking-widest text-neutral-secondary font-bold">
-                      Reservation Voucher (Demo)
+                      Official Reservation Voucher
                     </span>
                   </div>
 
                   <div className="text-left sm:text-right">
                     <span className="text-xs text-neutral-secondary block">Date Issued:</span>
                     <span className="text-xs font-bold text-neutral-dark">
-                      {new Date(snapshot.createdAt).toLocaleDateString('en-IN', {
+                      {new Date(booking.created_at).toLocaleDateString('en-IN', {
                         day: 'numeric',
                         month: 'short',
                         year: 'numeric',
@@ -169,13 +192,17 @@ export const ConfirmationPage: React.FC = () => {
                       <User className="w-3.5 h-3.5 text-brand" />
                       Guest Information
                     </span>
-                    <span className="font-bold text-neutral-dark text-sm">{snapshot.guest.fullName}</span>
-                    <span className="flex items-center gap-1.5 text-neutral-secondary">
-                      <Mail className="w-3 h-3" /> {snapshot.guest.email}
-                    </span>
-                    <span className="flex items-center gap-1.5 text-neutral-secondary">
-                      <Phone className="w-3 h-3" /> {snapshot.guest.phone}
-                    </span>
+                    <span className="font-bold text-neutral-dark text-sm">{booking.guest_name}</span>
+                    {booking.guest_email && (
+                      <span className="flex items-center gap-1.5 text-neutral-secondary">
+                        <Mail className="w-3 h-3" /> {booking.guest_email}
+                      </span>
+                    )}
+                    {booking.guest_phone && (
+                      <span className="flex items-center gap-1.5 text-neutral-secondary">
+                        <Phone className="w-3 h-3" /> {booking.guest_phone}
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex flex-col gap-2">
@@ -185,15 +212,17 @@ export const ConfirmationPage: React.FC = () => {
                     </span>
                     <div className="flex justify-between">
                       <span className="text-neutral-secondary">Check-In:</span>
-                      <span className="font-bold text-neutral-dark">{formatDateDisplay(snapshot.stay.checkIn)} (12:00 PM Demo)</span>
+                      <span className="font-bold text-neutral-dark">{formatDateDisplay(booking.check_in_date)} (12:00 PM)</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-neutral-secondary">Check-Out:</span>
-                      <span className="font-bold text-neutral-dark">{formatDateDisplay(snapshot.stay.checkOut)} (11:00 AM Demo)</span>
+                      <span className="font-bold text-neutral-dark">{formatDateDisplay(booking.check_out_date)} (11:00 AM)</span>
                     </div>
                     <div className="flex justify-between border-t border-neutral-border/60 pt-1 font-medium">
                       <span className="text-neutral-secondary">Total Stay:</span>
-                      <span className="font-bold text-brand">{snapshot.stay.nights} Nights • {snapshot.occupancy.rooms} Rooms ({snapshot.occupancy.adults}A, {snapshot.occupancy.children}C)</span>
+                      <span className="font-bold text-brand">
+                        {booking.nights_count} Nights • {booking.total_rooms_count} Rooms ({booking.total_adults}A, {booking.total_children}C)
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -209,20 +238,20 @@ export const ConfirmationPage: React.FC = () => {
                         <tr>
                           <th className="py-2.5 px-3">Room Category</th>
                           <th className="py-2.5 px-3 text-center">Quantity</th>
-                          <th className="py-2.5 px-3 text-right">Demo Rate</th>
-                          <th className="py-2.5 px-3 text-right">Line Total</th>
+                          <th className="py-2.5 px-3 text-right">Stay Nights</th>
+                          <th className="py-2.5 px-3 text-right">Category Status</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-neutral-border/60">
-                        {snapshot.selectedRooms.map((room) => (
-                          <tr key={room.categoryId}>
+                        {booking.rooms.map((room) => (
+                          <tr key={room.id || room.category_id}>
                             <td className="py-3 px-3 font-bold text-neutral-dark">
-                              {room.categoryName}
+                              {room.category_name}
                             </td>
-                            <td className="py-3 px-3 text-center">{room.quantity}</td>
-                            <td className="py-3 px-3 text-right">{formatCurrencyINR(room.ratePerNight)} / nt</td>
-                            <td className="py-3 px-3 text-right font-bold text-neutral-dark">
-                              {formatCurrencyINR(room.ratePerNight * room.quantity * snapshot.stay.nights)}
+                            <td className="py-3 px-3 text-center">{room.room_quantity}</td>
+                            <td className="py-3 px-3 text-right">{booking.nights_count} Nights</td>
+                            <td className="py-3 px-3 text-right font-semibold text-emerald-700">
+                              Confirmed
                             </td>
                           </tr>
                         ))}
@@ -231,24 +260,36 @@ export const ConfirmationPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Financial Breakdown */}
+                {/* Authoritative Financial Breakdown */}
                 <div className="flex flex-col gap-2 p-4 rounded-lg bg-neutral-light border border-neutral-border text-xs">
                   <div className="flex justify-between text-neutral-secondary">
-                    <span>Room Subtotal</span>
+                    <span>Room Tariff Subtotal</span>
                     <span className="font-semibold text-neutral-dark">
-                      {formatCurrencyINR(snapshot.pricing.subtotal)}
+                      {formatCurrencyINR(roomSubtotal)}
                     </span>
                   </div>
                   <div className="flex justify-between text-neutral-secondary">
-                    <span>Demo Taxes ({snapshot.pricing.taxRatePercent}%)</span>
+                    <span>Goods &amp; Services Tax (GST {taxRate}%)</span>
                     <span className="font-semibold text-neutral-dark">
-                      {formatCurrencyINR(snapshot.pricing.taxAmount)}
+                      {formatCurrencyINR(taxAmount)}
                     </span>
                   </div>
-                  <div className="flex justify-between pt-2 border-t border-neutral-border text-sm font-bold text-neutral-dark">
-                    <span>Total Demo Amount Paid</span>
-                    <span className="text-xl font-black text-brand">
-                      {formatCurrencyINR(snapshot.pricing.totalPayable)}
+                  <div className="flex justify-between pt-2 border-t border-neutral-border text-xs font-bold text-neutral-dark">
+                    <span>Gross Total Tariff</span>
+                    <span className="text-sm font-black text-neutral-dark">
+                      {formatCurrencyINR(grossTotal)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-1 text-xs text-emerald-800 font-bold bg-emerald-50/70 px-2.5 py-1.5 rounded border border-emerald-200">
+                    <span>50% Advance Deposit Paid</span>
+                    <span className="font-black text-emerald-700">
+                      {formatCurrencyINR(advancePaid)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-xs text-neutral-dark font-bold px-2.5 pt-1">
+                    <span>Remaining 50% Balance Due at Check-In</span>
+                    <span className="font-bold text-brand">
+                      {formatCurrencyINR(balanceDue)}
                     </span>
                   </div>
                 </div>
@@ -264,18 +305,12 @@ export const ConfirmationPage: React.FC = () => {
                       <strong>Mandatory ID:</strong> Original Aadhar Card is required for every guest upon arrival (Primary guest 18+).
                     </li>
                     <li>
-                      <strong>Wakefit Mattresses:</strong> All bedrooms feature premium Wakefit Memory Foam mattresses.
+                      <strong>Bedding:</strong> All bedrooms feature premium Wakefit Memory Foam mattresses.
                     </li>
                     <li>
-                      <strong>Cancellation Policy:</strong> Cancellations made 2+ days prior to check-in receive 50% refund. Cancellations made on the day of stay or within 48 hours are non-refundable (0% refund).
+                      <strong>Cancellation Policy:</strong> Confirmed direct reservations are strictly non-refundable.
                     </li>
                   </ul>
-                </div>
-
-                {/* Simulation Notice */}
-                <div className="flex items-center gap-2 p-3 rounded bg-amber-50 border border-amber-200 text-[11px] text-amber-900">
-                  <ShieldAlert className="w-4 h-4 shrink-0 text-feedback-warning" />
-                  <span>Demo Voucher: Generated for prototype preview. Official reservation confirmation will be issued when backend booking engine is live.</span>
                 </div>
               </CardContent>
             </Card>
@@ -287,7 +322,7 @@ export const ConfirmationPage: React.FC = () => {
                 variant="outline"
                 size="md"
                 onClick={handlePrint}
-                className="gap-2 font-semibold"
+                className="gap-2 font-semibold cursor-pointer"
               >
                 <Printer className="w-4 h-4" />
                 <span>Print / Save Voucher</span>
@@ -295,14 +330,14 @@ export const ConfirmationPage: React.FC = () => {
 
               <div className="flex items-center gap-3">
                 <Link to="/booking" onClick={resetBookingFlow}>
-                  <Button variant="outline" size="md" className="gap-2 font-semibold">
+                  <Button variant="outline" size="md" className="gap-2 font-semibold cursor-pointer">
                     <CalendarDays className="w-4 h-4" />
                     <span>Book Another Stay</span>
                   </Button>
                 </Link>
 
                 <Link to="/" onClick={resetBookingFlow}>
-                  <Button variant="primary" size="md" className="gap-2 font-bold shadow-sm">
+                  <Button variant="primary" size="md" className="gap-2 font-bold shadow-sm cursor-pointer">
                     <Home className="w-4 h-4" />
                     <span>Return to Home</span>
                   </Button>

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { User, MessageSquare, ArrowRight, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { User, MessageSquare, ArrowRight, ShieldCheck, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '../common/Card';
 import { Input } from '../common/Input';
 import { Button } from '../common/Button';
@@ -10,7 +10,7 @@ export interface GuestDetailsFormProps {
 }
 
 export const GuestDetailsForm: React.FC<GuestDetailsFormProps> = ({ onProceedToReview }) => {
-  const { guestDetails, setGuestDetails } = useBooking();
+  const { guestDetails, setGuestDetails, updateGuestInfo, activeHold } = useBooking();
 
   const [formData, setFormData] = useState({
     fullName: guestDetails.fullName || '',
@@ -20,6 +20,19 @@ export const GuestDetailsForm: React.FC<GuestDetailsFormProps> = ({ onProceedToR
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (guestDetails.fullName || guestDetails.email || guestDetails.phone) {
+      setFormData((prev) => ({
+        ...prev,
+        fullName: prev.fullName || guestDetails.fullName,
+        email: prev.email || guestDetails.email,
+        phone: prev.phone || guestDetails.phone,
+        specialRequests: prev.specialRequests || guestDetails.specialRequests || '',
+      }));
+    }
+  }, [guestDetails]);
 
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
@@ -43,12 +56,29 @@ export const GuestDetailsForm: React.FC<GuestDetailsFormProps> = ({ onProceedToR
     return Object.keys(errs).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validate()) {
-      setGuestDetails(formData);
-      onProceedToReview();
+    if (!validate()) return;
+
+    setGuestDetails(formData);
+
+    if (activeHold?.booking_reference) {
+      setIsSubmitting(true);
+      try {
+        await updateGuestInfo({
+          guest_name: formData.fullName.trim(),
+          guest_email: formData.email.trim(),
+          guest_phone: formData.phone.trim(),
+          special_requests: formData.specialRequests.trim(),
+        });
+      } catch (err) {
+        console.warn('Backend guest update notice:', err);
+      } finally {
+        setIsSubmitting(false);
+      }
     }
+
+    onProceedToReview();
   };
 
   return (
@@ -60,7 +90,7 @@ export const GuestDetailsForm: React.FC<GuestDetailsFormProps> = ({ onProceedToR
             Lead Guest Information
           </h2>
           <p className="text-xs sm:text-sm text-neutral-secondary mt-1">
-            Please provide your contact information to receive your booking voucher.
+            Please provide contact information to receive your official booking confirmation and tax voucher.
           </p>
         </div>
 
@@ -140,7 +170,7 @@ export const GuestDetailsForm: React.FC<GuestDetailsFormProps> = ({ onProceedToR
                 Primary guest must be <strong>18 years of age or older</strong>.
               </li>
               <li>
-                <strong>Cancellation Policy:</strong> Cancellations made 2+ days before check-in receive a 50% refund. Cancellations made on the day of stay or within 48 hours are non-refundable (0% refund).
+                <strong>Cancellation Policy:</strong> Confirmed reservations are strictly non-refundable per hotel direct booking policy.
               </li>
             </ul>
           </div>
@@ -155,10 +185,20 @@ export const GuestDetailsForm: React.FC<GuestDetailsFormProps> = ({ onProceedToR
               type="submit"
               variant="primary"
               size="lg"
+              disabled={isSubmitting}
               className="w-full sm:w-auto font-bold shadow-md gap-2"
             >
-              <span>Review Reservation</span>
-              <ArrowRight className="w-4 h-4" />
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Saving Details...</span>
+                </>
+              ) : (
+                <>
+                  <span>Review Reservation</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </Button>
           </div>
         </form>

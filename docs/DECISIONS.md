@@ -227,6 +227,30 @@
      - Confirmed category-level bookings consume physical room availability via existing category aggregation queries. No physical room assignment is performed at checkout (reception assigns physical rooms upon check-in).
 - **Consequences**: Zero risk of unverified or client-tampered bookings; resilient against network failures and duplicate requests; absolute transactional consistency between payment and reservation state.
 
+---
+
+## ADR 20: Real Customer Booking Flow & Real Razorpay Checkout Frontend Integration
+- **Status**: Approved.
+- **Context**: Phase 5 Step 3 transitions the entire frontend booking, availability, pricing, and checkout workflows from demo/mock simulations to real backend DRF endpoints and real Razorpay Checkout modal execution.
+- **Decision**:
+  1. **Direct Backend API Layer (`src/services/api/`)**:
+     - Introduces dedicated API services (`roomApiService`, `availabilityApiService`, `bookingApiService`, `paymentApiService`, `pricingApiService`) operating over standard `fetchApi` with `credentials: 'include'` and CSRF protection.
+     - Mock services are completely decoupled from production customer paths.
+  2. **Authoritative Booking & Hold Lifecycle**:
+     - Room availability is queried in real-time from `GET /api/v1/availability/search/`.
+     - Booking holds are authoritatively created on Django via `POST /api/v1/bookings/hold/`, returning authoritative `booking_reference`, `access_token`, and `hold_expires_at`.
+     - Frontend enforces an active 15-minute countdown and prevents payment submission against expired holds.
+  3. **Authoritative Checkout & Dynamic Pricing**:
+     - Checkout page strictly renders numbers provided by `GET /api/v1/bookings/{ref}/checkout/` (sourced directly from `BookingPriceSnapshot`). No prices, taxes, or 50% advance splits are calculated independently on the client.
+  4. **Razorpay Checkout JS Integration (`razorpayService`)**:
+     - Dynamically loads official `https://checkout.razorpay.com/v1/checkout.js`.
+     - Initiates gateway checkout using backend-created `razorpay_order_id`, public `razorpay_key_id`, and `amount` (in paise).
+     - Upon payment completion, signature, payment ID, and order ID are sent immediately to `POST /api/v1/payments/verify/` for cryptographic verification and reservation confirmation.
+  5. **Session-Authenticated Customer Gate**:
+     - Unauthenticated guests attempting to create a hold are routed to Django session-backed Google sign-in.
+- **Consequences**: Zero mock data in production flows; absolute financial alignment with server-side snapshots; seamless Razorpay test/live checkout user experience.
+
+
 
 
 

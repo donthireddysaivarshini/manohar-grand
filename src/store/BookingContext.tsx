@@ -1,33 +1,53 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
-import { BookingSearchParams, SelectedRoomItem } from '../types/booking';
+import {
+  BookingSearchParams,
+  SelectedRoomItem,
+  ApiBookingDetail,
+  ApiCheckoutSummary,
+  ApiRoomCategory,
+} from '../types/booking';
 import { GuestDetails } from '../types/guest';
-import { PriceBreakdown } from '../types/pricing';
-import { BookingSnapshot, PaymentSimulationMethod, PaymentSimulationStatus } from '../types/checkout';
-import { ROOM_CATEGORIES_DATA } from '../data/roomCategories';
-import { calculateBookingPrice } from '../utils/priceCalculators';
 import { getTodayDateString, getFutureDateString, calculateNights } from '../utils/dateUtils';
-import { paymentService } from '../services';
+import { bookingApiService } from '../services/api/bookingApiService';
+import { roomApiService } from '../services/api/roomApiService';
+import { useAuth } from './AuthContext';
 
 interface BookingContextType {
   searchParams: BookingSearchParams;
   setSearchParams: (params: Partial<BookingSearchParams>) => void;
   selectedRooms: SelectedRoomItem[];
-  setRoomQuantity: (categoryId: string, quantity: number) => void;
+  setRoomQuantity: (
+    categoryId: string,
+    quantity: number,
+    categoryInfo?: {
+      categoryName: string;
+      slug: string;
+      ratePerNight: number;
+      heroImage?: string;
+      maxAdultsPerRoom?: number;
+      maxTotalOccupancy?: number;
+    }
+  ) => void;
   clearSelectedRooms: () => void;
   selectedCategorySlug: string | null;
   setSelectedCategorySlug: (slug: string | null) => void;
   guestDetails: GuestDetails;
   setGuestDetails: (details: Partial<GuestDetails>) => void;
-  priceBreakdown: PriceBreakdown;
   totalSelectedRoomsCount: number;
   nightsCount: number;
-  currentSnapshot: BookingSnapshot | null;
-  createBookingSnapshot: (method?: PaymentSimulationMethod) => BookingSnapshot;
-  updateSnapshotPayment: (
-    status: PaymentSimulationStatus,
-    transactionId: string,
-    method: PaymentSimulationMethod
-  ) => Promise<BookingSnapshot | null>;
+  activeHold: ApiBookingDetail | null;
+  setActiveHold: (hold: ApiBookingDetail | null) => void;
+  checkoutSummary: ApiCheckoutSummary | null;
+  setCheckoutSummary: (summary: ApiCheckoutSummary | null) => void;
+  createHold: () => Promise<ApiBookingDetail>;
+  fetchCheckoutSummary: (reference?: string, token?: string) => Promise<ApiCheckoutSummary>;
+  updateGuestInfo: (guestData: {
+    guest_name?: string;
+    guest_phone?: string;
+    guest_email?: string;
+    special_requests?: string;
+    guests?: any[];
+  }) => Promise<ApiBookingDetail>;
   resetBookingFlow: () => void;
 }
 
@@ -49,34 +69,55 @@ const defaultGuestDetails: GuestDetails = {
 const BookingContext = createContext<BookingContextType | undefined>(undefined);
 
 export const BookingProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
   const [searchParams, setSearchParamsState] = useState<BookingSearchParams>(defaultSearchParams);
   const [selectedCategorySlug, setSelectedCategorySlug] = useState<string | null>(null);
   const [guestDetails, setGuestDetailsState] = useState<GuestDetails>(defaultGuestDetails);
   const [selectedRooms, setSelectedRooms] = useState<SelectedRoomItem[]>([]);
-  const [currentSnapshot, setCurrentSnapshot] = useState<BookingSnapshot | null>(null);
+  const [activeHold, setActiveHold] = useState<ApiBookingDetail | null>(null);
+  const [checkoutSummary, setCheckoutSummary] = useState<ApiCheckoutSummary | null>(null);
 
-  // If a category slug was selected from Room Details / Cards, auto-select 1 room of that category
+  // Auto-fill guest details from authenticated user when available
+  useEffect(() => {
+    if (user) {
+      setGuestDetailsState((prev) => ({
+        ...prev,
+        fullName: prev.fullName || `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.name || '',
+        email: prev.email || user.email || '',
+        phone: prev.phone || user.phone || '',
+      }));
+    }
+  }, [user]);
+
+  // If a category slug was selected from Room Details, fetch category info and select 1 room
   useEffect(() => {
     if (selectedCategorySlug) {
-      const category = ROOM_CATEGORIES_DATA.find((c) => c.slug === selectedCategorySlug);
-      if (category) {
-        setSelectedRooms((prev) => {
-          const exists = prev.find((r) => r.categoryId === category.id);
-          if (exists) return prev;
-          return [
-            ...prev,
-            {
-              categoryId: category.id,
-              categoryName: category.name,
-              slug: category.slug,
-              quantity: 1,
-              ratePerNight: category.demoBasePricePerNight,
-              heroImage: category.demoImages.hero,
-              maxAdultsPerRoom: category.demoCapacity.maxAdults,
-            },
-          ];
-        });
-      }
+      roomApiService
+        .getCategories()
+        .then((categories: ApiRoomCategory[]) => {
+          const category = categories.find((c) => c.slug === selectedCategorySlug);
+          if (category) {
+            setSelectedRooms((prev) => {
+              const exists = prev.find((r) => r.categoryId === category.id || r.slug === category.slug);
+              if (exists) return prev;
+              const rate = parseFloat(category.base_price_per_night) || 0;
+              return [
+                ...prev,
+                {
+                  categoryId: category.id,
+                  categoryName: category.name,
+                  slug: category.slug,
+                  quantity: 1,
+                  ratePerNight: rate,
+                  heroImage: category.primary_image || category.images[0]?.image_url,
+                  maxAdultsPerRoom: category.max_adults,
+                  maxTotalOccupancy: category.max_total_occupancy,
+                },
+              ];
+            });
+          }
+        })
+        .catch((err) => console.warn('Could not auto-select category from slug:', err));
     }
   }, [selectedCategorySlug]);
 
@@ -88,37 +129,56 @@ export const BookingProvider: React.FC<{ children: ReactNode }> = ({ children })
     setGuestDetailsState((prev) => ({ ...prev, ...details }));
   };
 
-  const setRoomQuantity = (categoryId: string, quantity: number) => {
-    const category = ROOM_CATEGORIES_DATA.find((c) => c.id === categoryId);
-    if (!category) return;
-
+  const setRoomQuantity = (
+    categoryId: string,
+    quantity: number,
+    categoryInfo?: {
+      categoryName: string;
+      slug: string;
+      ratePerNight: number;
+      heroImage?: string;
+      maxAdultsPerRoom?: number;
+      maxTotalOccupancy?: number;
+    }
+  ) => {
     setSelectedRooms((prev) => {
       if (quantity <= 0) {
-        return prev.filter((r) => r.categoryId !== categoryId);
+        return prev.filter((r) => r.categoryId !== categoryId && r.slug !== categoryId);
       }
 
-      const existingIndex = prev.findIndex((r) => r.categoryId === categoryId);
+      const existingIndex = prev.findIndex(
+        (r) => r.categoryId === categoryId || r.slug === categoryId
+      );
+
       if (existingIndex >= 0) {
         const updated = [...prev];
         updated[existingIndex] = {
           ...updated[existingIndex],
           quantity,
+          ...(categoryInfo && {
+            categoryName: categoryInfo.categoryName,
+            slug: categoryInfo.slug,
+            ratePerNight: categoryInfo.ratePerNight,
+            heroImage: categoryInfo.heroImage,
+            maxAdultsPerRoom: categoryInfo.maxAdultsPerRoom,
+          }),
         };
         return updated;
-      } else {
+      } else if (categoryInfo) {
         return [
           ...prev,
           {
-            categoryId: category.id,
-            categoryName: category.name,
-            slug: category.slug,
+            categoryId,
+            categoryName: categoryInfo.categoryName,
+            slug: categoryInfo.slug,
             quantity,
-            ratePerNight: category.demoBasePricePerNight,
-            heroImage: category.demoImages.hero,
-            maxAdultsPerRoom: category.demoCapacity.maxAdults,
+            ratePerNight: categoryInfo.ratePerNight,
+            heroImage: categoryInfo.heroImage,
+            maxAdultsPerRoom: categoryInfo.maxAdultsPerRoom,
           },
         ];
       }
+      return prev;
     });
   };
 
@@ -135,69 +195,90 @@ export const BookingProvider: React.FC<{ children: ReactNode }> = ({ children })
     return selectedRooms.reduce((acc, curr) => acc + curr.quantity, 0);
   }, [selectedRooms]);
 
-  const priceBreakdown = useMemo(() => {
-    return calculateBookingPrice({
-      selectedRooms,
-      checkIn: searchParams.checkIn,
-      checkOut: searchParams.checkOut,
-    });
-  }, [selectedRooms, searchParams.checkIn, searchParams.checkOut]);
+  /**
+   * Authoritatively creates a 15-minute temporary reservation hold in Django.
+   */
+  const createHold = async (): Promise<ApiBookingDetail> => {
+    if (selectedRooms.length === 0) {
+      throw new Error('Please select at least one room category to reserve.');
+    }
 
-  const createBookingSnapshot = (method: PaymentSimulationMethod = 'card'): BookingSnapshot => {
-    // Generate demo reference in format MG-DEMO-XXXXXX
-    const randomSuffix = Math.floor(100000 + Math.random() * 900000);
-    const bookingReference = `MG-DEMO-${randomSuffix}`;
+    const leadName =
+      guestDetails.fullName ||
+      (user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email : '') ||
+      'Guest';
 
-    const snapshot: BookingSnapshot = {
-      bookingReference,
-      createdAt: new Date().toISOString(),
-      stay: {
-        checkIn: searchParams.checkIn,
-        checkOut: searchParams.checkOut,
-        nights: nightsCount,
-      },
-      occupancy: {
-        adults: searchParams.adults,
-        children: searchParams.children,
-        rooms: totalSelectedRoomsCount || searchParams.rooms,
-      },
-      selectedRooms: [...selectedRooms],
-      pricing: { ...priceBreakdown },
-      guest: { ...guestDetails },
-      payment: {
-        method,
-        status: 'pending',
-        transactionId: `txn_init_${randomSuffix}`,
-        isSimulation: true,
-      },
-      isDemoRecord: true,
+    const payload = {
+      check_in: searchParams.checkIn,
+      check_out: searchParams.checkOut,
+      rooms: selectedRooms.map((r) => ({
+        category_id: r.categoryId,
+        room_quantity: r.quantity,
+      })),
+      guest_name: leadName,
+      guest_phone: guestDetails.phone || user?.phone || '',
+      guest_email: guestDetails.email || user?.email || '',
+      total_adults: searchParams.adults,
+      total_children: searchParams.children,
+      special_requests: guestDetails.specialRequests || '',
+      source: 'website',
     };
 
-    setCurrentSnapshot(snapshot);
-    paymentService.saveBookingSnapshot(snapshot);
-    return snapshot;
+    const holdBooking = await bookingApiService.createHold(payload);
+    setActiveHold(holdBooking);
+    return holdBooking;
   };
 
-  const updateSnapshotPayment = async (
-    status: PaymentSimulationStatus,
-    transactionId: string,
-    method: PaymentSimulationMethod
-  ): Promise<BookingSnapshot | null> => {
-    if (!currentSnapshot) return null;
+  /**
+   * Fetches authoritative pre-payment summary from Django.
+   */
+  const fetchCheckoutSummary = async (
+    reference?: string,
+    token?: string
+  ): Promise<ApiCheckoutSummary> => {
+    const targetRef = reference || activeHold?.booking_reference;
+    if (!targetRef) {
+      throw new Error('No active booking reference found to load checkout.');
+    }
+    const summary = await bookingApiService.getCheckoutSummary(
+      targetRef,
+      token || activeHold?.access_token
+    );
+    setCheckoutSummary(summary);
+    return summary;
+  };
 
-    const updated: BookingSnapshot = {
-      ...currentSnapshot,
-      payment: {
-        method,
-        status,
-        transactionId,
-        paidAt: status === 'success' ? new Date().toISOString() : undefined,
-        isSimulation: true,
-      },
-    };
-
-    setCurrentSnapshot(updated);
-    await paymentService.saveBookingSnapshot(updated);
+  /**
+   * Updates guest details on the active reservation.
+   */
+  const updateGuestInfo = async (guestData: {
+    guest_name?: string;
+    guest_phone?: string;
+    guest_email?: string;
+    special_requests?: string;
+    guests?: any[];
+  }): Promise<ApiBookingDetail> => {
+    const targetRef = activeHold?.booking_reference || checkoutSummary?.booking_reference;
+    if (!targetRef) {
+      throw new Error('No active reservation to update guest details.');
+    }
+    const updated = await bookingApiService.updateGuestDetails(
+      targetRef,
+      guestData,
+      activeHold?.access_token
+    );
+    setActiveHold(updated);
+    if (guestData.guest_name || guestData.guest_email || guestData.guest_phone) {
+      setGuestDetailsState((prev) => ({
+        ...prev,
+        ...(guestData.guest_name && { fullName: guestData.guest_name }),
+        ...(guestData.guest_email && { email: guestData.guest_email }),
+        ...(guestData.guest_phone && { phone: guestData.guest_phone }),
+        ...(guestData.special_requests !== undefined && {
+          specialRequests: guestData.special_requests,
+        }),
+      }));
+    }
     return updated;
   };
 
@@ -206,7 +287,8 @@ export const BookingProvider: React.FC<{ children: ReactNode }> = ({ children })
     setSelectedCategorySlug(null);
     setGuestDetailsState(defaultGuestDetails);
     setSelectedRooms([]);
-    setCurrentSnapshot(null);
+    setActiveHold(null);
+    setCheckoutSummary(null);
   };
 
   return (
@@ -221,12 +303,15 @@ export const BookingProvider: React.FC<{ children: ReactNode }> = ({ children })
         setSelectedCategorySlug,
         guestDetails,
         setGuestDetails,
-        priceBreakdown,
         totalSelectedRoomsCount,
         nightsCount,
-        currentSnapshot,
-        createBookingSnapshot,
-        updateSnapshotPayment,
+        activeHold,
+        setActiveHold,
+        checkoutSummary,
+        setCheckoutSummary,
+        createHold,
+        fetchCheckoutSummary,
+        updateGuestInfo,
         resetBookingFlow,
       }}
     >

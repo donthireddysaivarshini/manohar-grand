@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Calendar, ShieldAlert, Sparkles, CheckCircle2, BedDouble } from 'lucide-react';
+import { Calendar, Sparkles, CheckCircle2, BedDouble, AlertCircle } from 'lucide-react';
 import { Container } from '../../components/common/Container';
 import { Section } from '../../components/common/Section';
 import { Badge } from '../../components/common/Badge';
@@ -7,8 +7,9 @@ import { BookingSearchModifier } from '../../components/booking/BookingSearchMod
 import { RoomSelectionCard } from '../../components/booking/RoomSelectionCard';
 import { BookingSummaryCard } from '../../components/booking/BookingSummaryCard';
 import { useBooking } from '../../store/BookingContext';
-import { availabilityService } from '../../services';
-import { CategoryAvailabilityResult } from '../../types/booking';
+import { availabilityApiService } from '../../services/api/availabilityApiService';
+import { roomApiService } from '../../services/api/roomApiService';
+import { CategoryAvailabilityResult, ApiRoomCategory } from '../../types/booking';
 
 export const BookingPage: React.FC = () => {
   const {
@@ -21,13 +22,46 @@ export const BookingPage: React.FC = () => {
 
   const [availabilityResults, setAvailabilityResults] = useState<CategoryAvailabilityResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [apiError, setApiError] = useState<string | null>(null);
 
-  // Fetch mock availability based on search parameters
+  // Fetch real backend availability and category metadata
   const loadAvailability = useCallback(async () => {
     setIsLoading(true);
+    setApiError(null);
     try {
-      const results = await availabilityService.checkAvailability(searchParams);
-      setAvailabilityResults(results);
+      const [availRes, roomCats] = await Promise.all([
+        availabilityApiService.checkAvailability(searchParams),
+        roomApiService.getCategories().catch(() => [] as ApiRoomCategory[]),
+      ]);
+
+      const catMap: Record<string, ApiRoomCategory> = {};
+      roomCats.forEach((c) => {
+        catMap[c.id] = c;
+        catMap[c.slug] = c;
+      });
+
+      const transformed: CategoryAvailabilityResult[] = (availRes.categories || []).map((cat) => {
+        const meta = catMap[cat.category_id] || catMap[cat.category_slug];
+        const baseRate = meta ? parseFloat(meta.base_price_per_night) || 0 : 0;
+        return {
+          categoryId: cat.category_id,
+          categoryName: cat.category_name,
+          slug: cat.category_slug,
+          totalInventory: cat.total_operational_capacity,
+          availableQuantity: cat.minimum_available_rooms,
+          isAvailable: cat.is_available,
+          ratePerNight: baseRate,
+          maxAdultsPerRoom: meta?.max_adults || meta?.max_total_occupancy || 2,
+          maxTotalOccupancy: meta?.max_total_occupancy || 2,
+          primaryImage: meta?.primary_image || (meta?.images && meta.images[0]?.image_url),
+          description: meta?.description,
+        };
+      });
+
+      setAvailabilityResults(transformed);
+    } catch (err: any) {
+      console.error('Availability fetch failed:', err);
+      setApiError(err?.message || 'Failed to load live availability from server.');
     } finally {
       setIsLoading(false);
     }
@@ -56,7 +90,7 @@ export const BookingPage: React.FC = () => {
               Select Your Rooms
             </h1>
             <p className="text-sm sm:text-base text-neutral-300 leading-relaxed">
-              Customize your stay by selecting AC or Non-AC room combinations. Instant demo voucher confirmation.
+              Check real-time availability for AC and Non-AC rooms with guaranteed direct booking rates and instant confirmation.
             </p>
           </div>
         </Container>
@@ -67,6 +101,17 @@ export const BookingPage: React.FC = () => {
         <Container size="xl">
           {/* 1. Modify Search Bar */}
           <BookingSearchModifier onSearchUpdate={loadAvailability} />
+
+          {/* API Error Notice */}
+          {apiError && (
+            <div className="mb-6 p-4 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700 flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold">Unable to check live availability: </span>
+                {apiError}
+              </div>
+            </div>
+          )}
 
           {/* 2-Column Responsive Layout (Rooms Selection on Left, Sticky Summary on Right) */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -104,10 +149,10 @@ export const BookingPage: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-xl font-bold text-neutral-dark">
-                      Available Room Categories
+                      Available Accommodations
                     </h2>
                     <p className="text-xs text-neutral-secondary">
-                      Confirmed hotel categories with date-based simulated availability
+                      Real-time inventory from Manohar Grand property management
                     </p>
                   </div>
 
@@ -124,7 +169,9 @@ export const BookingPage: React.FC = () => {
                 ) : (
                   <div className="flex flex-col gap-6">
                     {availabilityResults.map((avail) => {
-                      const selected = selectedRooms.find((r) => r.categoryId === avail.categoryId);
+                      const selected = selectedRooms.find(
+                        (r) => r.categoryId === avail.categoryId || r.slug === avail.slug
+                      );
                       const qty = selected ? selected.quantity : 0;
 
                       return (
@@ -132,22 +179,22 @@ export const BookingPage: React.FC = () => {
                           key={avail.categoryId}
                           availability={avail}
                           currentQuantity={qty}
-                          onQuantityChange={(newQty) => setRoomQuantity(avail.categoryId, newQty)}
+                          onQuantityChange={(newQty) =>
+                            setRoomQuantity(avail.categoryId, newQty, {
+                              categoryName: avail.categoryName,
+                              slug: avail.slug,
+                              ratePerNight: avail.ratePerNight,
+                              heroImage: avail.primaryImage,
+                              maxAdultsPerRoom: avail.maxAdultsPerRoom,
+                              maxTotalOccupancy: avail.maxTotalOccupancy,
+                            })
+                          }
                           nightsCount={nightsCount}
                         />
                       );
                     })}
                   </div>
                 )}
-              </div>
-
-              {/* Transparency Notice */}
-              <div className="p-4 rounded-lg bg-white border border-neutral-border shadow-xs flex items-start gap-3">
-                <ShieldAlert className="w-5 h-5 text-feedback-warning shrink-0 mt-0.5" />
-                <div className="text-xs text-neutral-secondary leading-relaxed">
-                  <span className="font-bold text-neutral-dark">Demo Availability Notice: </span>
-                  Total inventory counts (20 AC Rooms / 8 Non-AC Rooms) are confirmed. The dynamic night availability numbers and rates displayed are simulated for prototype verification.
-                </div>
               </div>
 
               {/* Direct Booking Inclusions Card */}
@@ -163,15 +210,15 @@ export const BookingPage: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-3.5 h-3.5 text-feedback-success" />
-                    <span>Instant room confirmation voucher</span>
+                    <span>Instant 15-minute reservation hold lock</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-3.5 h-3.5 text-feedback-success" />
-                    <span>Flexible room adjustments before check-in</span>
+                    <span>Premium Wakefit memory foam mattresses in all rooms</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-3.5 h-3.5 text-feedback-success" />
-                    <span>Direct customer service support</span>
+                    <span>Direct 24/7 reception desk support</span>
                   </div>
                 </div>
               </div>
