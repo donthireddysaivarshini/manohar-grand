@@ -1,7 +1,7 @@
 """
 Payment services and Razorpay provider abstraction.
 Handles Razorpay order generation, cryptographic signature verifications,
-and idempotent advance payment order management.
+idempotent payment verification, webhook event logging, and atomic booking confirmation.
 """
 import hmac
 import hashlib
@@ -16,8 +16,13 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 
 from core.services import record_audit_log
-from apps.bookings.services import validate_booking_for_checkout
-from .models import PaymentOrder
+from apps.bookings.models import Booking
+from apps.bookings.services import (
+    validate_booking_for_checkout,
+    transition_booking_status,
+)
+from apps.rooms.models import RoomCategory
+from .models import PaymentOrder, WebhookEventLog
 
 logger = logging.getLogger(__name__)
 
@@ -80,6 +85,25 @@ class RazorpayPaymentProvider:
             logger.error(f"Razorpay order creation failed: {exc}", exc_info=True)
             raise PaymentProviderException(
                 "Unable to initialize payment gateway order. Please try again or contact support.",
+                code="PAYMENT_PROVIDER_ERROR",
+                original_exception=exc
+            )
+
+    @classmethod
+    def fetch_payment(cls, razorpay_payment_id: str) -> Dict[str, Any]:
+        """
+        Fetches live payment entity from Razorpay to verify server-side status, amount, and order ID.
+        """
+        if not razorpay_payment_id:
+            raise PaymentProviderException("Payment ID is required.", code="INVALID_PAYMENT_ID")
+        try:
+            client = cls.get_client()
+            payment_data = client.payment.fetch(razorpay_payment_id)
+            return payment_data
+        except Exception as exc:
+            logger.error(f"Failed to fetch payment {razorpay_payment_id} from Razorpay: {exc}", exc_info=True)
+            raise PaymentProviderException(
+                f"Unable to fetch payment details from gateway: {exc}",
                 code="PAYMENT_PROVIDER_ERROR",
                 original_exception=exc
             )
@@ -243,3 +267,326 @@ def create_advance_payment_order(
     )
 
     return payment_order
+
+
+@transaction.atomic
+def confirm_booking_after_verified_payment(
+    razorpay_order_id: str,
+    razorpay_payment_id: str,
+    razorpay_signature: Optional[str] = "",
+    verified_amount_paise: Optional[int] = None,
+    verified_currency: Optional[str] = None,
+    actor=None,
+    ip_address: Optional[str] = None,
+    source: str = "verification_api",
+) -> Dict[str, Any]:
+    """
+    Central, authoritative, atomic service for confirming a reservation upon verified payment.
+    Unified logic executed by both:
+    1. Direct client verification endpoint (/api/v1/payments/verify/)
+    2. Asynchronous Razorpay webhook handler (/api/v1/payments/webhook/razorpay/)
+
+    Strict Checkpoints:
+    1. Locks target PaymentOrder row with select_for_update().
+    2. Idempotency: If PaymentOrder is already 'captured' and Booking is 'confirmed', returns existing state cleanly.
+    3. Locks target Booking row with select_for_update().
+    4. Locks target RoomCategory rows with select_for_update().
+    5. Re-validates hold state & expiration.
+    6. Verifies monetary consistency (expected advance amount & currency match snapshot).
+    7. Updates PaymentOrder status to 'captured' and stores payment_id.
+    8. Atomically transitions Booking from 'held' -> 'confirmed' and clears hold expiration.
+    9. Emits immutable AuditLog records.
+    """
+    if not razorpay_order_id:
+        raise ValidationError({
+            "code": "PAYMENT_NOT_FOUND",
+            "payment": "Razorpay order ID is mandatory."
+        })
+
+    # 1. Lock PaymentOrder
+    payment_order = PaymentOrder.objects.select_for_update().filter(razorpay_order_id=razorpay_order_id).first()
+    if not payment_order:
+        raise ValidationError({
+            "code": "PAYMENT_NOT_FOUND",
+            "payment": f"No payment order found matching gateway order ID '{razorpay_order_id}'."
+        })
+
+    booking = Booking.objects.select_for_update().select_related('customer', 'price_snapshot').get(id=payment_order.booking_id)
+
+    # 2. Idempotency Check
+    if payment_order.status == 'captured' and booking.status == 'confirmed':
+        logger.info(f"PaymentOrder {payment_order.id} for {booking.booking_reference} is already confirmed (Idempotent response).")
+        return {
+            "success": True,
+            "booking": booking,
+            "payment_order": payment_order,
+            "already_confirmed": True,
+        }
+
+    # 3. Lock target RoomCategory rows for concurrency safety
+    category_ids = list(booking.rooms.values_list('category_id', flat=True))
+    if category_ids:
+        list(RoomCategory.objects.select_for_update().filter(id__in=category_ids).order_by('id'))
+
+    # 4. State & Expiry Validation
+    if booking.status == 'confirmed':
+        # Booking was already confirmed (e.g. by concurrent webhook), mark payment captured if needed
+        if payment_order.status != 'captured':
+            payment_order.status = 'captured'
+            payment_order.razorpay_payment_id = razorpay_payment_id
+            if razorpay_signature:
+                payment_order.razorpay_signature = razorpay_signature
+            payment_order.save(update_fields=['status', 'razorpay_payment_id', 'razorpay_signature', 'updated_at'])
+        return {
+            "success": True,
+            "booking": booking,
+            "payment_order": payment_order,
+            "already_confirmed": True,
+        }
+
+    if booking.status in ('cancelled', 'expired', 'checked_out', 'checked_in', 'no_show'):
+        raise ValidationError({
+            "code": "INVALID_BOOKING_STATE",
+            "booking": f"Cannot confirm booking {booking.booking_reference} in '{booking.status}' status."
+        })
+
+    if booking.status != 'held':
+        raise ValidationError({
+            "code": "INVALID_BOOKING_STATE",
+            "booking": f"Booking {booking.booking_reference} must be in 'held' status to confirm (current: '{booking.status}')."
+        })
+
+    # Hold Expiry Check
+    now = timezone.now()
+    if booking.hold_expires_at and booking.hold_expires_at <= now:
+        transition_booking_status(
+            booking=booking,
+            target_status='expired',
+            reason="Hold expired before payment verification completed"
+        )
+        raise ValidationError({
+            "code": "HOLD_EXPIRED",
+            "booking": f"The 15-minute hold for booking {booking.booking_reference} expired at {booking.hold_expires_at.isoformat()}."
+        })
+
+    # 5. Financial & Price Snapshot Consistency
+    if not hasattr(booking, 'price_snapshot') or booking.price_snapshot is None:
+        raise ValidationError({
+            "code": "MISSING_PRICE_SNAPSHOT",
+            "booking": f"Authoritative price snapshot missing for booking {booking.booking_reference}."
+        })
+
+    snapshot = booking.price_snapshot
+    expected_paise = int(round(float(snapshot.advance_amount_due) * 100))
+
+    if verified_amount_paise is not None and verified_amount_paise != expected_paise:
+        raise ValidationError({
+            "code": "PAYMENT_AMOUNT_MISMATCH",
+            "payment": f"Verified amount ({verified_amount_paise} paise) does not match expected advance deposit ({expected_paise} paise)."
+        })
+
+    expected_currency = snapshot.currency or getattr(settings, 'RAZORPAY_CURRENCY', 'INR')
+    if verified_currency and verified_currency.upper() != expected_currency.upper():
+        raise ValidationError({
+            "code": "PAYMENT_CURRENCY_MISMATCH",
+            "payment": f"Verified currency '{verified_currency}' does not match booking currency '{expected_currency}'."
+        })
+
+    # 6. Update PaymentOrder to 'captured'
+    old_payment_status = payment_order.status
+    payment_order.status = 'captured'
+    payment_order.razorpay_payment_id = razorpay_payment_id
+    if razorpay_signature:
+        payment_order.razorpay_signature = razorpay_signature
+    payment_order.save()
+
+    # 7. Transition Booking: 'held' -> 'confirmed'
+    booking = transition_booking_status(
+        booking=booking,
+        target_status='confirmed',
+        actor=actor,
+        reason=f"Verified advance payment received via {source} ({razorpay_payment_id})",
+        ip_address=ip_address,
+    )
+
+    # 8. Record immutable AuditLog
+    record_audit_log(
+        action='status_change',
+        resource_type='PaymentOrder',
+        resource_id=str(payment_order.id),
+        actor=actor,
+        old_values={'status': old_payment_status},
+        new_values={
+            'status': 'captured',
+            'razorpay_payment_id': razorpay_payment_id,
+            'source': source,
+            'booking_status': 'confirmed',
+        },
+        reason=f"Payment captured and reservation {booking.booking_reference} confirmed via {source}",
+        ip_address=ip_address,
+    )
+
+    return {
+        "success": True,
+        "booking": booking,
+        "payment_order": payment_order,
+        "already_confirmed": False,
+    }
+
+
+@transaction.atomic
+def handle_failed_payment(
+    payment_order: PaymentOrder,
+    razorpay_payment_id: str = "",
+    error_code: str = "",
+    error_description: str = "",
+    actor=None,
+    ip_address: Optional[str] = None,
+) -> PaymentOrder:
+    """
+    Safely records a gateway payment failure.
+    Guarantees:
+    - Booking remains in 'held' status if hold duration has not elapsed (guest can retry).
+    - Does NOT confirm booking.
+    - Emits AuditLog.
+    """
+    payment_order.status = 'failed'
+    if razorpay_payment_id:
+        payment_order.razorpay_payment_id = razorpay_payment_id
+    payment_order.metadata['failure_details'] = {
+        'error_code': error_code,
+        'error_description': error_description,
+        'failed_at': timezone.now().isoformat(),
+    }
+    payment_order.save()
+
+    record_audit_log(
+        action='update',
+        resource_type='PaymentOrder',
+        resource_id=str(payment_order.id),
+        actor=actor,
+        old_values={'status': 'created'},
+        new_values={
+            'status': 'failed',
+            'error_code': error_code,
+            'error_description': error_description,
+        },
+        reason=f"Payment failed for {payment_order.booking.booking_reference}: {error_description}",
+        ip_address=ip_address,
+    )
+
+    return payment_order
+
+
+def process_razorpay_webhook_event(
+    payload: Dict[str, Any],
+    raw_body: Union[str, bytes],
+    signature: str,
+    actor=None,
+    ip_address: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Processes incoming asynchronous Razorpay Webhook events.
+    1. Cryptographically verifies HMAC-SHA256 signature using RAZORPAY_WEBHOOK_SECRET.
+    2. Deduplicates event via WebhookEventLog(provider='razorpay', event_id=...).
+    3. Handles 'payment.captured', 'order.paid', 'payment.failed' idempotently.
+    """
+    # 1. Cryptographic Signature Verification
+    if not RazorpayPaymentProvider.verify_webhook_signature(raw_body, signature):
+        raise ValidationError({
+            "code": "WEBHOOK_SIGNATURE_INVALID",
+            "webhook": "Cryptographic webhook HMAC-SHA256 signature verification failed."
+        })
+
+    event_id = payload.get('id', '')
+    event_type = payload.get('event', '')
+
+    if not event_id or not event_type:
+        raise ValidationError({
+            "code": "INVALID_WEBHOOK_PAYLOAD",
+            "webhook": "Missing required event 'id' or 'event' field."
+        })
+
+    # 2. Idempotency / Deduplication check
+    existing_log = WebhookEventLog.objects.filter(provider='razorpay', event_id=event_id).first()
+    if existing_log and existing_log.status == 'processed':
+        logger.info(f"Webhook event {event_id} ({event_type}) was already processed. Acknowledging HTTP 200.")
+        return {"status": "already_processed", "event_id": event_id}
+
+    event_log, _ = WebhookEventLog.objects.get_or_create(
+        provider='razorpay',
+        event_id=event_id,
+        defaults={
+            'event_type': event_type,
+            'status': 'received',
+            'payload': payload,
+        }
+    )
+
+    # 3. Process Supported Events
+    try:
+        if event_type in ('payment.captured', 'order.paid'):
+            payment_entity = payload.get('payload', {}).get('payment', {}).get('entity', {})
+            order_id = payment_entity.get('order_id')
+            payment_id = payment_entity.get('id')
+            amount_paise = payment_entity.get('amount')
+            currency = payment_entity.get('currency')
+
+            if not order_id:
+                # Try getting order_id from order entity
+                order_entity = payload.get('payload', {}).get('order', {}).get('entity', {})
+                order_id = order_entity.get('id')
+
+            if order_id and payment_id:
+                confirm_booking_after_verified_payment(
+                    razorpay_order_id=order_id,
+                    razorpay_payment_id=payment_id,
+                    verified_amount_paise=amount_paise,
+                    verified_currency=currency,
+                    actor=actor,
+                    ip_address=ip_address,
+                    source='webhook'
+                )
+
+            event_log.status = 'processed'
+            event_log.processed_at = timezone.now()
+            event_log.save()
+            return {"status": "processed", "event_id": event_id}
+
+        elif event_type == 'payment.failed':
+            payment_entity = payload.get('payload', {}).get('payment', {}).get('entity', {})
+            order_id = payment_entity.get('order_id')
+            payment_id = payment_entity.get('id')
+            error_code = payment_entity.get('error_code', '')
+            error_description = payment_entity.get('error_description', '')
+
+            if order_id:
+                payment_order = PaymentOrder.objects.filter(razorpay_order_id=order_id).first()
+                if payment_order:
+                    handle_failed_payment(
+                        payment_order=payment_order,
+                        razorpay_payment_id=payment_id,
+                        error_code=error_code,
+                        error_description=error_description,
+                        actor=actor,
+                        ip_address=ip_address,
+                    )
+
+            event_log.status = 'processed'
+            event_log.processed_at = timezone.now()
+            event_log.save()
+            return {"status": "processed", "event_id": event_id}
+
+        else:
+            # Unhandled / Ignored event types
+            event_log.status = 'ignored'
+            event_log.processed_at = timezone.now()
+            event_log.save()
+            return {"status": "ignored", "event_id": event_id}
+
+    except Exception as exc:
+        event_log.status = 'failed'
+        event_log.error_message = str(exc)
+        event_log.save()
+        logger.error(f"Webhook processing failed for event {event_id}: {exc}", exc_info=True)
+        raise exc

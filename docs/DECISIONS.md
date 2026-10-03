@@ -204,6 +204,30 @@
      - Maintains immutable audit trail of payment order generations.
 - **Consequences**: Complete protection against client price tampering; zero duplicate order creation; safe, testable gateway abstraction with full signature verification utilities ready for subsequent verification and webhook phases.
 
+---
+
+## ADR 19: Razorpay Payment Verification, Webhooks & Atomic Booking Confirmation
+- **Status**: Approved.
+- **Context**: Phase 5 Step 2 implements authoritative server-side payment verification for Razorpay Checkout, asynchronous webhook processing, atomic booking confirmation, and inventory consumption.
+- **Decision**:
+  1. **Dual Verification Ingress**:
+     - Direct client verification endpoint (`POST /api/v1/payments/verify/`): accepts only gateway identifiers (`razorpay_order_id`, `razorpay_payment_id`, `razorpay_signature`). Derives ownership and booking association strictly on the server.
+     - Asynchronous webhook endpoint (`POST /api/v1/payments/webhook/razorpay/`): unauthenticated, validates `X-Razorpay-Signature` over raw request body using `RAZORPAY_WEBHOOK_SECRET`.
+  2. **Unified Confirmation Pipeline (`confirm_booking_after_verified_payment`)**:
+     - Both verification endpoints invoke a single internal service wrapped in `transaction.atomic()`.
+     - Acquires row-level locks via `select_for_update()` on `PaymentOrder`, `Booking`, and `RoomCategory` rows.
+     - Performs strict re-validation of hold validity (`hold_expires_at > now`), booking state (`held`), and exact financial match against `BookingPriceSnapshot.advance_amount_due`.
+     - Atomically transitions `PaymentOrder.status = 'captured'` and `Booking.status = 'confirmed'`, clears `hold_expires_at`, and emits immutable `AuditLog` records.
+  3. **Idempotency & Deduplication**:
+     - Payment confirmation safely detects already-captured/confirmed states and returns HTTP 200 without double-confirming inventory or duplicating audit entries.
+     - `WebhookEventLog` enforces unique `(provider, event_id)` constraints in the database, allowing webhook retries to be safely acknowledged without duplicate side-effects.
+  4. **Payment Failure Behavior**:
+     - Failed payments (`payment.failed`) mark `PaymentOrder.status = 'failed'` without cancelling the booking or releasing the hold prematurely, allowing customers to retry within their 15-minute hold window.
+  5. **Inventory Invariance**:
+     - Confirmed category-level bookings consume physical room availability via existing category aggregation queries. No physical room assignment is performed at checkout (reception assigns physical rooms upon check-in).
+- **Consequences**: Zero risk of unverified or client-tampered bookings; resilient against network failures and duplicate requests; absolute transactional consistency between payment and reservation state.
+
+
 
 
 

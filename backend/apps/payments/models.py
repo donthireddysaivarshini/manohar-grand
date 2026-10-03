@@ -116,3 +116,72 @@ class PaymentOrder(models.Model):
 
     def __str__(self):
         return f"PaymentOrder {self.id} [{self.purpose.upper()}] - {self.booking.booking_reference} (₹{self.amount}) [{self.status}]"
+
+
+class WebhookEventLog(models.Model):
+    """
+    Authoritative log for incoming payment gateway webhook events.
+    Enforces uniqueness on (provider, event_id) to guarantee idempotent processing.
+    """
+    STATUS_CHOICES = [
+        ('received', 'Received'),
+        ('processed', 'Processed'),
+        ('failed', 'Failed'),
+        ('ignored', 'Ignored'),
+    ]
+
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False
+    )
+    provider = models.CharField(
+        max_length=30,
+        default='razorpay',
+        db_index=True
+    )
+    event_id = models.CharField(
+        max_length=100,
+        db_index=True,
+        help_text="Gateway unique event identifier (e.g., evt_XXXXX)"
+    )
+    event_type = models.CharField(
+        max_length=100,
+        db_index=True,
+        help_text="Gateway event name (e.g., payment.captured, payment.failed)"
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='received',
+        db_index=True
+    )
+    payload = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Sanitized webhook payload content"
+    )
+    error_message = models.TextField(
+        blank=True,
+        help_text="Diagnostic failure error details if processing failed"
+    )
+    received_at = models.DateTimeField(
+        auto_now_add=True,
+        db_index=True
+    )
+    processed_at = models.DateTimeField(
+        null=True,
+        blank=True
+    )
+
+    class Meta:
+        ordering = ['-received_at']
+        verbose_name = 'Webhook Event Log'
+        verbose_name_plural = 'Webhook Event Logs'
+        constraints = [
+            models.UniqueConstraint(fields=['provider', 'event_id'], name='unique_provider_event_id'),
+        ]
+
+    def __str__(self):
+        return f"WebhookEventLog [{self.provider}] {self.event_type} ({self.event_id}) [{self.status}]"
+

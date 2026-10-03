@@ -2,7 +2,7 @@
 Django Admin configuration for Payments domain.
 """
 from django.contrib import admin
-from .models import PaymentOrder
+from .models import PaymentOrder, WebhookEventLog
 
 
 @admin.register(PaymentOrder)
@@ -53,3 +53,18 @@ class PaymentOrderAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False  # Financial records are immutable
+
+
+@admin.register(WebhookEventLog)
+class WebhookEventLogAdmin(admin.ModelAdmin):
+    list_display = ['id', 'provider', 'event_id', 'event_type', 'status', 'received_at', 'processed_at']
+    list_filter = ['provider', 'event_type', 'status', 'received_at']
+    search_fields = ['event_id', 'event_type', 'error_message']
+    readonly_fields = ['id', 'provider', 'event_id', 'event_type', 'status', 'payload', 'error_message', 'received_at', 'processed_at']
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
