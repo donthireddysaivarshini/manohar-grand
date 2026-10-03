@@ -299,6 +299,70 @@ class CustomerBookingListSerializer(serializers.ModelSerializer):
         return config.cancellation_policy_text
 
 
+class BookingCheckoutSummarySerializer(serializers.ModelSerializer):
+    """
+    Serializer for final pre-payment checkout summary (GET /api/v1/bookings/{booking_reference}/checkout/).
+    Exposes validated stay information, booked categories, guest roster, pricing snapshot, cancellation policy,
+    and hotel operational timings required by the frontend checkout screen.
+    """
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    source_display = serializers.CharField(source='get_source_display', read_only=True)
+    is_hold_valid = serializers.BooleanField(read_only=True)
+    nights_count = serializers.IntegerField(read_only=True)
+    total_rooms_count = serializers.IntegerField(read_only=True)
+    rooms = BookingRoomDetailSerializer(many=True, read_only=True)
+    guests = BookingGuestSerializer(source='guest_roster', many=True, read_only=True)
+    pricing = serializers.SerializerMethodField(read_only=True)
+    cancellation_policy = serializers.SerializerMethodField(read_only=True)
+    hotel_info = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = Booking
+        fields = [
+            'booking_reference',
+            'status',
+            'status_display',
+            'is_hold_valid',
+            'hold_expires_at',
+            'check_in_date',
+            'check_out_date',
+            'nights_count',
+            'total_adults',
+            'total_children',
+            'total_rooms_count',
+            'guest_name',
+            'guest_phone',
+            'guest_email',
+            'special_requests',
+            'source',
+            'source_display',
+            'rooms',
+            'guests',
+            'pricing',
+            'cancellation_policy',
+            'hotel_info',
+            'created_at',
+        ]
+
+    def get_pricing(self, obj):
+        if hasattr(obj, 'price_snapshot') and obj.price_snapshot:
+            from apps.pricing.serializers import BookingPriceSnapshotSerializer
+            return BookingPriceSnapshotSerializer(obj.price_snapshot).data
+        return None
+
+    def get_cancellation_policy(self, obj):
+        config = HotelConfiguration.get_solo()
+        return config.cancellation_policy_text
+
+    def get_hotel_info(self, obj):
+        config = HotelConfiguration.get_solo()
+        return {
+            'hotel_name': config.hotel_name,
+            'check_in_time': str(config.standard_check_in_time),
+            'check_out_time': str(config.standard_check_out_time),
+        }
+
+
 
 
 class PhysicalRoomAssignmentSerializer(serializers.Serializer):

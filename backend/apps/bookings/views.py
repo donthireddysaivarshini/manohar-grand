@@ -16,12 +16,15 @@ from .serializers import (
     BookingDetailSerializer,
     CustomerBookingListSerializer,
     BookingStayInfoUpdateSerializer,
+    BookingCheckoutSummarySerializer,
 )
 from .services import (
     create_booking_hold,
     release_booking_hold,
     cancel_booking,
     update_booking_guest_info,
+    validate_booking_for_checkout,
+    prepare_booking_for_payment,
     InsufficientInventoryException,
 )
 
@@ -363,3 +366,68 @@ def customer_booking_list(request):
             "timestamp": timezone.now().isoformat()
         }
     })
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def booking_checkout_summary(request, booking_reference: str):
+    """
+    GET /api/v1/bookings/<str:booking_reference>/checkout/
+    Retrieves the authoritative checkout summary for a HELD booking prior to payment handoff.
+    Requires:
+    - Authenticated customer ownership (request.user == booking.customer), OR
+    - Authorized staff access (request.user.is_staff), OR
+    - Valid cryptographic access token (?token= or X-Booking-Token header).
+
+    Validates:
+    - Hold validity and expiry (lazily marks expired if hold elapsed)
+    - Capacity and active category rules
+    - Authoritative BookingPriceSnapshot presence and consistency
+
+    Returns full pre-payment data (pricing breakdown, advance 50%, remaining balance, hotel info, policies).
+    """
+    booking = get_object_or_404(
+        Booking.objects.select_related('customer', 'price_snapshot')
+        .prefetch_related('rooms__category', 'guest_roster'),
+        booking_reference=booking_reference
+    )
+
+    # 1. Authorization check
+    if not _check_booking_authorization(booking, request):
+        return Response({
+            "success": False,
+            "error": {
+                "code": "PERMISSION_DENIED",
+                "message": "Valid access token or authenticated customer ownership is required to access checkout."
+            }
+        }, status=status.HTTP_403_FORBIDDEN)
+
+    # 2. Checkout readiness domain validation
+    try:
+        validate_booking_for_checkout(booking)
+    except DjangoValidationError as exc:
+        details = exc.message_dict if hasattr(exc, 'message_dict') else (exc.messages if hasattr(exc, 'messages') else str(exc))
+        code = "VALIDATION_ERROR"
+        msg = str(exc)
+        if isinstance(details, dict):
+            code = details.get("code", ["VALIDATION_ERROR"])[0] if "code" in details else "VALIDATION_ERROR"
+            msg = details.get("booking", [str(exc)])[0] if "booking" in details else str(exc)
+        return Response({
+            "success": False,
+            "error": {
+                "code": code,
+                "message": msg,
+                "details": details
+            }
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    # 3. Serialize authoritative checkout summary
+    serializer = BookingCheckoutSummarySerializer(booking)
+    return Response({
+        "success": True,
+        "data": serializer.data,
+        "meta": {
+            "timestamp": timezone.now().isoformat()
+        }
+    })
+

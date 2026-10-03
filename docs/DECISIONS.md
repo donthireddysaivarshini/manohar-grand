@@ -157,6 +157,29 @@
      - **Financial Immutability**: Cancellation never mutates `BookingPriceSnapshot` and never creates unauthorized refund records.
 - **Consequences**: Strict customer data isolation; zero risk of customer-side booking tampering; exact alignment with client-confirmed non-refundable policy while maintaining administrative emergency flexibility.
 
+---
+
+## ADR 17: Checkout Readiness & Authoritative Pre-Payment Booking Workflow
+- **Status**: Approved.
+- **Context**: Phase 4 Step 3 establishes the authoritative checkout validation and summary service preceding payment gateway handoff (Phase 5). The backend must ensure all hold invariants, category capacities, and pricing snapshots are verified before presenting final review data to customers or generating payment orders.
+- **Decision**:
+  1. **Checkout Summary Endpoint (`GET /api/v1/bookings/{booking_reference}/checkout/`)**:
+     - Exposes authoritative pre-payment review data: stay dates, nights, booked categories, guest roster, full immutable `BookingPriceSnapshot` breakdown (base tariff, extra charges, taxable subtotal, GST 5%, gross total, 50% advance due, 50% remaining balance), non-refundable cancellation policy, and hotel check-in/check-out operational timings.
+     - Strictly read-only (`GET` only; mutation methods return HTTP 405).
+     - Protected by customer ownership (`booking.customer == request.user`), valid access token (`?token=` or `X-Booking-Token`), or staff role (`is_staff`).
+  2. **Domain Validation Engine (`validate_booking_for_checkout`)**:
+     - Verifies: booking is in `held` status, hold has not expired (`hold_expires_at > now`), check-out > check-in, booked categories exist and are active, guest count does not exceed total category capacity, and authoritative `BookingPriceSnapshot` exists and is internally consistent (`gross_total == advance + balance`).
+     - Stale holds are lazily transitioned to `expired` status to release inventory, returning code `HOLD_EXPIRED`.
+     - Confirmed bookings return code `ALREADY_CONFIRMED`.
+  3. **Payment Handoff Contract (`prepare_booking_for_payment`)**:
+     - Dedicated isolated backend service for Phase 5 Razorpay order creation.
+     - Derives payable amounts strictly from `BookingPriceSnapshot` (`advance_amount_due`, `advance_amount_paise`).
+     - Guarantees that payment preparation NEVER alters booking state to `confirmed` and NEVER accepts client-supplied amounts.
+  4. **RBAC Integrity**:
+     - Confirmed matrix: `SUPER_ADMIN` has exclusive mutation permissions on Room Rates and Tax Rules. `MANAGER` and `RECEPTIONIST` have read-only access (mutations return HTTP 403 Forbidden).
+- **Consequences**: Zero risk of client price or date tampering; clean separation between pre-payment readiness (Phase 4 Step 3) and Razorpay execution/verification (Phase 5); robust hold expiry enforcement.
+
+
 
 
 

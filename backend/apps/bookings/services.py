@@ -1029,3 +1029,162 @@ def cancel_booking(
         ip_address=ip_address,
     )
 
+
+def validate_booking_for_checkout(booking) -> Dict[str, Any]:
+    """
+    Validates that a HELD booking is fully eligible to proceed to pre-payment review / checkout.
+    Authoritative verification rules:
+    1. Booking exists and is in 'held' status.
+    2. Hold has not expired (hold_expires_at > now). If expired, lazily transitions hold to 'expired'.
+    3. Dates are valid (check_in_date < check_out_date).
+    4. Reserved room categories exist, are active, and have valid positive quantities.
+    5. Total guest count does not exceed the total maximum room capacity.
+    6. Authoritative BookingPriceSnapshot exists and is internally consistent.
+    7. Booking is not in a terminal or confirmed state.
+
+    Returns a dict with validation status:
+    {"is_valid": True, "booking": booking, "snapshot": snapshot}
+    or raises Django ValidationError.
+    """
+    if booking is None:
+        raise ValidationError({
+            "code": "BOOKING_NOT_FOUND",
+            "booking": "Booking does not exist."
+        })
+
+    if booking.status == 'confirmed':
+        raise ValidationError({
+            "code": "ALREADY_CONFIRMED",
+            "booking": f"Booking {booking.booking_reference} has already been confirmed."
+        })
+
+    if booking.status in ('cancelled', 'expired', 'checked_out', 'checked_in', 'no_show'):
+        raise ValidationError({
+            "code": "INVALID_BOOKING_STATE",
+            "booking": f"Booking {booking.booking_reference} is in '{booking.status}' status and cannot proceed to checkout."
+        })
+
+    if booking.status != 'held':
+        raise ValidationError({
+            "code": "INVALID_BOOKING_STATE",
+            "booking": f"Booking {booking.booking_reference} must be in 'held' status to checkout (current: '{booking.status}')."
+        })
+
+    # Hold expiry check
+    now = timezone.now()
+    if booking.hold_expires_at and booking.hold_expires_at <= now:
+        # Lazily transition the hold to expired
+        transition_booking_status(
+            booking=booking,
+            target_status='expired',
+            reason="Hold expired during checkout readiness validation"
+        )
+        raise ValidationError({
+            "code": "HOLD_EXPIRED",
+            "booking": f"The 15-minute hold for booking {booking.booking_reference} expired at {booking.hold_expires_at.isoformat()}."
+        })
+
+    # Date check
+    if not booking.check_in_date or not booking.check_out_date or booking.check_in_date >= booking.check_out_date:
+        raise ValidationError({
+            "code": "INVALID_DATES",
+            "booking": "Booking dates are invalid. Check-out date must be strictly after check-in date."
+        })
+
+    # Reserved categories & capacity check
+    booked_rooms = booking.rooms.select_related('category').all()
+    if not booked_rooms.exists():
+        raise ValidationError({
+            "code": "NO_ROOMS_RESERVED",
+            "booking": f"No room categories are reserved for booking {booking.booking_reference}."
+        })
+
+    total_max_occupancy = 0
+    for br in booked_rooms:
+        cat = br.category
+        if not cat or not cat.is_active:
+            raise ValidationError({
+                "code": "INVALID_CATEGORY",
+                "booking": f"Room category '{cat.name if cat else br.category_id}' is inactive or unavailable."
+            })
+        if br.room_quantity <= 0:
+            raise ValidationError({
+                "code": "INVALID_ROOM_QUANTITY",
+                "booking": f"Invalid room quantity ({br.room_quantity}) for category '{cat.name}'."
+            })
+        total_max_occupancy += cat.max_total_occupancy * br.room_quantity
+
+    total_guests = booking.total_adults + booking.total_children
+    if total_guests > total_max_occupancy:
+        raise ValidationError({
+            "code": "CAPACITY_EXCEEDED",
+            "booking": f"Total guests ({total_guests}) exceed total reserved capacity ({total_max_occupancy})."
+        })
+
+    # Authoritative pricing snapshot check
+    if not hasattr(booking, 'price_snapshot') or booking.price_snapshot is None:
+        raise ValidationError({
+            "code": "MISSING_PRICE_SNAPSHOT",
+            "booking": f"No authoritative pricing snapshot found for booking {booking.booking_reference}."
+        })
+
+    snapshot = booking.price_snapshot
+    if snapshot.gross_total <= 0:
+        raise ValidationError({
+            "code": "INVALID_PRICING",
+            "booking": "Gross total in authoritative pricing snapshot must be greater than zero."
+        })
+
+    # Internal snapshot consistency: gross_total == advance_amount_due + balance_amount_due
+    calculated_sum = snapshot.advance_amount_due + snapshot.balance_amount_due
+    if abs(snapshot.gross_total - calculated_sum) > 0.01:
+        raise ValidationError({
+            "code": "INCONSISTENT_PRICING",
+            "booking": "Pricing snapshot is internally inconsistent (gross total != advance + balance)."
+        })
+
+    return {
+        "is_valid": True,
+        "booking": booking,
+        "snapshot": snapshot,
+    }
+
+
+def prepare_booking_for_payment(booking) -> Dict[str, Any]:
+    """
+    Authoritative payment handoff contract for Phase 5 (Razorpay Order creation).
+    Performs full pre-payment validation on the HELD booking, then extracts
+    authoritative payment parameters directly from the immutable server-side BookingPriceSnapshot.
+
+    IMPORTANT SAFETY GUARANTEES:
+    - This function does NOT create a Razorpay order.
+    - This function does NOT confirm the booking (booking remains in 'held' status).
+    - Frontend-supplied amounts are never accepted; all values originate from DB snapshot.
+    """
+    validation_res = validate_booking_for_checkout(booking)
+    snapshot = validation_res['snapshot']
+
+    advance_paise = int(round(float(snapshot.advance_amount_due) * 100))
+
+    lead_name = booking.guest_name or "Guest"
+    lead_email = booking.guest_email or (booking.customer.email if booking.customer else "")
+    lead_phone = booking.guest_phone or (booking.customer.phone if booking.customer else "")
+
+    return {
+        "booking_reference": booking.booking_reference,
+        "booking_id": str(booking.id),
+        "status": booking.status,
+        "currency": snapshot.currency or "INR",
+        "gross_total": snapshot.gross_total,
+        "advance_amount_due": snapshot.advance_amount_due,
+        "advance_amount_paise": advance_paise,
+        "balance_amount_due": snapshot.balance_amount_due,
+        "price_snapshot_id": str(snapshot.id),
+        "hold_expires_at": booking.hold_expires_at.isoformat() if booking.hold_expires_at else None,
+        "customer_id": str(booking.customer_id) if booking.customer_id else None,
+        "customer_email": lead_email,
+        "customer_phone": lead_phone,
+        "lead_guest_name": lead_name,
+    }
+
+
