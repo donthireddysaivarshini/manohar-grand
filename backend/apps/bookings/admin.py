@@ -148,7 +148,7 @@ class BookingAdmin(admin.ModelAdmin):
         if success_count:
             self.message_user(request, f"Successfully approved & marked refunded {success_count} booking(s).", level=messages.SUCCESS)
 
-    @admin.action(description="Approve Cancellation without Refund (0% Non-refundable)")
+    @admin.action(description="Approve Cancellation without Refund (Zero Refund / Non-refundable)")
     def approve_cancellation_zero_refund(self, request, queryset):
         success_count = 0
         for booking in queryset:
