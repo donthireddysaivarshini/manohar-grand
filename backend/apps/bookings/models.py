@@ -448,3 +448,14 @@ class BookingGuest(models.Model):
             if not self.full_name:
                 raise ValidationError({'full_name': 'Guest full name cannot be blank.'})
 
+
+class CancellationRequest(Booking):
+    """
+    Proxy model representing bookings requiring cancellation review or refund processing.
+    Provides a dedicated Admin view for receptionists and managers.
+    """
+    class Meta:
+        proxy = True
+        verbose_name = 'Cancellation & Refund Request'
+        verbose_name_plural = 'Cancellation & Refund Requests'
+

@@ -2,7 +2,7 @@
 Django Admin interface for Booking and BookingRoom models with audit logging.
 """
 from django.contrib import admin
-from .models import Booking, BookingRoom, BookingGuest
+from .models import Booking, BookingRoom, BookingGuest, CancellationRequest
 from core.services import record_audit_log
 
 
@@ -227,6 +227,150 @@ class BookingAdmin(admin.ModelAdmin):
         )
 
 
+@admin.register(CancellationRequest)
+class CancellationRequestAdmin(admin.ModelAdmin):
+    """
+    Dedicated admin interface for managing, approving, and refunding guest cancellation requests.
+    """
+    list_display = [
+        'booking_reference',
+        'guest_name',
+        'guest_phone',
+        'cancellation_reason_display',
+        'cancellation_requested_at',
+        'check_in_date',
+        'refund_amount_display',
+        'status_badge',
+        'refund_badge',
+        'actions_shortcut',
+    ]
+    list_filter = [
+        'status',
+        'refund_status',
+        'check_in_date',
+        'cancellation_requested_at',
+    ]
+    search_fields = [
+        'booking_reference',
+        'guest_name',
+        'guest_phone',
+        'guest_email',
+        'cancellation_reason',
+        'cancellation_notes',
+        'refund_reference',
+    ]
+    readonly_fields = [
+        'id',
+        'booking_reference',
+        'cancellation_requested_at',
+        'cancelled_at',
+        'cancelled_by',
+        'created_at',
+        'updated_at',
+    ]
+    actions = [
+        'approve_cancellation_and_refund',
+        'approve_cancellation_zero_refund',
+        'reject_cancellation_request',
+    ]
+
+    fieldsets = (
+        ('Cancellation & Refund Review', {
+            'fields': (
+                ('booking_reference', 'status'),
+                ('cancellation_requested_at', 'cancellation_reason'),
+                'cancellation_notes',
+                ('refund_amount', 'cancellation_fee'),
+                ('refund_status', 'refund_reference'),
+                ('cancelled_at', 'cancelled_by'),
+            )
+        }),
+        ('Guest & Stay Information', {
+            'fields': (
+                ('guest_name', 'guest_phone', 'guest_email'),
+                ('check_in_date', 'check_out_date'),
+                ('total_adults', 'total_children'),
+                'special_requests',
+            )
+        }),
+        ('Internal Notes & Audit', {
+            'fields': (
+                'internal_notes',
+                'created_by',
+                ('created_at', 'updated_at'),
+            ),
+            'classes': ('collapse',),
+        }),
+    )
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.filter(
+            status__in=['cancellation_requested', 'refund_pending', 'refunded', 'cancelled']
+        )
+
+    def cancellation_reason_display(self, obj):
+        reason = obj.cancellation_reason or 'No reason provided'
+        if len(reason) > 40:
+            reason = reason[:37] + '...'
+        return reason
+    cancellation_reason_display.short_description = 'Reason'
+
+    def refund_amount_display(self, obj):
+        return format_html('<b>₹{:,.2f}</b>', obj.refund_amount)
+    refund_amount_display.short_description = 'Refund Amount'
+
+    def status_badge(self, obj):
+        colors = {
+            'confirmed': '#10B981',
+            'cancellation_requested': '#F59E0B',
+            'refund_pending': '#D97706',
+            'cancelled': '#EF4444',
+            'refunded': '#8B5CF6',
+        }
+        color = colors.get(obj.status, '#6B7280')
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 4px 10px; border-radius: 9999px; font-weight: bold; font-size: 11px;">{}</span>',
+            color,
+            obj.get_status_display()
+        )
+    status_badge.short_description = 'Status'
+
+    def refund_badge(self, obj):
+        if not obj.refund_status or obj.refund_status == 'not_applicable':
+            return '-'
+        colors = {
+            'pending': '#F59E0B',
+            'processed': '#10B981',
+            'declined': '#6B7280',
+            'failed': '#EF4444',
+        }
+        color = colors.get(obj.refund_status, '#6B7280')
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">{}</span>',
+            color,
+            obj.get_refund_status_display()
+        )
+    refund_badge.short_description = 'Refund Status'
+
+    def actions_shortcut(self, obj):
+        if obj.status == 'cancellation_requested':
+            return format_html(
+                '<span style="color: #D97706; font-weight: bold;">⚡ Action Required</span>'
+            )
+        elif obj.status == 'refund_pending':
+            return format_html(
+                '<span style="color: #2563EB; font-weight: bold;">💳 Refund Pending</span>'
+            )
+        return format_html('<span style="color: #6B7280;">Completed</span>')
+    actions_shortcut.short_description = 'Review Status'
+
+    # Bulk actions shared from BookingAdmin
+    approve_cancellation_and_refund = BookingAdmin.approve_cancellation_and_refund
+    approve_cancellation_zero_refund = BookingAdmin.approve_cancellation_zero_refund
+    reject_cancellation_request = BookingAdmin.reject_cancellation_request
+
+
 @admin.register(BookingRoom)
 class BookingRoomAdmin(admin.ModelAdmin):
     list_display = [
@@ -241,3 +385,4 @@ class BookingRoomAdmin(admin.ModelAdmin):
     list_filter = ['category', 'booking__status']
     search_fields = ['booking__booking_reference', 'physical_room__room_number']
     readonly_fields = ['id', 'created_at', 'updated_at']
+

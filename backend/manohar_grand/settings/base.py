@@ -78,12 +78,19 @@ JAZZMIN_SETTINGS = {
     "user_avatar": None,
     "topmenu_links": [
         {"name": "Home", "url": "admin:index", "permissions": ["auth.view_user"]},
+        {"name": "⚡ Cancellation Requests", "url": "/admin/bookings/cancellationrequest/", "permissions": ["auth.view_user"]},
         {"name": "📊 Daily Occupancy & Reports", "url": "/admin/occupancy-report/", "permissions": ["auth.view_user"]},
         {"name": "🌐 Analytics Dashboard", "url": "http://localhost:3000/admin/reports", "new_window": True},
         {"name": "🏨 Live Site", "url": FRONTEND_URL, "new_window": True},
     ],
     "custom_links": {
         "bookings": [
+            {
+                "name": "⚡ Pending Cancellations",
+                "url": "/admin/bookings/cancellationrequest/?status__exact=cancellation_requested",
+                "icon": "fas fa-exclamation-triangle",
+                "permissions": ["auth.view_user"],
+            },
             {
                 "name": "📊 Daily Occupancy & Forecast",
                 "url": "/admin/occupancy-report/",
@@ -136,6 +143,7 @@ JAZZMIN_SETTINGS = {
         "inventory.MaintenanceBlock": "fas fa-tools",
         "bookings": "fas fa-book",
         "bookings.Booking": "fas fa-calendar-alt",
+        "bookings.CancellationRequest": "fas fa-undo-alt",
         "bookings.BookingRoom": "fas fa-bed",
         "bookings.BookingPriceSnapshot": "fas fa-file-invoice-dollar",
         "payments": "fas fa-wallet",
