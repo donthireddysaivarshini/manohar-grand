@@ -62,6 +62,10 @@ class UserProfileView(generics.RetrieveAPIView):
     def get_object(self):
         return self.request.user
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 class GoogleLoginView(SocialLoginView):
     """
     Google OAuth 2.0 exchange endpoint.
@@ -70,6 +74,27 @@ class GoogleLoginView(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter
     client_class = OAuth2Client
     callback_url = "postmessage"
+
+    def post(self, request, *args, **kwargs):
+        try:
+            return super().post(request, *args, **kwargs)
+        except Exception as exc:
+            logger.error(f"Google OAuth exchange failed: {exc}", exc_info=True)
+            error_msg = str(exc)
+            if "MultipleObjectsReturned" in error_msg:
+                error_msg = "Multiple Google provider configurations detected."
+            elif "invalid_grant" in error_msg or "code" in error_msg.lower():
+                error_msg = "Google authorization code is expired or invalid. Please try signing in again."
+            return Response(
+                {
+                    "success": False,
+                    "error": {
+                        "code": "GOOGLE_AUTH_FAILED",
+                        "message": error_msg,
+                    }
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
