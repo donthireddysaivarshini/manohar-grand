@@ -11,8 +11,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from dj_rest_auth.registration.views import SocialLoginView
-from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+from .adapters import CustomGoogleOAuth2Adapter
 
 from .serializers import (
     UserSerializer,
@@ -71,7 +71,7 @@ class GoogleLoginView(SocialLoginView):
     Google OAuth 2.0 exchange endpoint.
     Accepts Google authorization code from popup flow and issues JWT tokens + CustomerUser session.
     """
-    adapter_class = GoogleOAuth2Adapter
+    adapter_class = CustomGoogleOAuth2Adapter
     client_class = OAuth2Client
     callback_url = "postmessage"
 
