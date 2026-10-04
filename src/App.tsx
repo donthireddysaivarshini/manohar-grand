@@ -10,13 +10,13 @@ export const App: React.FC = () => {
   return (
     <BrowserRouter>
       <ScrollToTop />
-      <InventoryProvider>
-        <BookingProvider>
-          <AuthProvider>
+      <AuthProvider>
+        <InventoryProvider>
+          <BookingProvider>
             <AppRoutes />
-          </AuthProvider>
-        </BookingProvider>
-      </InventoryProvider>
+          </BookingProvider>
+        </InventoryProvider>
+      </AuthProvider>
     </BrowserRouter>
   );
 };

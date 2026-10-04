@@ -8,6 +8,14 @@ export interface CustomerUser {
   phone?: string;
   role?: string;
   is_staff?: boolean;
+  city?: string;
+  state?: string;
+  customer_profile?: {
+    id?: string;
+    city?: string;
+    state?: string;
+    notes?: string;
+  };
 }
 
 export interface AuthState {

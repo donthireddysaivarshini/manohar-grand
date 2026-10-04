@@ -8,9 +8,9 @@ export const DEMO_PRICING_CONFIG = {
   isDemoPricing: true,
   taxDisclaimer: 'Demo tax calculation. Official tax rates to be confirmed by hotel management.',
   
-  // Demo base prices per night in INR
+  // Base prices per night in INR
   baseRates: {
-    'ac-room': 2500, // Demo base price
-    'non-ac-room': 1600, // Demo base price
+    'ac-room': 1599, // Confirmed base tariff
+    'non-ac-room': 1299, // Confirmed base tariff
   },
 } as const;

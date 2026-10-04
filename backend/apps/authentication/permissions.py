@@ -34,12 +34,12 @@ class IsSuperAdmin(BasePermission):
 
 class IsManagerOrAbove(BasePermission):
     """
-    Allows access to Hotel Managers and Super Administrators.
+    Allows access to Hotel Managers, Super Administrators, and staff.
     """
     def has_permission(self, request, view):
         if not (request.user and request.user.is_authenticated and request.user.is_active):
             return False
-        if request.user.is_superuser:
+        if request.user.is_superuser or request.user.is_staff:
             return True
         if hasattr(request.user, 'staff_profile') and request.user.staff_profile.is_active_duty:
             return request.user.staff_profile.role in ('manager', 'superadmin')
@@ -52,7 +52,7 @@ class IsReceptionistOrAbove(BasePermission):
     def has_permission(self, request, view):
         if not (request.user and request.user.is_authenticated and request.user.is_active):
             return False
-        if request.user.is_superuser:
+        if request.user.is_superuser or request.user.is_staff:
             return True
         if hasattr(request.user, 'staff_profile') and request.user.staff_profile.is_active_duty:
             return request.user.staff_profile.role in ('receptionist', 'manager', 'superadmin')

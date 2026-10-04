@@ -1,20 +1,85 @@
-import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { useGoogleLogin } from '@react-oauth/google';
 import { Container } from '../../components/common/Container';
 import { Badge } from '../../components/common/Badge';
 import { Card, CardContent } from '../../components/common/Card';
-import { Lock, ShieldCheck } from 'lucide-react';
+import { Button } from '../../components/common/Button';
+import { Lock, Mail, ShieldCheck, Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../store/AuthContext';
 
 export const LoginPage: React.FC = () => {
-  const { isAuthenticated, loginWithGoogle, isLoading } = useAuth();
+  const { isAuthenticated, login, loginWithGoogle, isLoading } = useAuth();
   const navigate = useNavigate();
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/account/dashboard', { replace: true });
     }
   }, [isAuthenticated, navigate]);
+
+  const handleGoogleLogin = useGoogleLogin({
+    flow: 'auth-code',
+    onSuccess: async (codeResponse) => {
+      setError(null);
+      setIsSubmitting(true);
+      try {
+        await loginWithGoogle(codeResponse.code);
+        navigate('/account/dashboard', { replace: true });
+      } catch (err: unknown) {
+        const error = err as any;
+        const errData = error.response?.data;
+        let msg = 'Google sign-in failed. Please try again.';
+        if (typeof errData?.error === 'string') {
+          msg = errData.error;
+        } else if (errData?.error?.message) {
+          msg = errData.error.message;
+        } else if (errData?.message) {
+          msg = errData.message;
+        } else if (error.message) {
+          msg = error.message;
+        }
+        setError(msg);
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    onError: () => {
+      setError('Google sign-in was cancelled.');
+    },
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!email || !password) {
+      setError('Please enter your email and password.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await login(email.trim(), password);
+      navigate('/account/dashboard', { replace: true });
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { detail?: string; error?: string; message?: string } }; message?: string };
+      const msg =
+        error.response?.data?.detail ||
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        'Invalid email or password credentials.';
+      setError(msg);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="py-16 flex-1 flex items-center justify-center min-h-[70vh]">
@@ -29,18 +94,95 @@ export const LoginPage: React.FC = () => {
             Sign In to Manohar Grand
           </h1>
           <p className="text-sm text-neutral-secondary max-w-md">
-            Access your direct reservations, booking confirmations, tax invoices, and self-service cancellations securely.
+            Access your direct reservations, booking confirmations, tax invoices, and stay history securely.
           </p>
 
-          <Card variant="bordered" className="w-full bg-white p-8 mt-2 rounded-2xl shadow-sm border border-neutral-light">
-            <CardContent className="p-0 flex flex-col items-center gap-6">
+          <Card variant="bordered" className="w-full bg-white p-7 mt-2 rounded-2xl shadow-sm border border-neutral-light text-left">
+            <CardContent className="p-0 space-y-5">
+              {error && (
+                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-start gap-2.5">
+                  <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                  <span>{error}</span>
+                </div>
+              )}
+
+              {/* Form */}
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-neutral-dark mb-1">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="email"
+                      required
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-neutral-300 text-xs text-neutral-dark placeholder:text-neutral-400 focus:outline-brand focus:ring-1 focus:ring-brand"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-neutral-dark mb-1">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      placeholder="Enter password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full pl-9 pr-10 py-2.5 rounded-xl border border-neutral-300 text-xs text-neutral-dark placeholder:text-neutral-400 focus:outline-brand focus:ring-1 focus:ring-brand"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="md"
+                  disabled={isSubmitting || isLoading}
+                  className="w-full font-bold shadow-md h-10 text-xs gap-2 mt-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Signing In...</span>
+                    </>
+                  ) : (
+                    <span>Sign In to Account</span>
+                  )}
+                </Button>
+              </form>
+
+              {/* Divider */}
+              <div className="relative flex items-center justify-center my-2">
+                <div className="border-t border-neutral-200 w-full" />
+                <span className="bg-white px-3 text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">
+                  Or
+                </span>
+              </div>
+
               {/* Google Sign-In Action */}
               <button
-                onClick={loginWithGoogle}
-                disabled={isLoading}
-                className="w-full flex items-center justify-center gap-3 px-6 py-3.5 border border-neutral-medium rounded-xl text-neutral-dark font-semibold text-sm hover:bg-neutral-light hover:border-neutral-dark transition-all duration-200 shadow-sm active:scale-[0.99] cursor-pointer disabled:opacity-60"
+                type="button"
+                onClick={() => handleGoogleLogin()}
+                disabled={isSubmitting || isLoading}
+                className="w-full flex items-center justify-center gap-3 px-6 py-3 border border-neutral-300 rounded-xl text-neutral-dark font-semibold text-xs hover:bg-neutral-50 hover:border-neutral-400 transition-all duration-200 shadow-xs active:scale-[0.99] cursor-pointer disabled:opacity-60"
               >
-                <svg className="w-5 h-5" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                   <path
                     fill="#4285F4"
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -58,11 +200,20 @@ export const LoginPage: React.FC = () => {
                     d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
                   />
                 </svg>
-                Continue with Google
+                <span>Continue with Google</span>
               </button>
 
-              <div className="flex items-center gap-2 text-xs text-neutral-muted">
-                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <div className="text-center pt-2">
+                <p className="text-xs text-neutral-secondary">
+                  Don't have an account?{' '}
+                  <Link to="/booking" className="text-brand font-bold hover:underline">
+                    Book a room or create an account
+                  </Link>
+                </p>
+              </div>
+
+              <div className="flex items-center justify-center gap-2 text-[11px] text-neutral-muted pt-2 border-t border-neutral-100">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                 <span>Encrypted 256-bit secure session connection</span>
               </div>
             </CardContent>

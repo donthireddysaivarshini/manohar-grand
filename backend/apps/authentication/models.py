@@ -64,6 +64,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     def role(self):
         if hasattr(self, 'staff_profile') and self.staff_profile:
             return self.staff_profile.role
+        if self.is_superuser:
+            return 'superadmin'
+        if self.is_staff:
+            return 'staff'
         return 'customer'
 
 class CustomerProfile(models.Model):

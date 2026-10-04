@@ -219,11 +219,9 @@ class TestAuthoritativePricingEngine:
         assert quote_ac['taxable_subtotal'] == '1599.00'
         # 5% GST on 1599 = 79.95
         assert quote_ac['tax_amount'] == '79.95'
-        # Gross = 1599 + 79.95 = 1678.95
-        assert quote_ac['gross_total'] == '1678.95'
-        # 50% Advance = 839.48, Balance = 839.47
-        assert quote_ac['advance_amount_due'] == '839.48'
-        assert quote_ac['balance_amount_due'] == '839.47'
+        # 100% Full Payment = 1678.95, Balance = 0.00
+        assert quote_ac['advance_amount_due'] == '1678.95'
+        assert quote_ac['balance_amount_due'] == '0.00'
         assert Decimal(quote_ac['advance_amount_due']) + Decimal(quote_ac['balance_amount_due']) == Decimal('1678.95')
 
         # 1 Non-AC Room, 1 Night, standard 2 adults
@@ -259,8 +257,8 @@ class TestAuthoritativePricingEngine:
         assert quote['tax_amount'] == '479.70'
         # Gross = 10073.70
         assert quote['gross_total'] == '10073.70'
-        assert quote['advance_amount_due'] == '5036.85'
-        assert quote['balance_amount_due'] == '5036.85'
+        assert quote['advance_amount_due'] == '10073.70'
+        assert quote['balance_amount_due'] == '0.00'
 
     # ==========================================
     # C & D. EXTRA GUEST CHARGES TESTS
@@ -443,8 +441,8 @@ class TestAuthoritativePricingEngine:
         assert snapshot.room_subtotal == Decimal('3198.00')
         assert snapshot.tax_amount == Decimal('159.90')
         assert snapshot.gross_total == Decimal('3357.90')
-        assert snapshot.advance_amount_due == Decimal('1678.95')
-        assert snapshot.balance_amount_due == Decimal('1678.95')
+        assert snapshot.advance_amount_due == Decimal('3357.90')
+        assert snapshot.balance_amount_due == Decimal('0.00')
         assert 'rooms' in snapshot.itemized_breakdown
 
         # 3. Modify the RoomRatePlan to simulate future price hike (₹1,599 -> ₹2,500)
@@ -503,8 +501,8 @@ class TestAuthoritativePricingEngine:
         assert res['tax_amount'] == '202.40'
         # Gross Total = 4250.40
         assert res['gross_total'] == '4250.40'
-        assert res['advance_amount_due'] == '2125.20'
-        assert res['balance_amount_due'] == '2125.20'
+        assert res['advance_amount_due'] == '4250.40'
+        assert res['balance_amount_due'] == '0.00'
 
     # ==========================================
     # M. OFFLINE STAFF BOOKINGS SHARED ENGINE

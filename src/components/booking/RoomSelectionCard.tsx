@@ -69,17 +69,13 @@ export const RoomSelectionCard: React.FC<RoomSelectionCardProps> = ({
                     {availability.categoryName}
                   </h3>
                   <div className="flex flex-wrap items-center gap-2 mt-1">
-                    <span className="text-xs text-neutral-secondary font-medium">
-                      {availability.totalInventory} Rooms Total Inventory
-                    </span>
-                    <span className="text-neutral-300">•</span>
                     <Badge
                       variant={availability.availableQuantity > 0 ? 'success' : 'error'}
                       size="sm"
                       className="text-[10px] font-bold"
                     >
                       {availability.availableQuantity > 0
-                        ? `${availability.availableQuantity} Available for stay dates`
+                        ? 'Available for Selected Dates'
                         : 'Sold Out on Selected Dates'}
                     </Badge>
                   </div>
@@ -165,7 +161,7 @@ export const RoomSelectionCard: React.FC<RoomSelectionCardProps> = ({
 
                 {currentQuantity >= maxAvailable && maxAvailable > 0 && (
                   <span className="text-[11px] text-amber-700 font-medium">
-                    Max available reached ({maxAvailable})
+                    Maximum limit reached
                   </span>
                 )}
               </div>

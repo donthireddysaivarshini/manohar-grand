@@ -1,5 +1,5 @@
-import React from 'react';
-import { ShieldCheck, CheckCircle2, ShieldAlert } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ShieldCheck, CheckCircle2, ShieldAlert, Clock } from 'lucide-react';
 import { Card, CardContent } from '../common/Card';
 import { Badge } from '../common/Badge';
 import { useBooking } from '../../store/BookingContext';
@@ -16,8 +16,27 @@ export const CheckoutSummary: React.FC = () => {
     totalSelectedRoomsCount,
   } = useBooking();
 
+  const [secondsRemaining, setSecondsRemaining] = useState<number | null>(null);
+
   const pricing = checkoutSummary?.pricing || activeHold?.pricing;
   const bookingRef = checkoutSummary?.booking_reference || activeHold?.booking_reference;
+  const holdExpiresAt = checkoutSummary?.hold_expires_at || activeHold?.hold_expires_at;
+
+  // Live Hold Countdown calculation
+  useEffect(() => {
+    if (!holdExpiresAt) return;
+
+    const updateTimer = () => {
+      const expiry = new Date(holdExpiresAt).getTime();
+      const now = new Date().getTime();
+      const diffSecs = Math.max(0, Math.floor((expiry - now) / 1000));
+      setSecondsRemaining(diffSecs);
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [holdExpiresAt]);
 
   const grossTotal = pricing
     ? parseFloat(String(pricing.gross_total))
@@ -25,11 +44,7 @@ export const CheckoutSummary: React.FC = () => {
 
   const advanceDue = pricing
     ? parseFloat(String(pricing.advance_amount_due))
-    : grossTotal * 0.5;
-
-  const balanceDue = pricing
-    ? parseFloat(String(pricing.balance_amount_due))
-    : grossTotal - advanceDue;
+    : grossTotal;
 
   const roomSubtotal = pricing
     ? parseFloat(String(pricing.room_subtotal))
@@ -50,6 +65,14 @@ export const CheckoutSummary: React.FC = () => {
   const checkOut = checkoutSummary?.check_out_date || activeHold?.check_out_date || searchParams.checkOut;
   const displayNights = checkoutSummary?.nights_count || activeHold?.nights_count || nightsCount;
 
+  const isHoldExpired = secondsRemaining !== null && secondsRemaining <= 0;
+
+  const formatCountdown = (secs: number) => {
+    const mins = Math.floor(secs / 60);
+    const remainder = secs % 60;
+    return `${mins}:${remainder < 10 ? '0' : ''}${remainder}`;
+  };
+
   return (
     <Card variant="elevated" className="bg-white border-neutral-border p-6 shadow-elevated sticky top-24">
       <CardContent className="p-0 flex flex-col gap-5">
@@ -65,6 +88,25 @@ export const CheckoutSummary: React.FC = () => {
             </Badge>
           )}
         </div>
+
+        {/* Live Hold Timer Banner */}
+        {secondsRemaining !== null && (
+          <div
+            className={`p-3 rounded-xl border flex items-center justify-between text-xs transition-colors ${
+              isHoldExpired
+                ? 'bg-red-50 border-red-200 text-red-700'
+                : 'bg-amber-50/80 border-amber-200 text-amber-900'
+            }`}
+          >
+            <div className="flex items-center gap-2 font-semibold">
+              <Clock className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>{isHoldExpired ? 'Hold Expired' : 'Room Hold Active'}</span>
+            </div>
+            <span className="font-mono font-bold text-sm">
+              {isHoldExpired ? '0:00' : formatCountdown(secondsRemaining)}
+            </span>
+          </div>
+        )}
 
         {/* Stay Dates Info */}
         <div className="flex flex-col gap-2 p-3 rounded-lg bg-neutral-light border border-neutral-border text-xs">
@@ -136,7 +178,7 @@ export const CheckoutSummary: React.FC = () => {
             </span>
           </div>
 
-          <div className="flex justify-between text-neutral-secondary">
+          <div className="flex justify-between text-neutral-secondary pb-1">
             <span>Gross Total Stay</span>
             <span className="font-bold text-neutral-dark">
               {formatCurrencyINR(grossTotal)}
@@ -146,9 +188,9 @@ export const CheckoutSummary: React.FC = () => {
           <div className="flex items-baseline justify-between pt-2 border-t border-neutral-border/80">
             <div>
               <span className="text-sm font-extrabold text-neutral-dark block">
-                50% Advance Due Now
+                Total Payable Now
               </span>
-              <span className="text-[10px] text-neutral-400">Balance paid at check-in ({formatCurrencyINR(balanceDue)})</span>
+              <span className="text-[10px] text-emerald-700 font-bold">100% Full Payment</span>
             </div>
             <span className="text-2xl font-black text-brand">
               {formatCurrencyINR(advanceDue)}

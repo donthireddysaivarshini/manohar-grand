@@ -117,16 +117,24 @@ export const ConfirmationPage: React.FC = () => {
 
   return (
     <div className="flex flex-col w-full print:bg-white print:p-0">
+      <style>{`
+        @media print {
+          @page { margin: 10mm; size: auto; }
+          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: #fff !important; }
+          .print-avoid-break { break-inside: avoid !important; page-break-inside: avoid !important; }
+        }
+      `}</style>
+
       {/* 1. Progress Step Bar (Hidden during print) */}
       <div className="print:hidden">
         <CheckoutProgress currentStep="confirmation" />
       </div>
 
-      <Section variant="default" padding="sm" className="py-6">
-        <Container size="lg">
-          <div className="max-w-3xl mx-auto flex flex-col gap-6">
-            {/* Confirmation Banner */}
-            <div className="bg-white rounded-card border border-neutral-border p-6 sm:p-8 text-center flex flex-col items-center gap-4 shadow-card">
+      <Section variant="default" padding="sm" className="py-6 print:py-0 print:bg-white">
+        <Container size="lg" className="print:p-0 print:max-w-full">
+          <div className="max-w-3xl mx-auto flex flex-col gap-6 print:gap-4 print:max-w-full">
+            {/* Confirmation Banner (Hidden during print for a clean 1-page voucher) */}
+            <div className="bg-white rounded-card border border-neutral-border p-6 sm:p-8 text-center flex flex-col items-center gap-4 shadow-card print:hidden">
               <div className="w-16 h-16 rounded-full bg-green-100 text-feedback-success flex items-center justify-center shadow-sm">
                 <CheckCircle2 className="w-9 h-9" />
               </div>
@@ -154,14 +162,14 @@ export const ConfirmationPage: React.FC = () => {
                 </div>
                 <div className="hidden sm:block text-neutral-300">|</div>
                 <div>
-                  <span className="text-neutral-secondary">Advance Paid: </span>
+                  <span className="text-neutral-secondary">Amount Paid: </span>
                   <span className="font-mono font-bold text-emerald-700">{formatCurrencyINR(advancePaid)}</span>
                 </div>
               </div>
             </div>
 
             {/* Itemized Voucher Card */}
-            <Card variant="bordered" className="bg-white p-6 sm:p-8 shadow-card">
+            <Card variant="bordered" className="bg-white p-6 sm:p-8 shadow-card print:shadow-none print:border print:border-neutral-300 print:p-5 print:rounded-none">
               <CardContent className="p-0 flex flex-col gap-6">
                 {/* Voucher Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-neutral-border">
@@ -186,7 +194,7 @@ export const ConfirmationPage: React.FC = () => {
                 </div>
 
                 {/* Lead Guest & Property Details */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-4 rounded-lg bg-neutral-light/70 border border-neutral-border text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-4 rounded-lg bg-neutral-light/70 border border-neutral-border text-xs print-avoid-break">
                   <div className="flex flex-col gap-2">
                     <span className="font-bold text-neutral-dark uppercase tracking-wider text-[11px] flex items-center gap-1.5">
                       <User className="w-3.5 h-3.5 text-brand" />
@@ -228,7 +236,7 @@ export const ConfirmationPage: React.FC = () => {
                 </div>
 
                 {/* Accommodations Table */}
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2 print-avoid-break">
                   <span className="text-xs font-bold uppercase tracking-wider text-neutral-dark">
                     Reserved Accommodations
                   </span>
@@ -261,7 +269,7 @@ export const ConfirmationPage: React.FC = () => {
                 </div>
 
                 {/* Authoritative Financial Breakdown */}
-                <div className="flex flex-col gap-2 p-4 rounded-lg bg-neutral-light border border-neutral-border text-xs">
+                <div className="flex flex-col gap-2 p-4 rounded-lg bg-neutral-light border border-neutral-border text-xs print-avoid-break">
                   <div className="flex justify-between text-neutral-secondary">
                     <span>Room Tariff Subtotal</span>
                     <span className="font-semibold text-neutral-dark">
@@ -281,21 +289,23 @@ export const ConfirmationPage: React.FC = () => {
                     </span>
                   </div>
                   <div className="flex justify-between py-1 text-xs text-emerald-800 font-bold bg-emerald-50/70 px-2.5 py-1.5 rounded border border-emerald-200">
-                    <span>50% Advance Deposit Paid</span>
+                    <span>Total Paid Online (100% Full Payment)</span>
                     <span className="font-black text-emerald-700">
                       {formatCurrencyINR(advancePaid)}
                     </span>
                   </div>
-                  <div className="flex justify-between text-xs text-neutral-dark font-bold px-2.5 pt-1">
-                    <span>Remaining 50% Balance Due at Check-In</span>
-                    <span className="font-bold text-brand">
-                      {formatCurrencyINR(balanceDue)}
-                    </span>
-                  </div>
+                  {balanceDue > 0 && (
+                    <div className="flex justify-between text-xs text-neutral-dark font-bold px-2.5 pt-1">
+                      <span>Balance Due at Check-In</span>
+                      <span className="font-bold text-brand">
+                        {formatCurrencyINR(balanceDue)}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Check-In Guidelines & Policies */}
-                <div className="p-4 rounded-lg bg-neutral-50 border border-neutral-200 text-xs flex flex-col gap-2">
+                <div className="p-4 rounded-lg bg-neutral-50 border border-neutral-200 text-xs flex flex-col gap-2 print-avoid-break">
                   <span className="font-bold text-neutral-dark uppercase tracking-wider text-[11px] flex items-center gap-1.5">
                     <ShieldAlert className="w-3.5 h-3.5 text-brand" />
                     Important Check-In Guidelines &amp; Policies

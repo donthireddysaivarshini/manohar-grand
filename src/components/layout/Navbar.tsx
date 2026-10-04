@@ -6,6 +6,8 @@ import { Button } from '../common/Button';
 import { Logo } from '../common/Logo';
 import { cn } from '../../utils/cn';
 
+import { UserNavMenu } from './UserNavMenu';
+
 export interface NavItem {
   label: string;
   href: string;
@@ -61,16 +63,19 @@ export const Navbar: React.FC = () => {
               ))}
             </nav>
 
-            {/* Header Actions (Phone Pill, Red Book Button) */}
+            {/* Header Actions (Phone Pill, User Menu / Sign In, Red Book Button) */}
             <div className="flex items-center gap-1.5 xs:gap-2 sm:gap-3 shrink-0">
               <a
                 href="tel:7997044999"
-                className="inline-flex items-center justify-center gap-1.5 h-8 sm:h-9 px-2.5 sm:px-3 rounded-lg bg-neutral-800 border border-neutral-700/80 text-neutral-200 hover:text-white hover:border-neutral-500 text-xs font-semibold transition-colors"
+                className="hidden lg:inline-flex items-center justify-center gap-1.5 h-8 sm:h-9 px-2.5 sm:px-3 rounded-lg bg-neutral-800 border border-neutral-700/80 text-neutral-200 hover:text-white hover:border-neutral-500 text-xs font-semibold transition-colors"
                 aria-label="Call Reception 7997044999"
               >
                 <Phone className="w-3.5 h-3.5 text-brand shrink-0" />
-                <span className="hidden sm:inline font-bold">7997044999</span>
+                <span className="font-bold">7997044999</span>
               </a>
+
+              {/* Customer Account / Sign In Dropdown */}
+              <UserNavMenu />
 
               <Link to="/booking" className="shrink-0">
                 <Button variant="primary" size="sm" className="gap-1.5 font-bold text-xs h-8 sm:h-9 px-2.5 xs:px-3 sm:px-4 shrink-0 shadow-sm">

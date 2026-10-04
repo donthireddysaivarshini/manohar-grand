@@ -6,15 +6,20 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
 from core.views import health_check
+from apps.reports.admin_views import admin_occupancy_dashboard_view
 
 urlpatterns = [
+    # Custom Staff & Manager Occupancy & Booking Dashboard
+    path('admin/occupancy-report/', admin_occupancy_dashboard_view, name='admin-occupancy-report'),
+
     # Developer/Superadmin Django Admin (Private)
     path('admin/', admin.site.urls),
 
     # django-allauth OAuth Endpoints (Google OAuth2 Authorization Code flow)
     path('accounts/', include('allauth.urls')),
 
-    # REST API Version 1 Namespace
+    # REST API Namespaces
+    path('api/auth/', include('apps.authentication.urls')),
     path('api/v1/health/', health_check, name='api-health'),
     path('api/v1/auth/', include('apps.authentication.urls')),
     path('api/v1/rooms/', include('apps.rooms.urls')),

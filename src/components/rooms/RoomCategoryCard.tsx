@@ -77,7 +77,7 @@ export const RoomCategoryCard: React.FC<RoomCategoryCardProps> = ({ category }) 
 
             <div className="text-right shrink-0">
               <span className="text-[9px] xs:text-[10px] uppercase font-bold text-neutral-400 block tracking-wider">
-                Demo Rate
+                Starting from
               </span>
               <div className="flex items-baseline gap-1">
                 <span className="text-lg xs:text-xl font-black text-brand tracking-tight">

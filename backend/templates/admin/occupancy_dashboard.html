@@ -1,0 +1,181 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+    &rsaquo; <span>Daily Occupancy & Room Booking Dashboard</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid" style="padding-bottom: 40px;">
+    <!-- Top Filter Bar -->
+    <div class="card card-primary card-outline shadow-sm mb-4">
+        <div class="card-header bg-white py-3">
+            <div class="d-flex flex-wrap justify-content-between align-items-center">
+                <h4 class="card-title m-0 text-dark font-weight-bold">
+                    <i class="fas fa-calendar-alt text-primary mr-2"></i> Daily Room Occupancy & Booking Forecast
+                </h4>
+                <a href="http://localhost:3000/admin/reports" target="_blank" class="btn btn-outline-primary btn-sm font-weight-bold">
+                    <i class="fas fa-external-link-alt mr-1"></i> Open Advanced Analytics Dashboard
+                </a>
+            </div>
+        </div>
+        <div class="card-body bg-light py-3">
+            <form method="get" class="form-inline flex-wrap gap-2">
+                <label class="mr-2 font-weight-bold text-secondary">From Date:</label>
+                <input type="date" name="from_date" value="{{ from_date }}" class="form-control form-control-sm mr-3" required />
+                
+                <label class="mr-2 font-weight-bold text-secondary">To Date:</label>
+                <input type="date" name="to_date" value="{{ to_date }}" class="form-control form-control-sm mr-3" required />
+                
+                <button type="submit" class="btn btn-primary btn-sm font-weight-bold px-3">
+                    <i class="fas fa-filter mr-1"></i> Update Date Range
+                </button>
+                <a href="?" class="btn btn-secondary btn-sm ml-2">Reset (Next 14 Days)</a>
+            </form>
+        </div>
+    </div>
+
+    <!-- KPI Summary Row -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-info shadow-sm">
+                <div class="inner">
+                    <h3>{{ occupancy.summary.operational_physical_rooms }}</h3>
+                    <p>Total Hotel Rooms (20 AC / 8 Non-AC)</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-hotel"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-success shadow-sm">
+                <div class="inner">
+                    <h3>{{ occupancy.summary.average_occupancy_rate_percent }}%</h3>
+                    <p>Average Occupancy Rate</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-warning shadow-sm">
+                <div class="inner">
+                    <h3>{{ frontdesk.summary.expected_arrivals_count }}</h3>
+                    <p>Today's Expected Arrivals</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-sign-in-alt"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-danger shadow-sm">
+                <div class="inner">
+                    <h3>{{ frontdesk.summary.expected_departures_count }}</h3>
+                    <p>Today's Expected Departures</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-sign-out-alt"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Day-By-Day Detailed Table -->
+    <div class="card card-outline card-dark shadow-sm mb-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="card-title m-0 text-dark font-weight-bold">
+                <i class="fas fa-table mr-2 text-primary"></i> Day-by-Day Room Inventory & Occupancy Breakdown
+            </h5>
+        </div>
+        <div class="card-body p-0 table-responsive">
+            <table class="table table-hover table-striped table-bordered text-center m-0">
+                <thead class="thead-dark text-nowrap">
+                    <tr>
+                        <th style="text-align: left; padding-left: 15px;">Date</th>
+                        <th>Total Capacity</th>
+                        <th class="bg-success text-white">Booked / Occupied</th>
+                        <th class="bg-warning text-dark">Active Holds (15m)</th>
+                        <th class="bg-secondary text-white">Maintenance Blocks</th>
+                        <th class="bg-primary text-white">Available to Book</th>
+                        <th>Occupancy %</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for day in occupancy.daily_occupancy %}
+                    <tr>
+                        <td style="text-align: left; padding-left: 15px;" class="font-weight-bold text-dark">
+                            {{ day.date }}
+                        </td>
+                        <td>
+                            <span class="badge badge-light border px-2 py-1">{{ day.total_operational_rooms }}</span>
+                        </td>
+                        <td>
+                            {% if day.rooms_occupied > 0 %}
+                                <span class="badge badge-success font-weight-bold px-2 py-1" style="font-size: 13px;">
+                                    {{ day.rooms_occupied }} Rooms
+                                </span>
+                            {% else %}
+                                <span class="text-muted font-weight-bold">0</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if day.rooms_held > 0 %}
+                                <span class="badge badge-warning font-weight-bold px-2 py-1">
+                                    {{ day.rooms_held }} Held
+                                </span>
+                            {% else %}
+                                <span class="text-muted">0</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if day.rooms_blocked > 0 %}
+                                <span class="badge badge-secondary px-2 py-1">
+                                    {{ day.rooms_blocked }}
+                                </span>
+                            {% else %}
+                                <span class="text-muted">0</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge badge-primary font-weight-bold px-2 py-1" style="font-size: 13px;">
+                                {{ day.rooms_available }} Available
+                            </span>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center justify-content-center">
+                                <div class="progress progress-xs mr-2" style="width: 60px; height: 8px;">
+                                    <div class="progress-bar {% if day.occupancy_rate_percent >= 80 %}bg-danger{% elif day.occupancy_rate_percent >= 40 %}bg-warning{% else %}bg-success{% endif %}" style="width: {{ day.occupancy_rate_percent }}%"></div>
+                                </div>
+                                <span class="font-weight-bold text-dark">{{ day.occupancy_rate_percent }}%</span>
+                            </div>
+                        </td>
+                        <td>
+                            {% if day.rooms_available == 0 %}
+                                <span class="badge badge-danger font-weight-bold px-2 py-1">SOLD OUT</span>
+                            {% elif day.rooms_occupied > 0 %}
+                                <span class="badge badge-info font-weight-bold px-2 py-1">ACTIVE BOOKINGS</span>
+                            {% else %}
+                                <span class="badge badge-success font-weight-bold px-2 py-1">ALL AVAILABLE</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="p-4 text-muted font-italic">
+                            No occupancy records found for the specified date range.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

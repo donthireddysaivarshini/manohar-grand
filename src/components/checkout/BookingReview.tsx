@@ -68,7 +68,6 @@ export const BookingReview: React.FC<BookingReviewProps> = ({ onBackToDetails })
   // Authoritative financial values from BookingPriceSnapshot
   const pricing = checkoutSummary?.pricing || activeHold?.pricing;
   const advanceAmountDue = pricing ? parseFloat(String(pricing.advance_amount_due)) : 0;
-  const balanceAmountDue = pricing ? parseFloat(String(pricing.balance_amount_due)) : 0;
   const grossTotal = pricing ? parseFloat(String(pricing.gross_total)) : 0;
   const roomSubtotal = pricing ? parseFloat(String(pricing.room_subtotal)) : 0;
   const taxAmount = pricing ? parseFloat(String(pricing.tax_amount)) : 0;
@@ -117,7 +116,7 @@ export const BookingReview: React.FC<BookingReviewProps> = ({ onBackToDetails })
         amount: paymentOrder.amount, // in paise
         currency: paymentOrder.currency || 'INR',
         name: 'Hotel Manohar Grand',
-        description: `50% Advance Deposit - ${bookingRef}`,
+        description: `Full Payment - ${bookingRef}`,
         order_id: paymentOrder.razorpay_order_id,
         prefill: {
           name: leadName,
@@ -369,24 +368,17 @@ export const BookingReview: React.FC<BookingReviewProps> = ({ onBackToDetails })
               </span>
             </div>
 
-            <div className="p-3 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-between">
+            <div className="p-3 rounded-lg bg-red-50/70 border border-brand/20 flex items-center justify-between">
               <div>
                 <span className="font-extrabold text-brand text-sm block">
-                  50% Advance Payable Now
+                  Total Payable Now (100% Full Payment)
                 </span>
                 <span className="text-[11px] text-neutral-600">
-                  Required to secure and confirm reservation
+                  Secures and confirms your instant direct reservation
                 </span>
               </div>
               <span className="text-2xl font-black text-brand">
                 {formatCurrencyINR(advanceAmountDue)}
-              </span>
-            </div>
-
-            <div className="flex justify-between text-neutral-secondary pt-1">
-              <span>Remaining 50% Balance Due at Check-In</span>
-              <span className="font-bold text-neutral-dark">
-                {formatCurrencyINR(balanceAmountDue)}
               </span>
             </div>
           </div>
@@ -462,7 +454,7 @@ export const BookingReview: React.FC<BookingReviewProps> = ({ onBackToDetails })
           ) : (
             <>
               <Lock className="w-4 h-4" />
-              <span>Pay {formatCurrencyINR(advanceAmountDue)} Advance</span>
+              <span>Pay {formatCurrencyINR(advanceAmountDue)}</span>
             </>
           )}
         </Button>

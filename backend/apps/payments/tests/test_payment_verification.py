@@ -188,8 +188,8 @@ class TestDirectPaymentVerificationAPI:
         assert res["payment_status"] == "captured"
         assert res["razorpay_order_id"] == order_id
         assert res["razorpay_payment_id"] == payment_id
-        assert Decimal(str(res["advance_amount"])) == Decimal("1678.95")
-        assert Decimal(str(res["balance_amount"])) == Decimal("1678.95")
+        assert Decimal(str(res["advance_amount"])) == Decimal("3357.90")
+        assert Decimal(str(res["balance_amount"])) == Decimal("0.00")
 
         # Verify DB state
         booking.refresh_from_db()

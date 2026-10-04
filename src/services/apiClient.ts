@@ -1,6 +1,5 @@
-/**
- * Authoritative API client for Django Session Authentication & DRF APIs.
- */
+import { getAccessToken } from '../lib/api';
+
 export const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
 
 export function getCookie(name: string): string | null {
@@ -34,6 +33,12 @@ export async function fetchApi<T = any>(
 
   if (!headers.has('Content-Type') && !(options.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json');
+  }
+
+  // Attach JWT Bearer Token if available
+  const token = getAccessToken();
+  if (token && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${token}`);
   }
 
   const csrfToken = getCookie('csrftoken');

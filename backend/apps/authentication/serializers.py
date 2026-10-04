@@ -100,3 +100,65 @@ class ProfileUpdateSerializer(serializers.Serializer):
             profile.save(update_fields=['city', 'state'])
 
         return user
+
+class UserProfileSerializer(UserSerializer):
+    pass
+
+class RegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(
+        write_only=True,
+        required=True,
+        min_length=8,
+        style={'input_type': 'password'},
+        help_text="Password must be at least 8 characters long."
+    )
+    name = serializers.CharField(write_only=True, required=False, allow_blank=True)
+
+    class Meta:
+        model = User
+        fields = ['id', 'email', 'name', 'first_name', 'last_name', 'phone', 'password']
+        read_only_fields = ['id']
+
+    def validate_email(self, value):
+        normalized_email = value.lower().strip()
+        if User.objects.filter(email__iexact=normalized_email).exists():
+            raise serializers.ValidationError("An account with this email address already exists.")
+        return normalized_email
+
+    def create(self, validated_data):
+        name = validated_data.pop('name', '').strip()
+        first_name = validated_data.get('first_name', '')
+        last_name = validated_data.get('last_name', '')
+
+        if name and not first_name:
+            parts = name.split(' ', 1)
+            first_name = parts[0]
+            last_name = parts[1] if len(parts) > 1 else ''
+
+        email = validated_data.get('email').lower().strip()
+        password = validated_data.get('password')
+        phone = validated_data.get('phone', '')
+
+        user = User.objects.create_user(
+            email=email,
+            password=password,
+            first_name=first_name,
+            last_name=last_name,
+            phone=phone,
+            auth_provider='email',
+        )
+
+        # Automatically ensure customer profile exists
+        CustomerProfile.objects.get_or_create(user=user)
+        return user
+
+
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    username_field = User.USERNAME_FIELD
+
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        data['user'] = UserSerializer(self.user).data
+        return data

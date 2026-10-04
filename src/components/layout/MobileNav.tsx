@@ -14,9 +14,13 @@ import {
   User,
   ChevronRight,
   ShieldCheck,
+  LogOut,
+  BookOpen,
+  LayoutDashboard,
 } from 'lucide-react';
 import { Logo } from '../common/Logo';
 import { Button } from '../common/Button';
+import { useAuth } from '../../store/AuthContext';
 import { cn } from '../../utils/cn';
 
 export interface MobileNavProps {
@@ -25,6 +29,8 @@ export interface MobileNavProps {
 }
 
 export const MobileNav: React.FC<MobileNavProps> = ({ isOpen, onClose }) => {
+  const { user, isAuthenticated, logout } = useAuth();
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
@@ -45,6 +51,9 @@ export const MobileNav: React.FC<MobileNavProps> = ({ isOpen, onClose }) => {
 
   if (!isOpen) return null;
 
+  const displayName = user ? (user.full_name || user.first_name || user.email.split('@')[0]) : '';
+  const userInitial = displayName ? displayName.charAt(0).toUpperCase() : 'U';
+
   const navSections = [
     {
       label: 'Main Navigation',
@@ -55,8 +64,8 @@ export const MobileNav: React.FC<MobileNavProps> = ({ isOpen, onClose }) => {
           href: '/rooms',
           icon: BedDouble,
           subItems: [
-            { label: 'AC Room (20 Rooms)', href: '/rooms/ac-room' },
-            { label: 'Non-AC Room (8 Rooms)', href: '/rooms/non-ac-room' },
+            { label: 'AC Room', href: '/rooms/ac-room' },
+            { label: 'Non-AC Room', href: '/rooms/non-ac-room' },
           ],
         },
         { label: 'Hotel Amenities', href: '/amenities', icon: Sparkles },
@@ -64,13 +73,6 @@ export const MobileNav: React.FC<MobileNavProps> = ({ isOpen, onClose }) => {
         { label: 'Corporate & Bulk Booking', href: '/corporate-booking', icon: Briefcase },
         { label: 'About Manohar Grand', href: '/about', icon: Info },
         { label: 'Location & Contact', href: '/contact', icon: MapPin },
-      ],
-    },
-    {
-      label: 'Direct Booking & Account',
-      items: [
-        { label: 'Check Availability & Book', href: '/booking', icon: CalendarDays },
-        { label: 'Customer Account / Login', href: '/account/login', icon: User },
       ],
     },
   ];
@@ -164,6 +166,101 @@ export const MobileNav: React.FC<MobileNavProps> = ({ isOpen, onClose }) => {
               </nav>
             </div>
           ))}
+
+          {/* Direct Booking & Customer Account Section */}
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 px-2.5 block">
+              Direct Booking & Account
+            </span>
+
+            <nav className="space-y-1">
+              <NavLink
+                to="/booking"
+                onClick={onClose}
+                className={({ isActive }) =>
+                  cn(
+                    'flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-colors',
+                    isActive
+                      ? 'bg-brand text-white shadow-sm'
+                      : 'text-neutral-200 hover:bg-neutral-800 hover:text-white'
+                  )
+                }
+              >
+                <div className="flex items-center gap-2.5">
+                  <CalendarDays className="w-4 h-4 text-brand shrink-0" />
+                  <span>Check Availability & Book</span>
+                </div>
+                <ChevronRight className="w-3.5 h-3.5 text-neutral-500" />
+              </NavLink>
+
+              {isAuthenticated && user ? (
+                <>
+                  {/* Logged in User Card */}
+                  <div className="p-3 rounded-xl bg-neutral-800/80 border border-neutral-700/80 space-y-2 mt-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-full bg-brand text-white flex items-center justify-center text-xs font-bold shrink-0">
+                        {userInitial}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-bold text-white truncate">{displayName}</p>
+                        <p className="text-[10px] text-neutral-400 truncate">{user.email}</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-1.5 pt-1">
+                      <Link
+                        to="/account/bookings"
+                        onClick={onClose}
+                        className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-neutral-900 border border-neutral-700/60 text-[11px] font-semibold text-neutral-200 hover:text-white"
+                      >
+                        <BookOpen className="w-3 h-3 text-brand" />
+                        <span>My Bookings</span>
+                      </Link>
+                      <Link
+                        to="/account/dashboard"
+                        onClick={onClose}
+                        className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-neutral-900 border border-neutral-700/60 text-[11px] font-semibold text-neutral-200 hover:text-white"
+                      >
+                        <LayoutDashboard className="w-3 h-3 text-brand" />
+                        <span>Dashboard</span>
+                      </Link>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        logout();
+                        onClose();
+                      }}
+                      className="w-full flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-semibold text-red-400 hover:text-red-300 hover:bg-red-950/30 rounded-lg transition-colors cursor-pointer"
+                    >
+                      <LogOut className="w-3 h-3" />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <NavLink
+                  to="/account/login"
+                  onClick={onClose}
+                  className={({ isActive }) =>
+                    cn(
+                      'flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-colors',
+                      isActive
+                        ? 'bg-brand text-white shadow-sm'
+                        : 'text-neutral-200 hover:bg-neutral-800 hover:text-white'
+                    )
+                  }
+                >
+                  <div className="flex items-center gap-2.5">
+                    <User className="w-4 h-4 text-brand shrink-0" />
+                    <span>Customer Account / Sign In</span>
+                  </div>
+                  <ChevronRight className="w-3.5 h-3.5 text-neutral-500" />
+                </NavLink>
+              )}
+            </nav>
+          </div>
 
           {/* Location & Quick Contact Card */}
           <div className="p-3 rounded-xl bg-neutral-800/70 border border-neutral-700/80 space-y-2">

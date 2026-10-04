@@ -112,13 +112,11 @@ export const Footer: React.FC = () => {
               <li>
                 <Link to="/rooms/ac-room" className="hover:text-brand transition-colors flex items-center justify-between">
                   <span>AC Room</span>
-                  <span className="text-xs text-neutral-500">20 Rooms</span>
                 </Link>
               </li>
               <li>
                 <Link to="/rooms/non-ac-room" className="hover:text-brand transition-colors flex items-center justify-between">
                   <span>Non-AC Room</span>
-                  <span className="text-xs text-neutral-500">8 Rooms</span>
                 </Link>
               </li>
               <li className="pt-2">

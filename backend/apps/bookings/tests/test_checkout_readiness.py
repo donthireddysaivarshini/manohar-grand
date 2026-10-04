@@ -271,10 +271,10 @@ class TestCheckoutReadinessFlow:
         assert Decimal(str(pricing["tax_amount"])) == Decimal("159.90")
         # Gross = 3198 + 159.90 = 3357.90
         assert Decimal(str(pricing["gross_total"])) == Decimal("3357.90")
-        # 50% advance = 1678.95
-        assert Decimal(str(pricing["advance_amount_due"])) == Decimal("1678.95")
-        # Remaining balance = 1678.95
-        assert Decimal(str(pricing["balance_amount_due"])) == Decimal("1678.95")
+        # 100% full payment = 3357.90
+        assert Decimal(str(pricing["advance_amount_due"])) == Decimal("3357.90")
+        # Remaining balance = 0.00
+        assert Decimal(str(pricing["balance_amount_due"])) == Decimal("0.00")
 
     def test_customer_cannot_access_another_customers_checkout(self, api_client, room_setup, customer_user, customer_user_2, hotel_config):
         """B. Customer B cannot access Customer A's checkout summary (403 Forbidden)."""
@@ -527,9 +527,9 @@ class TestCheckoutReadinessFlow:
         assert payment_data["status"] == "held"
         assert payment_data["currency"] == "INR"
         assert Decimal(str(payment_data["gross_total"])) == Decimal("3357.90")
-        assert Decimal(str(payment_data["advance_amount_due"])) == Decimal("1678.95")
-        assert payment_data["advance_amount_paise"] == 167895
-        assert Decimal(str(payment_data["balance_amount_due"])) == Decimal("1678.95")
+        assert Decimal(str(payment_data["advance_amount_due"])) == Decimal("3357.90")
+        assert payment_data["advance_amount_paise"] == 335790
+        assert Decimal(str(payment_data["balance_amount_due"])) == Decimal("0.00")
         assert payment_data["lead_guest_name"] == "Alice Sharma"
         assert payment_data["customer_email"] == "alice@example.com"
 

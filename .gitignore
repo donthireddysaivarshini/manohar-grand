@@ -41,4 +41,9 @@ htmlcov/
 *.egg-info/
 media/
 backend/media/
+venv/
+.venv/
+env/
+notes.txt
+
 

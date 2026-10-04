@@ -5,16 +5,71 @@ from django.contrib.auth import login as django_login, logout as django_logout
 from django.middleware.csrf import get_token
 from django.utils import timezone
 from django.views.decorators.csrf import ensure_csrf_cookie
-from rest_framework import status
+from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from dj_rest_auth.registration.views import SocialLoginView
+from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
+from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 
 from .serializers import (
     UserSerializer,
     StaffLoginSerializer,
     ProfileUpdateSerializer,
+    RegisterSerializer,
+    CustomTokenObtainPairSerializer,
 )
+
+class RegisterView(generics.CreateAPIView):
+    """
+    Public customer registration endpoint.
+    Accepts full name, email, password, and provisions a CustomerUser + CustomerProfile.
+    """
+    serializer_class = RegisterSerializer
+    permission_classes = [AllowAny]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        headers = self.get_success_headers(serializer.data)
+        return Response({
+            "success": True,
+            "data": {
+                "message": "Account created successfully.",
+                "user": UserSerializer(user).data
+            },
+            "meta": {
+                "timestamp": timezone.now().isoformat()
+            }
+        }, status=status.HTTP_201_CREATED, headers=headers)
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    """
+    JWT Login endpoint returning access, refresh tokens and the full user profile.
+    """
+    serializer_class = CustomTokenObtainPairSerializer
+
+class UserProfileView(generics.RetrieveAPIView):
+    """
+    Returns the authenticated user's profile for session hydration.
+    """
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
+
+class GoogleLoginView(SocialLoginView):
+    """
+    Google OAuth 2.0 exchange endpoint.
+    Accepts Google authorization code from popup flow and issues JWT tokens + CustomerUser session.
+    """
+    adapter_class = GoogleOAuth2Adapter
+    client_class = OAuth2Client
+    callback_url = "postmessage"
 
 @api_view(['GET'])
 @permission_classes([AllowAny])

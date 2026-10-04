@@ -1,12 +1,23 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { CustomerUser, AuthState } from '../types/customer';
-import { BACKEND_URL, fetchApi, initCsrfToken } from '../services/apiClient';
+import { authService, clearTokens, getAccessToken } from '../lib/api';
+import { AuthModal } from '../components/auth/AuthModal';
+
+const GOOGLE_CLIENT_ID =
+  import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+  '611694955223-6ibdlp0ct37g0jlpbl8m06rcg5a06i7m.apps.googleusercontent.com';
 
 interface AuthContextType extends AuthState {
-  loginWithGoogle: () => void;
-  hydrate: () => Promise<CustomerUser | null>;
+  login: (email: string, password: string) => Promise<void>;
+  signup: (data: { name?: string; email: string; password: string; phone?: string }) => Promise<void>;
+  loginWithGoogle: (code: string) => Promise<void>;
   logout: () => Promise<void>;
+  hydrate: () => Promise<CustomerUser | null>;
   setUser: (user: CustomerUser | null) => void;
+  openAuthModal: (mode?: 'login' | 'signup') => void;
+  closeAuthModal: () => void;
+  isAuthModalOpen: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -14,18 +25,38 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<CustomerUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'signup'>('login');
 
+  const openAuthModal = (mode: 'login' | 'signup' = 'login') => {
+    setAuthModalMode(mode);
+    setIsAuthModalOpen(true);
+  };
+
+  const closeAuthModal = () => {
+    setIsAuthModalOpen(false);
+  };
+
+  // Hydrate user session from JWT token on load
   const hydrate = async (): Promise<CustomerUser | null> => {
+    setIsLoading(true);
     try {
-      const res = await fetchApi<CustomerUser>('/api/v1/auth/me/');
-      if (res.success && res.data) {
-        setUser(res.data);
-        return res.data;
+      const token = getAccessToken();
+      if (!token) {
+        setUser(null);
+        return null;
+      }
+      const currentUser = await authService.getCurrentUser();
+      if (currentUser) {
+        setUser(currentUser);
+        return currentUser;
       } else {
+        clearTokens();
         setUser(null);
         return null;
       }
     } catch {
+      clearTokens();
       setUser(null);
       return null;
     } finally {
@@ -34,21 +65,50 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   useEffect(() => {
-    initCsrfToken();
     hydrate();
+
+    // Listen for session expiry from Axios interceptors
+    const handleSessionExpired = () => {
+      setUser(null);
+      openAuthModal('login');
+    };
+    window.addEventListener('auth:session-expired', handleSessionExpired);
+    return () => window.removeEventListener('auth:session-expired', handleSessionExpired);
   }, []);
 
-  const loginWithGoogle = () => {
-    // Initiates django-allauth OAuth Authorization Code flow
-    window.location.href = `${BACKEND_URL}/accounts/google/login/?process=login`;
+  const login = async (email: string, password: string) => {
+    setIsLoading(true);
+    try {
+      const res = await authService.login(email, password);
+      setUser(res.user);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const signup = async (data: { name?: string; email: string; password: string; phone?: string }) => {
+    setIsLoading(true);
+    try {
+      await authService.signup(data);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loginWithGoogle = async (code: string) => {
+    setIsLoading(true);
+    try {
+      const res = await authService.loginWithGoogle(code);
+      setUser(res.user);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const logout = async () => {
     setIsLoading(true);
     try {
-      await fetchApi('/api/v1/auth/logout/', { method: 'POST' });
-    } catch (err) {
-      console.warn('Logout API error:', err);
+      await authService.logout();
     } finally {
       setUser(null);
       setIsLoading(false);
@@ -56,19 +116,32 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isAuthenticated: !!user,
-        isLoading,
-        loginWithGoogle,
-        hydrate,
-        logout,
-        setUser,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      <AuthContext.Provider
+        value={{
+          user,
+          isAuthenticated: !!user,
+          isLoading,
+          login,
+          signup,
+          loginWithGoogle,
+          logout,
+          hydrate,
+          setUser,
+          openAuthModal,
+          closeAuthModal,
+          isAuthModalOpen,
+        }}
+      >
+        {children}
+        {/* Global Auth Modal */}
+        <AuthModal
+          isOpen={isAuthModalOpen}
+          onClose={closeAuthModal}
+          defaultMode={authModalMode}
+        />
+      </AuthContext.Provider>
+    </GoogleOAuthProvider>
   );
 };
 

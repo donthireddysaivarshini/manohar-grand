@@ -286,9 +286,9 @@ def calculate_booking_quote(
     # 6. Gross Total
     gross_total = quantize_currency(taxable_subtotal + tax_amount)
 
-    # 7. 50% Advance Due & Balance Due
-    advance_amount_due = quantize_currency(gross_total * Decimal('0.50'))
-    balance_amount_due = gross_total - advance_amount_due
+    # 7. 100% Full Payment Online
+    advance_amount_due = gross_total
+    balance_amount_due = Decimal('0.00')
 
     total_rooms_count = sum(r['room_quantity'] for r in normalized_rooms)
 

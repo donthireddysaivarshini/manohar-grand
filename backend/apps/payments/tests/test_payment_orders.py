@@ -211,9 +211,9 @@ class TestRazorpayPaymentOrders:
         assert data["razorpay_key_id"] == getattr(settings, 'RAZORPAY_KEY_ID')
         assert data["razorpay_order_id"].startswith("order_mock_")
         
-        # 2 nights * 1599 = 3198 + 5% GST (159.90) = 3357.90 => 50% advance = 1678.95 => 167895 paise
-        assert Decimal(str(data["amount_inr"])) == Decimal("1678.95")
-        assert data["amount"] == 167895
+        # 2 nights * 1599 = 3198 + 5% GST (159.90) = 3357.90 => 100% full payment = 3357.90 => 335790 paise
+        assert Decimal(str(data["amount_inr"])) == Decimal("3357.90")
+        assert data["amount"] == 335790
 
         # Check internal payment ID is distinct from Razorpay order ID
         assert data["payment_id"] != data["razorpay_order_id"]
@@ -221,8 +221,8 @@ class TestRazorpayPaymentOrders:
         # Verify DB record
         order = PaymentOrder.objects.get(id=data["payment_id"])
         assert order.booking == booking
-        assert order.amount == Decimal("1678.95")
-        assert order.amount_paise == 167895
+        assert order.amount == Decimal("3357.90")
+        assert order.amount_paise == 335790
         assert order.status == "created"
 
         # Verify booking status remains 'held'
@@ -387,9 +387,9 @@ class TestRazorpayPaymentOrders:
 
         assert response.status_code == status.HTTP_201_CREATED
         data = response.json()["data"]
-        # Server must strictly charge authoritative ₹1678.95 (167895 paise) in INR
-        assert Decimal(str(data["amount_inr"])) == Decimal("1678.95")
-        assert data["amount"] == 167895
+        # Server must strictly charge authoritative ₹3357.90 (335790 paise) in INR
+        assert Decimal(str(data["amount_inr"])) == Decimal("3357.90")
+        assert data["amount"] == 335790
         assert data["currency"] == "INR"
 
     def test_duplicate_order_requests_are_idempotent(self, api_client, room_setup, customer_user, hotel_config, mock_razorpay):
