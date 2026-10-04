@@ -1,9 +1,14 @@
 """
 Custom DRF exception handler to enforce consistent error envelopes and accurate HTTP status codes.
 """
+import logging
+from django.conf import settings
 from django.utils import timezone
 from rest_framework.views import exception_handler
 from rest_framework import exceptions, status
+from rest_framework.response import Response
+
+logger = logging.getLogger('django.request')
 
 def custom_exception_handler(exc, context):
     response = exception_handler(exc, context)
@@ -25,4 +30,24 @@ def custom_exception_handler(exc, context):
             }
         }
         response.data = custom_data
-    return response
+        return response
+
+    # If unhandled by standard DRF and DEBUG is False, produce a clean 500 envelope without exposing tracebacks
+    if not getattr(settings, 'DEBUG', True):
+        logger.exception("Unhandled API error: %s", exc)
+        return Response(
+            {
+                "success": False,
+                "error": {
+                    "code": "INTERNAL_SERVER_ERROR",
+                    "message": "An unexpected server error occurred. Please contact hotel administration if the issue persists.",
+                    "details": None
+                },
+                "meta": {
+                    "timestamp": timezone.now().isoformat()
+                }
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+    return None

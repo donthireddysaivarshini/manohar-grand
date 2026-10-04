@@ -312,3 +312,22 @@
   5. **Sanitization & Privacy**:
      - Sensitive credentials (Razorpay API keys/secrets, webhook secrets, guest Aadhaar/Govt IDs, access tokens) are strictly excluded from report payloads.
 - **Consequences**: Fast, reliable, and secure operational reporting; complete clarity on hotel financial health; full alignment with backend sources of truth without data drift.
+
+---
+
+## ADR 23: Production Hardening, Security Sanitization & Architecture Freeze
+- **Status**: Approved.
+- **Context**: Phase 7 establishes the final production hardening pass across the Django backend, REST API, React SPA, security headers, database configuration, exception handlers, and deployment runbooks prior to final end-to-end browser UAT.
+- **Decision**:
+  1. **Architecture & Feature Freeze**:
+     - Feature implementation is officially frozen across all domains (Authentication, Rooms, Availability, Booking Hold, Pricing, Payments, Webhooks, Reconciliation, and Reports).
+     - Corporate and bulk bookings remain an enquiry and contact workflow.
+     - Outbound notification infrastructure (email/SMS/WhatsApp dispatchers) is explicitly excluded from backend runtime scope.
+  2. **Production Settings & Security Hardening**:
+     - `production.py` defines `DEBUG=False`, `SESSION_COOKIE_SECURE=True`, `CSRF_COOKIE_SECURE=True`, `SameSite='Lax'`, `SECURE_PROXY_SSL_HEADER=('HTTP_X_FORWARDED_PROTO', 'https')`, `SECURE_HSTS_SECONDS=31536000`, `X_FRAME_OPTIONS='DENY'`, and sanitized logging.
+     - `custom_exception_handler` intercepts unhandled server exceptions in production to return structured JSON without leaking tracebacks, database queries, or filesystem paths.
+  3. **Database Configuration**:
+     - Supports direct `DATABASE_URL` or discrete environment variables for PostgreSQL 16+ production clusters while preserving SQLite for local development and unit testing.
+  4. **Strict Secret Isolation**:
+     - Zero private keys, API secrets, or OAuth credentials are tracked in Git.
+- **Consequences**: Complete production readiness, zero security leakage, rock-solid stability, and clear boundaries for final UAT QA.
