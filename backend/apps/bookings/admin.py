@@ -317,7 +317,8 @@ class CancellationRequestAdmin(admin.ModelAdmin):
     cancellation_reason_display.short_description = 'Reason'
 
     def refund_amount_display(self, obj):
-        return format_html('<b>₹{:,.2f}</b>', obj.refund_amount)
+        amount = obj.refund_amount if obj.refund_amount is not None else 0
+        return format_html('<b>₹{}</b>', f"{amount:,.2f}")
     refund_amount_display.short_description = 'Refund Amount'
 
     def status_badge(self, obj):
