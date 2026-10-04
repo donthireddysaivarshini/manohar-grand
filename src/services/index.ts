@@ -5,6 +5,7 @@ export * from './api/bookingApiService';
 export * from './api/paymentApiService';
 export * from './api/pricingApiService';
 export * from './api/razorpayService';
+export * from './api/reportApiService';
 
 // Contract Interfaces
 export * from './contracts/IRoomService';

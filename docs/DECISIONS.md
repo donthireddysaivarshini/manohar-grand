@@ -288,3 +288,27 @@
      - Customer serializers expose `payment_status` (`unpaid`, `advance_paid`, `failed`).
      - Staff serializers expose read-only `payment_orders` without leaking gateway secrets.
 - **Consequences**: Rock-solid resilience against payment retries, network race conditions, and webhook replays; full auditability of financial lifecycle events; zero security exposure.
+
+---
+
+## ADR 22: Operational Reporting Architecture & Server-Side Metrics Aggregation
+- **Status**: Approved.
+- **Context**: Phase 6 introduces an enterprise-grade operational and financial reporting suite for hotel managers and super administrators, providing real-time visibility into bookings, physical room occupancy, category RevPAR/ADR performance, revenue breakdowns, payment gateway statuses, front-desk manifests, physical room utilization, overbooking audit trails, and payment discrepancies.
+- **Decision**:
+  1. **Strict Read-Only Guarantee**:
+     - All reporting endpoints (`/api/v1/admin/reports/*`) are strictly queries (`GET`) and never mutate reservations, inventory, pricing, or payment states.
+  2. **Authoritative Relational Data Sources**:
+     - Historical booking financials are sourced strictly from immutable `BookingPriceSnapshot` records.
+     - Physical room inventory and occupancy calculations query `PhysicalRoom`, `BookingRoom`, `RoomBlock`, and `MaintenanceBlock` across discrete nightly intervals `[check_in, check_out)`.
+     - Payment statistics are derived exclusively from `PaymentOrder` records.
+     - Overbooking and reconciliation discrepancies query authoritative `AuditLog` events.
+  3. **Role-Based Access Control (RBAC)**:
+     - `SUPER_ADMIN` and `MANAGER`: Full access to all 11 reports including revenue, payments, overbookings, and reconciliation.
+     - `RECEPTIONIST`: Restricted strictly to operational front-desk tools (`overview`, `frontdesk`, `occupancy`, `bookings`, `rooms_utilization`), with HTTP 403 Forbidden enforced on financial and reconciliation endpoints.
+     - Public/Customer: Denied access (HTTP 401/403).
+  4. **Performance & Aggregation**:
+     - Leverages database aggregations (`Sum`, `Count`, `Avg`, `Q` filtering) and bulk interval evaluations to avoid N+1 queries.
+     - Strict date boundary validation (`from_date <= to_date`, max 366 days window).
+  5. **Sanitization & Privacy**:
+     - Sensitive credentials (Razorpay API keys/secrets, webhook secrets, guest Aadhaar/Govt IDs, access tokens) are strictly excluded from report payloads.
+- **Consequences**: Fast, reliable, and secure operational reporting; complete clarity on hotel financial health; full alignment with backend sources of truth without data drift.

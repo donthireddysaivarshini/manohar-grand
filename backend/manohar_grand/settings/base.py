@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'apps.bookings.apps.BookingsConfig',
     'apps.availability.apps.AvailabilityConfig',
     'apps.payments.apps.PaymentsConfig',
+    'apps.reports.apps.ReportsConfig',
 ]
 
 # Razorpay Payment Gateway Configuration

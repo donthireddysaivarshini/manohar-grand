@@ -14,5 +14,6 @@ urlpatterns = [
     path('pricing/', include('apps.pricing.admin_urls')),
     path('content/', include('apps.cms.admin_urls')),
     path('bookings/', include('apps.bookings.admin_urls')),
+    path('reports/', include('apps.reports.urls')),
     path('audit-logs/', AuditLogAdminListView.as_view(), name='admin-audit-logs'),
 ]
