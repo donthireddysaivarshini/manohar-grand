@@ -129,6 +129,45 @@ class RazorpayPaymentProvider:
             )
 
     @classmethod
+    def create_refund(
+        cls,
+        razorpay_payment_id: str,
+        amount_paise: int,
+        notes: Optional[Dict[str, Any]] = None,
+        receipt: str = ""
+    ) -> Dict[str, Any]:
+        """
+        Creates an authoritative refund for a captured Razorpay payment.
+        :param razorpay_payment_id: Gateway payment ID (pay_XXXX)
+        :param amount_paise: Integer amount in paise (e.g. 50000 = ₹500.00)
+        :param notes: Key-value metadata
+        :param receipt: Internal receipt reference
+        :return: Normalized Razorpay refund dictionary
+        """
+        if not razorpay_payment_id:
+            raise PaymentProviderException("Payment ID is required for refund.", code="INVALID_PAYMENT_ID")
+        if amount_paise <= 0:
+            raise PaymentProviderException("Refund amount must be greater than zero.", code="INVALID_REFUND_AMOUNT")
+
+        payload = {
+            "amount": amount_paise,
+            "notes": notes or {},
+            "receipt": receipt[:40] if receipt else None,
+        }
+        try:
+            client = cls.get_client()
+            refund_data = client.payment.refund(razorpay_payment_id, payload)
+            logger.info(f"Successfully processed Razorpay refund: {refund_data.get('id')} for payment: {razorpay_payment_id}")
+            return refund_data
+        except Exception as exc:
+            logger.error(f"Razorpay refund failed: {exc}", exc_info=True)
+            raise PaymentProviderException(
+                f"Razorpay refund failed: {exc}",
+                code="PAYMENT_REFUND_ERROR",
+                original_exception=exc
+            )
+
+    @classmethod
     def verify_payment_signature(
         cls,
         razorpay_order_id: str,

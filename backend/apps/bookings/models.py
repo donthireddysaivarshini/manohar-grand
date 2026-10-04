@@ -3,6 +3,7 @@ Booking domain models: Booking and BookingRoom.
 Preserves category-level customer reservations with optional reception physical room assignment.
 """
 import uuid
+from decimal import Decimal
 from typing import List
 from datetime import date
 from django.db import models
@@ -32,7 +33,10 @@ class Booking(models.Model):
         ('confirmed', 'Confirmed Reservation'),
         ('checked_in', 'Checked In'),
         ('checked_out', 'Checked Out'),
+        ('cancellation_requested', 'Cancellation Requested'),
+        ('refund_pending', 'Refund Pending'),
         ('cancelled', 'Cancelled'),
+        ('refunded', 'Cancelled & Refunded'),
         ('expired', 'Hold Expired'),
         ('no_show', 'No Show'),
     ]
@@ -80,7 +84,7 @@ class Booking(models.Model):
         help_text="Booking origin channel"
     )
     status = models.CharField(
-        max_length=20,
+        max_length=30,
         choices=STATUS_CHOICES,
         default='held',
         db_index=True,
@@ -132,6 +136,66 @@ class Booking(models.Model):
         blank=True,
         related_name='created_bookings',
         help_text="Staff user who created the booking (null for direct customer web bookings)"
+    )
+
+    # Cancellation & Refund Management
+    cancellation_reason = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Guest-selected or staff-entered reason for booking cancellation"
+    )
+    cancellation_notes = models.TextField(
+        blank=True,
+        help_text="Additional guest notes or staff remarks regarding cancellation"
+    )
+    cancellation_requested_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Timestamp when cancellation request was submitted by guest"
+    )
+    cancellation_fee = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        help_text="Authoritative cancellation penalty / retention fee charged by hotel"
+    )
+    refund_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        help_text="Authoritative refund amount eligible / approved for credit"
+    )
+    refund_status = models.CharField(
+        max_length=30,
+        choices=[
+            ('not_applicable', 'Not Applicable'),
+            ('pending', 'Pending Refund Approval'),
+            ('processed', 'Refund Processed'),
+            ('declined', 'Refund Declined / Non-refundable'),
+            ('failed', 'Refund Gateway Failed'),
+        ],
+        default='not_applicable',
+        db_index=True,
+        help_text="Current state of monetary refund"
+    )
+    refund_reference = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="Razorpay refund ID (rfnd_XXXX) or bank transfer/UTR reference number"
+    )
+    cancelled_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp when booking was formally cancelled"
+    )
+    cancelled_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='cancelled_bookings',
+        help_text="User (guest or staff) who authorized the cancellation"
     )
 
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)

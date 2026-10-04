@@ -24,6 +24,7 @@ import { bookingApiService } from '../../services/api/bookingApiService';
 import { ApiBookingDetail } from '../../types/booking';
 import { formatDateDisplay } from '../../utils/dateUtils';
 import { formatCurrencyINR } from '../../utils/formatters';
+import { CancellationModal } from '../../components/booking/CancellationModal';
 
 export const ConfirmationPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -32,8 +33,9 @@ export const ConfirmationPage: React.FC = () => {
   const [booking, setBooking] = useState<ApiBookingDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
-  useEffect(() => {
+  const loadBooking = () => {
     document.title = 'Reservation Voucher | Manohar Grand Hotel';
 
     if (!id) {
@@ -42,6 +44,7 @@ export const ConfirmationPage: React.FC = () => {
       return;
     }
 
+    setIsLoading(true);
     bookingApiService
       .getBookingDetail(id)
       .then((data) => {
@@ -55,6 +58,10 @@ export const ConfirmationPage: React.FC = () => {
       .finally(() => {
         setIsLoading(false);
       });
+  };
+
+  useEffect(() => {
+    loadBooking();
   }, [id]);
 
   if (isLoading) {
@@ -318,7 +325,7 @@ export const ConfirmationPage: React.FC = () => {
                       <strong>Bedding:</strong> All bedrooms feature premium Wakefit Memory Foam mattresses.
                     </li>
                     <li>
-                      <strong>Cancellation Policy:</strong> Confirmed direct reservations are strictly non-refundable.
+                      <strong>Cancellation Policy:</strong> Cancellations made 2 or more days prior to check-in are eligible for a 50% refund. Cancellations made within 2 days of check-in are non-refundable.
                     </li>
                   </ul>
                 </div>
@@ -327,16 +334,30 @@ export const ConfirmationPage: React.FC = () => {
 
             {/* Post-Booking Actions (Hidden in Print) */}
             <div className="flex flex-wrap items-center justify-between gap-4 pt-2 print:hidden">
-              <Button
-                type="button"
-                variant="outline"
-                size="md"
-                onClick={handlePrint}
-                className="gap-2 font-semibold cursor-pointer"
-              >
-                <Printer className="w-4 h-4" />
-                <span>Print / Save Voucher</span>
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="md"
+                  onClick={handlePrint}
+                  className="gap-2 font-semibold cursor-pointer"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>Print / Save Voucher</span>
+                </Button>
+
+                {booking.status === 'confirmed' && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="md"
+                    onClick={() => setIsCancelModalOpen(true)}
+                    className="gap-2 font-bold text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 cursor-pointer"
+                  >
+                    <span>Cancel Booking</span>
+                  </Button>
+                )}
+              </div>
 
               <div className="flex items-center gap-3">
                 <Link to="/booking" onClick={resetBookingFlow}>
@@ -357,6 +378,19 @@ export const ConfirmationPage: React.FC = () => {
           </div>
         </Container>
       </Section>
+
+      {/* Cancellation Modal */}
+      {isCancelModalOpen && booking && (
+        <CancellationModal
+          bookingReference={booking.booking_reference}
+          isOpen={isCancelModalOpen}
+          onClose={() => setIsCancelModalOpen(false)}
+          onSuccess={() => {
+            setIsCancelModalOpen(false);
+            loadBooking();
+          }}
+        />
+      )}
     </div>
   );
 };

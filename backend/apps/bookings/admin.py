@@ -18,6 +18,11 @@ class BookingRoomInline(admin.TabularInline):
     readonly_fields = ['created_at', 'updated_at']
 
 
+from django.utils.html import format_html
+from django.contrib import messages
+from .services import process_booking_cancellation_decision
+
+
 @admin.register(Booking)
 class BookingAdmin(admin.ModelAdmin):
     list_display = [
@@ -25,19 +30,161 @@ class BookingAdmin(admin.ModelAdmin):
         'guest_name',
         'guest_phone',
         'source',
-        'status',
+        'status_badge',
+        'refund_badge',
+        'refund_amount',
         'check_in_date',
         'check_out_date',
         'nights_count',
-        'total_adults',
-        'total_children',
         'is_overbooking',
         'created_at',
     ]
-    list_filter = ['status', 'source', 'is_overbooking', 'check_in_date', 'check_out_date']
-    search_fields = ['booking_reference', 'guest_name', 'guest_phone', 'guest_email']
-    readonly_fields = ['id', 'booking_reference', 'created_at', 'updated_at']
+    list_filter = ['status', 'refund_status', 'source', 'is_overbooking', 'check_in_date', 'check_out_date']
+    search_fields = ['booking_reference', 'guest_name', 'guest_phone', 'guest_email', 'refund_reference', 'cancellation_reason']
+    readonly_fields = ['id', 'booking_reference', 'access_token', 'cancellation_requested_at', 'cancelled_at', 'created_at', 'updated_at']
     inlines = [BookingRoomInline, BookingGuestInline]
+    actions = ['approve_cancellation_and_refund', 'approve_cancellation_zero_refund', 'reject_cancellation_request']
+
+    fieldsets = (
+        ('Reservation Core', {
+            'fields': (
+                'booking_reference',
+                'status',
+                'customer',
+                'source',
+                ('check_in_date', 'check_out_date'),
+                ('total_adults', 'total_children'),
+            )
+        }),
+        ('Guest Details', {
+            'fields': (
+                'guest_name',
+                'guest_phone',
+                'guest_email',
+                'special_requests',
+            )
+        }),
+        ('Cancellation & Refund Management', {
+            'fields': (
+                'cancellation_reason',
+                'cancellation_notes',
+                'cancellation_requested_at',
+                ('refund_amount', 'cancellation_fee'),
+                ('refund_status', 'refund_reference'),
+                ('cancelled_at', 'cancelled_by'),
+            ),
+            'classes': ('collapse',),
+        }),
+        ('Internal & Operational Notes', {
+            'fields': (
+                'internal_notes',
+                ('is_overbooking', 'overbooking_reason'),
+                'created_by',
+                'access_token',
+                ('created_at', 'updated_at'),
+            ),
+            'classes': ('collapse',),
+        }),
+    )
+
+    def status_badge(self, obj):
+        colors = {
+            'confirmed': '#10B981',
+            'checked_in': '#3B82F6',
+            'checked_out': '#6B7280',
+            'cancellation_requested': '#F59E0B',
+            'refund_pending': '#D97706',
+            'cancelled': '#EF4444',
+            'refunded': '#8B5CF6',
+            'held': '#EC4899',
+            'expired': '#9CA3AF',
+            'no_show': '#B91C1C',
+        }
+        color = colors.get(obj.status, '#6B7280')
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 3px 8px; border-radius: 9999px; font-weight: bold; font-size: 11px;">{}</span>',
+            color,
+            obj.get_status_display()
+        )
+    status_badge.short_description = 'Status'
+
+    def refund_badge(self, obj):
+        if not obj.refund_status or obj.refund_status == 'not_applicable':
+            return '-'
+        colors = {
+            'pending': '#F59E0B',
+            'processed': '#10B981',
+            'declined': '#6B7280',
+            'failed': '#EF4444',
+        }
+        color = colors.get(obj.refund_status, '#6B7280')
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600;">{}</span>',
+            color,
+            obj.get_refund_status_display()
+        )
+    refund_badge.short_description = 'Refund'
+
+    @admin.action(description="Approve Cancellation & Process Refund for Selected")
+    def approve_cancellation_and_refund(self, request, queryset):
+        success_count = 0
+        for booking in queryset:
+            if booking.status == 'cancellation_requested':
+                try:
+                    process_booking_cancellation_decision(
+                        booking=booking,
+                        action='approve_and_refund',
+                        staff_user=request.user,
+                        refund_mode='manual',
+                        manual_reference=f"ADMIN-DIRECT-{request.user.username}",
+                        internal_notes="Approved via Django Admin bulk action",
+                        ip_address=request.META.get('REMOTE_ADDR')
+                    )
+                    success_count += 1
+                except Exception as exc:
+                    self.message_user(request, f"Error processing {booking.booking_reference}: {exc}", level=messages.ERROR)
+            else:
+                self.message_user(request, f"Skipped {booking.booking_reference}: Not in 'cancellation_requested' status.", level=messages.WARNING)
+        if success_count:
+            self.message_user(request, f"Successfully approved & marked refunded {success_count} booking(s).", level=messages.SUCCESS)
+
+    @admin.action(description="Approve Cancellation without Refund (0% Non-refundable)")
+    def approve_cancellation_zero_refund(self, request, queryset):
+        success_count = 0
+        for booking in queryset:
+            if booking.status == 'cancellation_requested':
+                try:
+                    process_booking_cancellation_decision(
+                        booking=booking,
+                        action='approve_no_refund',
+                        staff_user=request.user,
+                        internal_notes="Approved 0% non-refundable via Django Admin bulk action",
+                        ip_address=request.META.get('REMOTE_ADDR')
+                    )
+                    success_count += 1
+                except Exception as exc:
+                    self.message_user(request, f"Error processing {booking.booking_reference}: {exc}", level=messages.ERROR)
+        if success_count:
+            self.message_user(request, f"Successfully cancelled {success_count} booking(s) with zero refund.", level=messages.SUCCESS)
+
+    @admin.action(description="Reject Cancellation Request (Keep Confirmed)")
+    def reject_cancellation_request(self, request, queryset):
+        success_count = 0
+        for booking in queryset:
+            if booking.status == 'cancellation_requested':
+                try:
+                    process_booking_cancellation_decision(
+                        booking=booking,
+                        action='reject',
+                        staff_user=request.user,
+                        internal_notes="Rejected via Django Admin bulk action",
+                        ip_address=request.META.get('REMOTE_ADDR')
+                    )
+                    success_count += 1
+                except Exception as exc:
+                    self.message_user(request, f"Error rejecting {booking.booking_reference}: {exc}", level=messages.ERROR)
+        if success_count:
+            self.message_user(request, f"Successfully rejected {success_count} cancellation request(s) and restored to confirmed.", level=messages.SUCCESS)
 
     def save_model(self, request, obj, form, change):
         if not obj.created_by and request.user.is_authenticated:

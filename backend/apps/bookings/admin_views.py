@@ -19,6 +19,7 @@ from .serializers import (
     PhysicalRoomAssignmentSerializer,
     AdminWalkInCreateSerializer,
     AdminOverbookingCreateSerializer,
+    StaffCancellationDecisionSerializer,
 )
 from .services import (
     assign_physical_rooms,
@@ -26,6 +27,7 @@ from .services import (
     admin_check_out_booking,
     admin_create_walkin_booking,
     admin_create_overbooking,
+    process_booking_cancellation_decision,
     InsufficientInventoryException,
 )
 
@@ -412,3 +414,69 @@ class AdminOverbookingCreateView(APIView):
                 "timestamp": timezone.now().isoformat()
             }
         }, status=status.HTTP_201_CREATED)
+
+
+class AdminProcessCancellationView(APIView):
+    """
+    POST /api/v1/admin/bookings/<identifier>/process-cancellation/
+    Staff/Manager endpoint to approve, process refund, or decline a cancellation request.
+    """
+    permission_classes = [IsReceptionistOrAbove]
+
+    def post(self, request, identifier):
+        try:
+            booking = _get_booking_or_404(identifier)
+        except Booking.DoesNotExist:
+            return Response({
+                "success": False,
+                "error": {
+                    "code": "BOOKING_NOT_FOUND",
+                    "message": f"Booking '{identifier}' does not exist."
+                }
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = StaffCancellationDecisionSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response({
+                "success": False,
+                "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid cancellation decision parameters.",
+                    "details": serializer.errors
+                }
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        action = serializer.validated_data['action']
+        refund_mode = serializer.validated_data.get('refund_mode', 'manual')
+        manual_reference = serializer.validated_data.get('manual_reference', '')
+        internal_notes = serializer.validated_data.get('internal_notes', '')
+        ip_address = _get_client_ip(request)
+
+        try:
+            result = process_booking_cancellation_decision(
+                booking=booking,
+                action=action,
+                staff_user=request.user,
+                refund_mode=refund_mode,
+                manual_reference=manual_reference,
+                internal_notes=internal_notes,
+                ip_address=ip_address,
+            )
+            return Response({
+                "success": True,
+                "data": result,
+                "message": f"Cancellation request successfully processed with action '{action}'.",
+                "meta": {
+                    "timestamp": timezone.now().isoformat()
+                }
+            }, status=status.HTTP_200_OK)
+        except DjangoValidationError as exc:
+            return Response({
+                "success": False,
+                "error": {
+                    "code": "CANCELLATION_PROCESS_ERROR",
+                    "message": str(exc),
+                    "details": exc.message_dict if hasattr(exc, 'message_dict') else str(exc)
+                }
+            }, status=status.HTTP_400_BAD_REQUEST)
+

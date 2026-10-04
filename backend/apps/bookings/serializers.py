@@ -232,6 +232,14 @@ class BookingDetailSerializer(serializers.ModelSerializer):
             'special_requests',
             'source',
             'source_display',
+            'cancellation_reason',
+            'cancellation_notes',
+            'cancellation_requested_at',
+            'cancellation_fee',
+            'refund_amount',
+            'refund_status',
+            'refund_reference',
+            'cancelled_at',
             'rooms',
             'guests',
             'pricing',
@@ -241,7 +249,7 @@ class BookingDetailSerializer(serializers.ModelSerializer):
         ]
 
     def get_payment_status(self, obj) -> str:
-        if obj.status in ('confirmed', 'checked_in', 'checked_out'):
+        if obj.status in ('confirmed', 'checked_in', 'checked_out', 'refunded'):
             return 'advance_paid'
         if hasattr(obj, 'payment_orders'):
             if obj.payment_orders.filter(status='captured').exists():
@@ -296,6 +304,13 @@ class CustomerBookingListSerializer(serializers.ModelSerializer):
             'guest_email',
             'source',
             'source_display',
+            'cancellation_reason',
+            'cancellation_requested_at',
+            'cancellation_fee',
+            'refund_amount',
+            'refund_status',
+            'refund_reference',
+            'cancelled_at',
             'rooms',
             'pricing',
             'cancellation_policy',
@@ -550,6 +565,14 @@ class BookingAdminStaffDetailSerializer(serializers.ModelSerializer):
             'guest_email',
             'special_requests',
             'internal_notes',
+            'cancellation_reason',
+            'cancellation_notes',
+            'cancellation_requested_at',
+            'cancellation_fee',
+            'refund_amount',
+            'refund_status',
+            'refund_reference',
+            'cancelled_at',
             'is_overbooking',
             'overbooking_reason',
             'source',
@@ -603,3 +626,59 @@ class AdminOverbookingCreateSerializer(AdminWalkInCreateSerializer):
         allow_blank=False,
         help_text="Mandatory justification note for administrative capacity override"
     )
+
+
+class CancellationPreviewSerializer(serializers.Serializer):
+    """
+    Serializer for customer cancellation policy preview calculation.
+    """
+    booking_reference = serializers.CharField()
+    booking_id = serializers.CharField()
+    status = serializers.CharField()
+    check_in_date = serializers.CharField()
+    check_out_date = serializers.CharField()
+    as_of_date = serializers.CharField()
+    days_before_checkin = serializers.IntegerField()
+    total_paid_amount = serializers.CharField()
+    is_eligible_for_refund = serializers.BooleanField()
+    refund_percentage = serializers.FloatField()
+    cancellation_fee_percentage = serializers.FloatField()
+    refund_amount = serializers.CharField()
+    cancellation_fee = serializers.CharField()
+    policy_label = serializers.CharField()
+    can_request_cancellation = serializers.BooleanField()
+
+
+class CancellationRequestSerializer(serializers.Serializer):
+    """
+    Serializer for customer requesting cancellation.
+    """
+    reason = serializers.CharField(max_length=255, required=True, allow_blank=False)
+    notes = serializers.CharField(required=False, allow_blank=True, default="")
+
+
+class StaffCancellationDecisionSerializer(serializers.Serializer):
+    """
+    Serializer for staff manager processing cancellation decision.
+    """
+    action = serializers.ChoiceField(
+        choices=['approve_and_refund', 'approve_no_refund', 'reject'],
+        required=True
+    )
+    refund_mode = serializers.ChoiceField(
+        choices=['razorpay', 'manual'],
+        default='manual',
+        required=False
+    )
+    manual_reference = serializers.CharField(
+        max_length=100,
+        required=False,
+        allow_blank=True,
+        default=""
+    )
+    internal_notes = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        default=""
+    )
+

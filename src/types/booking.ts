@@ -3,9 +3,30 @@ export type BookingStatus =
   | 'confirmed'
   | 'checked_in'
   | 'checked_out'
+  | 'cancellation_requested'
+  | 'refund_pending'
   | 'cancelled'
+  | 'refunded'
   | 'expired'
   | 'no_show';
+
+export interface ApiCancellationPreview {
+  booking_reference: string;
+  booking_id: string;
+  status: string;
+  check_in_date: string;
+  check_out_date: string;
+  as_of_date: string;
+  days_before_checkin: number;
+  total_paid_amount: string;
+  is_eligible_for_refund: boolean;
+  refund_percentage: number;
+  cancellation_fee_percentage: number;
+  refund_amount: string;
+  cancellation_fee: string;
+  policy_label: string;
+  can_request_cancellation: boolean;
+}
 
 export interface SelectedRoomItem {
   categoryId: string; // Category UUID or unique slug
@@ -169,6 +190,14 @@ export interface ApiBookingDetail {
   special_requests: string;
   source: string;
   source_display: string;
+  cancellation_reason?: string;
+  cancellation_notes?: string;
+  cancellation_requested_at?: string;
+  cancellation_fee?: string;
+  refund_amount?: string;
+  refund_status?: string;
+  refund_reference?: string;
+  cancelled_at?: string;
   rooms: ApiBookingRoom[];
   guests?: ApiBookingGuest[];
   pricing?: ApiBookingPriceSnapshot;

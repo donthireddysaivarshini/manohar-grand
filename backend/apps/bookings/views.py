@@ -17,6 +17,8 @@ from .serializers import (
     CustomerBookingListSerializer,
     BookingStayInfoUpdateSerializer,
     BookingCheckoutSummarySerializer,
+    CancellationPreviewSerializer,
+    CancellationRequestSerializer,
 )
 from .services import (
     create_booking_hold,
@@ -25,6 +27,8 @@ from .services import (
     update_booking_guest_info,
     validate_booking_for_checkout,
     prepare_booking_for_payment,
+    calculate_cancellation_refund,
+    request_booking_cancellation,
     InsufficientInventoryException,
 )
 
@@ -430,4 +434,102 @@ def booking_checkout_summary(request, booking_reference: str):
             "timestamp": timezone.now().isoformat()
         }
     })
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def booking_cancellation_preview_view(request, booking_reference):
+    """
+    GET /api/v1/bookings/<booking_reference>/cancellation-preview/
+    Returns real-time authoritative calculation of eligible refund and retention fee
+    based on check-in date vs today according to the hotel policy.
+    """
+    booking = get_object_or_404(
+        Booking.objects.select_related('customer', 'price_snapshot').prefetch_related('payment_orders'),
+        booking_reference=booking_reference
+    )
+
+    if not _check_booking_authorization(booking, request):
+        return Response({
+            "success": False,
+            "error": {
+                "code": "PERMISSION_DENIED",
+                "message": "You are not authorized to view cancellation details for this booking."
+            }
+        }, status=status.HTTP_403_FORBIDDEN)
+
+    preview_data = calculate_cancellation_refund(booking)
+    serializer = CancellationPreviewSerializer(preview_data)
+    return Response({
+        "success": True,
+        "data": serializer.data,
+        "meta": {
+            "timestamp": timezone.now().isoformat()
+        }
+    })
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def booking_cancellation_request_view(request, booking_reference):
+    """
+    POST /api/v1/bookings/<booking_reference>/request-cancellation/
+    Submits guest cancellation request with mandatory reason and optional notes.
+    Transitions booking status to 'cancellation_requested' and records immutable AuditLog.
+    """
+    booking = get_object_or_404(
+        Booking.objects.select_related('customer', 'price_snapshot').prefetch_related('payment_orders'),
+        booking_reference=booking_reference
+    )
+
+    if not _check_booking_authorization(booking, request):
+        return Response({
+            "success": False,
+            "error": {
+                "code": "PERMISSION_DENIED",
+                "message": "You are not authorized to cancel this booking."
+            }
+        }, status=status.HTTP_403_FORBIDDEN)
+
+    serializer = CancellationRequestSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response({
+            "success": False,
+            "error": {
+                "code": "VALIDATION_ERROR",
+                "message": "Invalid cancellation request data.",
+                "details": serializer.errors
+            }
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    reason = serializer.validated_data['reason']
+    notes = serializer.validated_data.get('notes', '')
+    actor = request.user if request.user.is_authenticated else None
+    ip_address = _get_client_ip(request)
+
+    try:
+        result = request_booking_cancellation(
+            booking=booking,
+            reason=reason,
+            notes=notes,
+            actor=actor,
+            ip_address=ip_address
+        )
+        return Response({
+            "success": True,
+            "data": result,
+            "message": "Cancellation request submitted successfully and is pending manager review.",
+            "meta": {
+                "timestamp": timezone.now().isoformat()
+            }
+        }, status=status.HTTP_200_OK)
+    except DjangoValidationError as exc:
+        return Response({
+            "success": False,
+            "error": {
+                "code": "CANCELLATION_ERROR",
+                "message": str(exc)
+            }
+        }, status=status.HTTP_400_BAD_REQUEST)
+
 

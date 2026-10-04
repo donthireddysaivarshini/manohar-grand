@@ -28,10 +28,32 @@ export const ReportsPage: React.FC = () => {
 
   // Date filters
   const todayStr = new Date().toISOString().split('T')[0];
+  const fourteenDaysFutureStr = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   const thirtyDaysAgoStr = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-  const [fromDate, setFromDate] = useState<string>(thirtyDaysAgoStr);
-  const [toDate, setToDate] = useState<string>(todayStr);
+  
+  // Default to Next 14 Days forecast so upcoming bookings show immediately
+  const [fromDate, setFromDate] = useState<string>(todayStr);
+  const [toDate, setToDate] = useState<string>(fourteenDaysFutureStr);
   const [frontDeskDate, setFrontDeskDate] = useState<string>(todayStr);
+
+  const setPresetRange = (type: 'next14' | 'next30' | 'past30' | 'thisMonth') => {
+    const now = new Date();
+    if (type === 'next14') {
+      setFromDate(todayStr);
+      setToDate(new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+    } else if (type === 'next30') {
+      setFromDate(todayStr);
+      setToDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+    } else if (type === 'past30') {
+      setFromDate(thirtyDaysAgoStr);
+      setToDate(todayStr);
+    } else if (type === 'thisMonth') {
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+      setFromDate(firstDay);
+      setToDate(lastDay);
+    }
+  };
 
   // Report state data
   const [overviewData, setOverviewData] = useState<OverviewKPIResponse | null>(null);
@@ -156,6 +178,39 @@ export const ReportsPage: React.FC = () => {
                 onChange={(e) => setToDate(e.target.value)}
                 className="text-xs border border-neutral-300 rounded px-2 py-1 text-neutral-800"
               />
+            </div>
+          )}
+
+          {activeTab !== 'frontdesk' && (
+            <div className="flex items-center gap-1.5 border-l border-neutral-200 pl-2">
+              <button
+                type="button"
+                onClick={() => setPresetRange('next14')}
+                className="px-2 py-1 rounded text-[11px] font-semibold bg-neutral-100 hover:bg-neutral-200 text-neutral-700 cursor-pointer"
+              >
+                Next 14D Forecast
+              </button>
+              <button
+                type="button"
+                onClick={() => setPresetRange('next30')}
+                className="px-2 py-1 rounded text-[11px] font-semibold bg-neutral-100 hover:bg-neutral-200 text-neutral-700 cursor-pointer"
+              >
+                Next 30D
+              </button>
+              <button
+                type="button"
+                onClick={() => setPresetRange('thisMonth')}
+                className="px-2 py-1 rounded text-[11px] font-semibold bg-neutral-100 hover:bg-neutral-200 text-neutral-700 cursor-pointer"
+              >
+                This Month
+              </button>
+              <button
+                type="button"
+                onClick={() => setPresetRange('past30')}
+                className="px-2 py-1 rounded text-[11px] font-semibold bg-neutral-100 hover:bg-neutral-200 text-neutral-700 cursor-pointer"
+              >
+                Past 30D
+              </button>
             </div>
           )}
 

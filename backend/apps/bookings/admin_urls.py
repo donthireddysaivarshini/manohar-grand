@@ -10,6 +10,7 @@ from .admin_views import (
     AdminCheckOutView,
     AdminWalkInBookingCreateView,
     AdminOverbookingCreateView,
+    AdminProcessCancellationView,
 )
 
 urlpatterns = [
@@ -21,4 +22,5 @@ urlpatterns = [
     path('<str:identifier>/assign-room/', AdminAssignRoomsView.as_view(), name='admin-booking-assign-room-alias'),
     path('<str:identifier>/check-in/', AdminCheckInView.as_view(), name='admin-booking-checkin'),
     path('<str:identifier>/check-out/', AdminCheckOutView.as_view(), name='admin-booking-checkout'),
+    path('<str:identifier>/process-cancellation/', AdminProcessCancellationView.as_view(), name='admin-booking-process-cancellation'),
 ]

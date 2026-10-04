@@ -4,6 +4,7 @@ import {
   ApiBookingDetail,
   ApiCheckoutSummary,
   ApiBookingGuest,
+  ApiCancellationPreview,
 } from '../../types/booking';
 
 export const bookingApiService = {
@@ -134,5 +135,62 @@ export const bookingApiService = {
       return res.data;
     }
     throw new Error(res.error?.message || 'Failed to load bookings');
+  },
+
+  /**
+   * Fetches real-time authoritative calculation of eligible refund and cancellation policy preview.
+   * Endpoint: GET /api/v1/bookings/{bookingReference}/cancellation-preview/?token={token}
+   */
+  async getCancellationPreview(
+    bookingReference: string,
+    token?: string
+  ): Promise<ApiCancellationPreview> {
+    const url = `/api/v1/bookings/${bookingReference}/cancellation-preview/${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+    const res = await fetchApi<ApiCancellationPreview>(url);
+
+    if (res.success && res.data) {
+      return res.data;
+    }
+    throw new Error(res.error?.message || 'Failed to calculate cancellation refund');
+  },
+
+  /**
+   * Submits a customer cancellation request with reason.
+   * Endpoint: POST /api/v1/bookings/{bookingReference}/request-cancellation/?token={token}
+   */
+  async requestCancellation(
+    bookingReference: string,
+    payload: { reason: string; notes?: string },
+    token?: string
+  ): Promise<any> {
+    const url = `/api/v1/bookings/${bookingReference}/request-cancellation/${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+    const res = await fetchApi<any>(url, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+
+    if (res.success) {
+      return res.data;
+    }
+    throw new Error(res.error?.message || 'Failed to submit cancellation request');
+  },
+
+  /**
+   * Staff/Manager process cancellation decision with refund or rejection.
+   * Endpoint: POST /api/v1/admin/bookings/{bookingReference}/process-cancellation/
+   */
+  async processCancellation(
+    bookingReference: string,
+    payload: { action: string; refund_mode?: string; manual_reference?: string; internal_notes?: string }
+  ): Promise<any> {
+    const res = await fetchApi<any>(`/api/v1/admin/bookings/${bookingReference}/process-cancellation/`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+
+    if (res.success) {
+      return res.data;
+    }
+    throw new Error(res.error?.message || 'Failed to process cancellation decision');
   },
 };

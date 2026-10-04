@@ -6,6 +6,7 @@ import collections
 import secrets
 import string
 import uuid
+from decimal import Decimal
 from datetime import datetime, date, timedelta
 from typing import List, Dict, Any, Optional
 
@@ -73,11 +74,14 @@ def generate_booking_reference() -> str:
 # Authoritative State Transition Graph
 VALID_STATUS_TRANSITIONS = {
     'held': {'confirmed', 'expired', 'cancelled'},
-    'confirmed': {'checked_in', 'cancelled', 'no_show'},
+    'confirmed': {'checked_in', 'cancellation_requested', 'cancelled', 'no_show'},
+    'cancellation_requested': {'confirmed', 'refund_pending', 'cancelled', 'refunded'},
+    'refund_pending': {'refunded', 'cancelled', 'confirmed'},
     'checked_in': {'checked_out', 'cancelled'},
     'no_show': {'cancelled'},
+    'cancelled': {'refunded'},
+    'refunded': set(),     # Terminal state
     'checked_out': set(),  # Terminal state
-    'cancelled': set(),    # Terminal state
     'expired': set(),      # Terminal state
 }
 
@@ -1186,5 +1190,245 @@ def prepare_booking_for_payment(booking) -> Dict[str, Any]:
         "customer_phone": lead_phone,
         "lead_guest_name": lead_name,
     }
+
+
+def calculate_cancellation_refund(booking, as_of_date: Optional[date] = None) -> Dict[str, Any]:
+    """
+    Authoritative calculation of cancellation refund and retention penalties.
+
+    Policy:
+    - >= 2 days (48+ hours) prior to check-in date: 50% refund, 50% cancellation fee.
+    - < 2 days prior (same-day or 1-day before check-in): 0% refund (100% cancellation fee).
+    """
+    if as_of_date is None:
+        as_of_date = timezone.now().date()
+
+    check_in_date = booking.check_in_date
+    days_before_checkin = (check_in_date - as_of_date).days
+
+    # Determine total paid amount from captured payment orders or price snapshot
+    from apps.payments.models import PaymentOrder
+    captured_payments = PaymentOrder.objects.filter(
+        booking=booking,
+        status='captured'
+    )
+    total_captured = sum((p.amount for p in captured_payments), Decimal('0.00'))
+
+    if total_captured <= Decimal('0.00'):
+        if hasattr(booking, 'price_snapshot') and booking.price_snapshot:
+            # Fallback if booking is confirmed but offline/mock payment
+            total_captured = booking.price_snapshot.advance_amount_due or booking.price_snapshot.gross_total
+        else:
+            total_captured = Decimal('0.00')
+
+    # Policy evaluation
+    if days_before_checkin >= 2:
+        is_eligible_for_refund = True
+        refund_percentage = Decimal('50.00')
+        cancellation_fee_percentage = Decimal('50.00')
+        refund_amount = (total_captured * Decimal('0.50')).quantize(Decimal('0.01'))
+        cancellation_fee = total_captured - refund_amount
+        policy_label = "Eligible for 50% refund (Cancelled 2 or more days prior to check-in)"
+    else:
+        is_eligible_for_refund = False
+        refund_percentage = Decimal('0.00')
+        cancellation_fee_percentage = Decimal('100.00')
+        refund_amount = Decimal('0.00')
+        cancellation_fee = total_captured
+        policy_label = "Non-Refundable (Cancellations made within 2 days of check-in)"
+
+    can_cancel = booking.status in ('confirmed', 'held')
+
+    return {
+        "booking_reference": booking.booking_reference,
+        "booking_id": str(booking.id),
+        "status": booking.status,
+        "check_in_date": check_in_date.isoformat(),
+        "check_out_date": booking.check_out_date.isoformat(),
+        "as_of_date": as_of_date.isoformat(),
+        "days_before_checkin": days_before_checkin,
+        "total_paid_amount": str(total_captured),
+        "is_eligible_for_refund": is_eligible_for_refund,
+        "refund_percentage": float(refund_percentage),
+        "cancellation_fee_percentage": float(cancellation_fee_percentage),
+        "refund_amount": str(refund_amount),
+        "cancellation_fee": str(cancellation_fee),
+        "policy_label": policy_label,
+        "can_request_cancellation": can_cancel,
+    }
+
+
+@transaction.atomic
+def request_booking_cancellation(
+    booking,
+    reason: str,
+    notes: str = "",
+    actor=None,
+    ip_address: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Submits a customer cancellation request, transitions booking to 'cancellation_requested',
+    computes authoritative fee & refund projections, and records immutable AuditLog.
+    """
+    if booking.status not in ('confirmed', 'held'):
+        raise ValidationError({
+            "status": f"Booking cannot be cancelled from status '{booking.get_status_display()}'."
+        })
+
+    preview = calculate_cancellation_refund(booking)
+
+    old_status = booking.status
+    booking.status = 'cancellation_requested'
+    booking.cancellation_requested_at = timezone.now()
+    booking.cancellation_reason = reason or "Guest requested cancellation"
+    booking.cancellation_notes = notes or ""
+    booking.cancellation_fee = Decimal(preview['cancellation_fee'])
+    booking.refund_amount = Decimal(preview['refund_amount'])
+    booking.refund_status = 'pending' if Decimal(preview['refund_amount']) > 0 else 'declined'
+    booking.save()
+
+    record_audit_log(
+        action='cancellation_requested',
+        resource_type='Booking',
+        resource_id=str(booking.id),
+        actor=actor,
+        old_values={'status': old_status},
+        new_values={
+            'status': 'cancellation_requested',
+            'reason': reason,
+            'refund_amount': preview['refund_amount'],
+            'cancellation_fee': preview['cancellation_fee'],
+        },
+        reason=f"Guest submitted cancellation request: {reason}",
+        ip_address=ip_address,
+    )
+
+    return {
+        "booking_reference": booking.booking_reference,
+        "status": booking.status,
+        "cancellation_reason": booking.cancellation_reason,
+        "refund_amount": str(booking.refund_amount),
+        "cancellation_fee": str(booking.cancellation_fee),
+        "refund_status": booking.refund_status,
+        "policy_label": preview['policy_label'],
+    }
+
+
+@transaction.atomic
+def process_booking_cancellation_decision(
+    booking,
+    action: str,
+    staff_user,
+    refund_mode: str = "manual",
+    manual_reference: str = "",
+    internal_notes: str = "",
+    ip_address: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Staff/Manager processing of a cancellation request.
+    Actions:
+    - 'approve_and_refund': Approves cancellation, executes Razorpay / manual refund, marks as 'refunded' / 'cancelled'.
+    - 'approve_no_refund': Approves cancellation with zero refund, marks as 'cancelled'.
+    - 'reject': Rejects cancellation request, restores booking to 'confirmed'.
+    """
+    if booking.status != 'cancellation_requested':
+        raise ValidationError({
+            "status": f"Booking {booking.booking_reference} is in '{booking.status}', not 'cancellation_requested'."
+        })
+
+    old_status = booking.status
+    refund_id_captured = ""
+
+    if action == 'approve_and_refund':
+        target_refund = booking.refund_amount
+        if target_refund > Decimal('0.00'):
+            if refund_mode == 'razorpay':
+                from apps.payments.models import PaymentOrder
+                from apps.payments.services import RazorpayPaymentProvider
+                captured_order = PaymentOrder.objects.filter(
+                    booking=booking,
+                    status='captured'
+                ).first()
+                if captured_order and captured_order.razorpay_payment_id:
+                    paise = int(round(float(target_refund) * 100))
+                    try:
+                        refund_res = RazorpayPaymentProvider.create_refund(
+                            razorpay_payment_id=captured_order.razorpay_payment_id,
+                            amount_paise=paise,
+                            notes={"booking_reference": booking.booking_reference, "staff_user": str(staff_user)},
+                            receipt=f"rfnd_{booking.booking_reference}"[:40]
+                        )
+                        refund_id_captured = refund_res.get('id', '')
+                        captured_order.status = 'partially_refunded' if target_refund < captured_order.amount else 'refunded'
+                        captured_order.save(update_fields=['status'])
+                    except Exception as exc:
+                        booking.refund_status = 'failed'
+                        booking.save(update_fields=['refund_status'])
+                        raise ValidationError({
+                            "refund": f"Razorpay refund processing failed: {exc}"
+                        })
+                else:
+                    refund_id_captured = manual_reference or "MANUAL-OVERRIDE"
+            else:
+                refund_id_captured = manual_reference or f"MANUAL-REFUND-{timezone.now().strftime('%Y%m%d%H%M%S')}"
+
+            booking.refund_status = 'processed'
+            booking.refund_reference = refund_id_captured
+            booking.status = 'refunded'
+        else:
+            booking.refund_status = 'declined'
+            booking.status = 'cancelled'
+
+        booking.cancelled_at = timezone.now()
+        booking.cancelled_by = staff_user
+        if internal_notes:
+            booking.internal_notes = f"{booking.internal_notes}\n[Refund Staff Note]: {internal_notes}".strip()
+        booking.save()
+
+    elif action == 'approve_no_refund':
+        booking.status = 'cancelled'
+        booking.refund_amount = Decimal('0.00')
+        booking.refund_status = 'declined'
+        booking.cancelled_at = timezone.now()
+        booking.cancelled_by = staff_user
+        if internal_notes:
+            booking.internal_notes = f"{booking.internal_notes}\n[Cancellation Staff Note]: {internal_notes}".strip()
+        booking.save()
+
+    elif action == 'reject':
+        booking.status = 'confirmed'
+        booking.refund_status = 'declined'
+        if internal_notes:
+            booking.internal_notes = f"{booking.internal_notes}\n[Cancellation Request Rejected]: {internal_notes}".strip()
+        booking.save()
+
+    else:
+        raise ValidationError({"action": f"Unknown decision action '{action}'."})
+
+    record_audit_log(
+        action=f"cancellation_decision_{action}",
+        resource_type='Booking',
+        resource_id=str(booking.id),
+        actor=staff_user,
+        old_values={'status': old_status},
+        new_values={
+            'status': booking.status,
+            'refund_status': booking.refund_status,
+            'refund_reference': booking.refund_reference,
+            'refund_amount': str(booking.refund_amount),
+        },
+        reason=f"Staff processed cancellation with action '{action}'",
+        ip_address=ip_address,
+    )
+
+    return {
+        "booking_reference": booking.booking_reference,
+        "status": booking.status,
+        "refund_status": booking.refund_status,
+        "refund_reference": booking.refund_reference,
+        "refund_amount": str(booking.refund_amount),
+        "action": action,
+    }
+
 
 
