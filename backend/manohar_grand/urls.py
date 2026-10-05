@@ -24,6 +24,7 @@ urlpatterns = [
     path('api/v1/auth/', include('apps.authentication.urls')),
     path('api/v1/rooms/', include('apps.rooms.urls')),
     path('api/v1/content/', include('apps.cms.urls')),
+    path('api/v1/cms/', include('apps.cms.urls')),
     path('api/v1/pricing/', include('apps.pricing.urls')),
     path('api/v1/availability/', include('apps.availability.urls')),
     path('api/v1/bookings/', include('apps.bookings.urls')),

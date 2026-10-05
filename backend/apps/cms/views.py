@@ -36,8 +36,12 @@ from core.services import record_audit_log
 def public_cms_sections_list(request):
     """
     List all active public CMS marketing sections ordered by display_order.
+    Supports ?section_key= filtering.
     """
     sections = CMSSection.objects.filter(is_active=True)
+    section_key = request.query_params.get('section_key')
+    if section_key:
+        sections = sections.filter(section_key=section_key.lower().strip())
     serializer = CMSSectionSerializer(sections, many=True)
     return Response({
         "success": True,

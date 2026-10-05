@@ -30,10 +30,12 @@ export const WelcomeSection: React.FC = () => {
       try {
         const gallery = await cmsApiService.getGallery();
         if (gallery.length > 0) {
-          setPrimaryImage(gallery[0].image_url);
-        }
-        if (gallery.length > 1) {
-          setSecondaryImage(gallery[1].image_url);
+          const propertyImage = gallery.find((g) => g.category === 'property' || g.is_featured || g.category === 'exterior') || gallery[0];
+          setPrimaryImage(propertyImage.image_url);
+          const roomImage = gallery.find((g) => g.id !== propertyImage.id && (g.category === 'rooms' || g.category === 'amenities')) || gallery[1];
+          if (roomImage) {
+            setSecondaryImage(roomImage.image_url);
+          }
         }
       } catch (err) {
         console.warn('Could not load welcome gallery media:', err);
