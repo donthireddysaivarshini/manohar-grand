@@ -10,12 +10,17 @@ import {
   ArrowUpRight,
   MessageSquare,
 } from 'lucide-react';
-import { PLACEHOLDER_HOTEL_INFO } from '../../data/placeholderHotelInfo';
+import { useHotelConfig } from '../../store/HotelConfigContext';
 import { cn } from '../../utils/cn';
 
 export const FloatingContactWidget: React.FC = () => {
+  const { config } = useHotelConfig();
   const [isOpen, setIsOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+
+  const primaryCleanPhone = config.primary_phone.replace(/[^0-9]/g, '');
+  const secondaryCleanPhone = config.secondary_phone.replace(/[^0-9]/g, '');
+  const whatsappNumber = primaryCleanPhone.startsWith('91') ? primaryCleanPhone : `91${primaryCleanPhone}`;
 
   // Show smoothly after load
   useEffect(() => {
@@ -55,7 +60,7 @@ export const FloatingContactWidget: React.FC = () => {
                 <MessageSquare className="w-4 h-4" />
               </div>
               <div>
-                <h4 className="text-xs font-bold text-white">Contact Manohar Grand</h4>
+                <h4 className="text-xs font-bold text-white">Contact {config.hotel_name || 'Manohar Grand'}</h4>
                 <p className="text-[10px] text-neutral-300 flex items-center gap-1">
                   <Clock className="w-3 h-3 text-emerald-400" />
                   <span>24/7 Front Desk Support</span>
@@ -76,7 +81,7 @@ export const FloatingContactWidget: React.FC = () => {
           <div className="p-3 space-y-2 bg-neutral-50/60">
             {/* Primary Phone */}
             <a
-              href="tel:7997044999"
+              href={`tel:${primaryCleanPhone}`}
               className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-neutral-200/80 hover:border-emerald-500 hover:bg-emerald-50/40 transition-all group"
             >
               <div className="flex items-center gap-2.5">
@@ -86,7 +91,7 @@ export const FloatingContactWidget: React.FC = () => {
                 <div className="text-left">
                   <span className="text-[10px] font-semibold text-neutral-500 block uppercase">Call Primary</span>
                   <span className="text-xs font-bold text-neutral-900 group-hover:text-emerald-600 transition-colors">
-                    +91 7997044999
+                    {config.primary_phone}
                   </span>
                 </div>
               </div>
@@ -94,27 +99,29 @@ export const FloatingContactWidget: React.FC = () => {
             </a>
 
             {/* Secondary Phone */}
-            <a
-              href="tel:7997022999"
-              className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-neutral-200/80 hover:border-emerald-500 hover:bg-emerald-50/40 transition-all group"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-colors">
-                  <Phone className="w-4 h-4" />
+            {config.secondary_phone && (
+              <a
+                href={`tel:${secondaryCleanPhone}`}
+                className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-neutral-200/80 hover:border-emerald-500 hover:bg-emerald-50/40 transition-all group"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                    <Phone className="w-4 h-4" />
+                  </div>
+                  <div className="text-left">
+                    <span className="text-[10px] font-semibold text-neutral-500 block uppercase">Call Secondary</span>
+                    <span className="text-xs font-bold text-neutral-900 group-hover:text-emerald-600 transition-colors">
+                      {config.secondary_phone}
+                    </span>
+                  </div>
                 </div>
-                <div className="text-left">
-                  <span className="text-[10px] font-semibold text-neutral-500 block uppercase">Call Secondary</span>
-                  <span className="text-xs font-bold text-neutral-900 group-hover:text-emerald-600 transition-colors">
-                    +91 7997022999
-                  </span>
-                </div>
-              </div>
-              <ArrowUpRight className="w-4 h-4 text-neutral-400 group-hover:text-emerald-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
-            </a>
+                <ArrowUpRight className="w-4 h-4 text-neutral-400 group-hover:text-emerald-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+              </a>
+            )}
 
             {/* WhatsApp Chat */}
             <a
-              href="https://wa.me/917997044999?text=Hello%20Manohar%20Grand,%20I%20would%20like%20to%20inquire%20about%20room%20availability."
+              href={`https://wa.me/${whatsappNumber}?text=Hello%20${encodeURIComponent(config.hotel_name || 'Manohar Grand')},%20I%20would%20like%20to%20inquire%20about%20room%20availability.`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-neutral-200/80 hover:border-emerald-500 hover:bg-emerald-50/60 transition-all group"
@@ -135,7 +142,7 @@ export const FloatingContactWidget: React.FC = () => {
 
             {/* Email */}
             <a
-              href={`mailto:${PLACEHOLDER_HOTEL_INFO.email}`}
+              href={`mailto:${config.email}`}
               className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-neutral-200/80 hover:border-emerald-500 hover:bg-emerald-50/40 transition-all group"
             >
               <div className="flex items-center gap-2.5">
@@ -145,7 +152,7 @@ export const FloatingContactWidget: React.FC = () => {
                 <div className="text-left truncate max-w-[170px]">
                   <span className="text-[10px] font-semibold text-neutral-500 block uppercase">Email Reception</span>
                   <span className="text-[11px] font-bold text-neutral-900 group-hover:text-emerald-600 transition-colors truncate block">
-                    {PLACEHOLDER_HOTEL_INFO.email}
+                    {config.email}
                   </span>
                 </div>
               </div>

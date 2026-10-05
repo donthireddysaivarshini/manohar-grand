@@ -1,18 +1,55 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { CalendarDays, CheckCircle2, ArrowRight } from 'lucide-react';
 import { Container } from '../../components/common/Container';
 import { Section } from '../../components/common/Section';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
-import { DEMO_MEDIA } from '../../data/demoMedia';
 import { Icon3D } from '../../components/common/Icon3D';
 import { ScrollReveal } from '../../components/common/ScrollReveal';
+import { useHotelConfig } from '../../store/HotelConfigContext';
+import { cmsApiService } from '../../services/api/cmsApiService';
+import { ApiCMSSection } from '../../types/cms';
 
 export const AboutPage: React.FC = () => {
+  const { config } = useHotelConfig();
+  const [aboutSection, setAboutSection] = useState<ApiCMSSection | null>(null);
+  const [aboutImage, setAboutImage] = useState<string>('');
+
   useEffect(() => {
-    document.title = 'About Us | Manohar Grand';
-  }, []);
+    document.title = `About Us | ${config.hotel_name || 'Manohar Grand'}`;
+
+    const loadAboutData = async () => {
+      try {
+        const sections = await cmsApiService.getSections('about');
+        if (sections.length > 0) {
+          setAboutSection(sections[0]);
+        }
+      } catch (err) {
+        console.warn('Could not load about CMS section:', err);
+      }
+
+      try {
+        const gallery = await cmsApiService.getGallery();
+        if (gallery.length > 0) {
+          const featured = gallery.find((g) => g.is_featured || g.category === 'property') || gallery[0];
+          setAboutImage(featured.image_url);
+        }
+      } catch (err) {
+        console.warn('Could not load about gallery image:', err);
+      }
+    };
+
+    loadAboutData();
+  }, [config.hotel_name]);
+
+  const title = aboutSection?.title || 'Redefines Luxury with Affordable Prices';
+  const subtitle = aboutSection?.subtitle || 'Dedicated to a Relaxing & Convenient Hotel Experience';
+  const body = aboutSection?.body || (
+    `Welcome to ${config.hotel_name || 'Manohar Grand'}. Located conveniently near city transit, ` +
+    'our hotel is configured to serve business professionals, transit travelers, and visiting families ' +
+    'with dependable amenities, clean attached bathrooms, and warm hospitality.'
+  );
 
   return (
     <div className="flex flex-col w-full">
@@ -23,13 +60,13 @@ export const AboutPage: React.FC = () => {
         <Container size="xl" className="relative z-10">
           <div className="max-w-2xl flex flex-col items-start gap-3">
             <Badge variant="brand" size="sm" className="font-bold">
-              About Manohar Grand
+              About {config.hotel_name || 'Manohar Grand'}
             </Badge>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight">
-              Redefines Luxury with Affordable Prices
+              {title}
             </h1>
             <p className="text-sm sm:text-base text-neutral-300 leading-relaxed">
-              Providing welcoming hospitality, comfortable rooms, and dependable service with direct walkable access to the JNTU Metro corridor.
+              Providing welcoming hospitality, comfortable rooms, and dependable service with direct transit access.
             </p>
           </div>
         </Container>
@@ -42,13 +79,19 @@ export const AboutPage: React.FC = () => {
             {/* Image Preview */}
             <ScrollReveal>
               <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-card border border-neutral-border bg-neutral-100">
-                <img
-                  src={DEMO_MEDIA.welcome.primary}
-                  alt="Manohar Grand reception lobby"
-                  className="w-full h-full object-cover"
-                />
+                {aboutImage ? (
+                  <img
+                    src={aboutImage}
+                    alt={`${config.hotel_name || 'Manohar Grand'} hospitality and rooms`}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-neutral-400 text-xs">
+                    {config.hotel_name || 'Manohar Grand'}
+                  </div>
+                )}
                 <div className="absolute bottom-3 left-3 bg-neutral-dark/80 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg text-xs font-medium">
-                  Manohar Grand Hospitality
+                  {config.hotel_name || 'Manohar Grand'} Hospitality
                 </div>
               </div>
             </ScrollReveal>
@@ -60,10 +103,10 @@ export const AboutPage: React.FC = () => {
                   Our Philosophy
                 </Badge>
                 <h2 className="text-2xl sm:text-3xl font-extrabold text-neutral-dark tracking-tight leading-snug">
-                  Dedicated to a Relaxing &amp; Convenient Hotel Experience
+                  {subtitle}
                 </h2>
                 <p className="text-sm text-neutral-secondary leading-relaxed">
-                  Welcome to Manohar Grand. Located conveniently near JNTU Metro Station in Kukatpally, our hotel is configured to serve business professionals, transit travelers, and visiting families with dependable amenities, clean attached bathrooms, and warm hospitality.
+                  {body}
                 </p>
                 <p className="text-sm text-neutral-secondary leading-relaxed">
                   We focus on the essentials that make a stay comfortable — clean air-conditioned and ventilated rooms, round-the-clock power backup, daily housekeeping, on-premise car parking, and dedicated reception assistance.
@@ -80,7 +123,7 @@ export const AboutPage: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-2 p-2.5 rounded-lg bg-neutral-50 border border-neutral-200">
                     <CheckCircle2 className="w-4 h-4 text-feedback-success shrink-0" />
-                    <span>Walkable distance from JNTU Metro Station (1 min walk)</span>
+                    <span>{config.near_landmark ? `Located ${config.near_landmark} with seamless transit` : config.address}</span>
                   </div>
                   <div className="flex items-center gap-2 p-2.5 rounded-lg bg-neutral-50 border border-neutral-200">
                     <CheckCircle2 className="w-4 h-4 text-feedback-success shrink-0" />
@@ -159,4 +202,3 @@ export const AboutPage: React.FC = () => {
     </div>
   );
 };
-

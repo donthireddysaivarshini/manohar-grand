@@ -78,7 +78,7 @@ class TestSeedPhase2MasterDataCommand:
         assert config.max_late_checkout_hours == 3
 
         # Assert structural CMS sections created
-        assert CMSSection.objects.count() == 3
+        assert CMSSection.objects.count() == 5
         hero = CMSSection.objects.get(section_key='hero')
         assert hero.title == 'Welcome to Manohar Grand'
         assert hero.metadata['connectivity_badge'] == 'Walkable distance from JNTU Metro Station'
@@ -102,7 +102,7 @@ class TestSeedPhase2MasterDataCommand:
         assert RoomRatePlan.objects.count() == 2
         assert TaxRule.objects.count() == 1
         assert HotelConfiguration.objects.count() == 1
-        assert CMSSection.objects.count() == 3
+        assert CMSSection.objects.count() == 5
         assert FAQ.objects.count() == 0
         assert PhysicalRoom.objects.count() == 0
         assert RoomImage.objects.count() == 0

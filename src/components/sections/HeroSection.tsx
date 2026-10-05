@@ -1,45 +1,80 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { CalendarDays, ArrowRight, MapPin } from 'lucide-react';
 import { Container } from '../common/Container';
 import { Button } from '../common/Button';
-import { DEMO_MEDIA } from '../../data/demoMedia';
+import { useHotelConfig } from '../../store/HotelConfigContext';
+import { cmsApiService } from '../../services/api/cmsApiService';
+import { ApiCMSSection } from '../../types/cms';
 
 /**
- * Clean, Unified Homepage Hero Section (Mobile & Desktop).
- * - Hierarchy:
- *   1. Welcome to Manohar Grand (Main Heading)
- *   2. Luxury Air-conditioned and Non A/c Rooms (Bold Brand Red)
- *   3. Walkable distance from JNTU Metro Station (Location highlight)
- *   4. [Book Your Stay] [Explore Rooms] (Action CTAs)
+ * Backend-driven Homepage Hero Section.
+ * - Dynamic Title & Subtitle from CMSSection (key: 'hero') / HotelConfiguration
+ * - Dynamic Landmark/Connectivity badge from HotelConfiguration / CMSSection metadata
+ * - Dynamic background imagery from GalleryMedia / Fallback
  */
 export const HeroSection: React.FC = () => {
+  const { config } = useHotelConfig();
+  const [heroSection, setHeroSection] = useState<ApiCMSSection | null>(null);
+  const [bgImage, setBgImage] = useState<string>('');
+
+  useEffect(() => {
+    const loadHeroData = async () => {
+      try {
+        const sections = await cmsApiService.getSections('hero');
+        if (sections.length > 0) {
+          setHeroSection(sections[0]);
+        }
+      } catch (err) {
+        console.warn('Could not load hero CMS section:', err);
+      }
+
+      try {
+        const gallery = await cmsApiService.getGallery();
+        const heroImg = gallery.find((g) => g.is_featured || g.category === 'property' || g.category === 'exterior');
+        if (heroImg) {
+          setBgImage(heroImg.image_url);
+        }
+      } catch (err) {
+        console.warn('Could not load hero gallery media:', err);
+      }
+    };
+
+    loadHeroData();
+  }, []);
+
+  const headline = heroSection?.title || `Welcome to ${config.hotel_name || 'Manohar Grand'}`;
+  const subtitle = heroSection?.subtitle || 'Luxury Air-conditioned and Non A/c Rooms';
+  const connectivityBadge = heroSection?.metadata?.connectivity_badge || (config.near_landmark ? `Walkable distance from ${config.near_landmark}` : 'Prime Location & Transit Access');
+
   return (
     <div className="relative min-h-[340px] sm:min-h-[380px] lg:min-h-[420px] flex items-center bg-neutral-dark text-white overflow-hidden">
-      {/* Background Image with Gradient Overlay */}
-      <img
-        src={DEMO_MEDIA.hero.url}
-        alt={DEMO_MEDIA.hero.alt}
-        className="absolute inset-0 w-full h-full object-cover object-center opacity-30 scale-105 transform animate-in fade-in duration-700"
-      />
+      {/* Dynamic Background Image with Gradient Overlay */}
+      {bgImage && (
+        <img
+          src={bgImage}
+          alt={headline}
+          className="absolute inset-0 w-full h-full object-cover object-center opacity-30 scale-105 transform animate-in fade-in duration-700"
+        />
+      )}
       <div className="absolute inset-0 bg-gradient-to-t from-neutral-dark via-neutral-dark/80 to-neutral-dark/60" />
 
       <Container size="xl" className="relative z-10 py-8 sm:py-12 lg:py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl flex flex-col items-start gap-3 sm:gap-4">
           {/* 1. Main Headline */}
           <h1 className="text-2xl xs:text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight">
-            Welcome to Manohar Grand
+            {headline}
           </h1>
 
           {/* 2. Room Category Highlight / Subtitle in White */}
           <p className="text-sm xs:text-base sm:text-lg lg:text-xl font-medium text-white tracking-tight leading-snug">
-            Luxury Air-conditioned and Non A/c Rooms
+            {subtitle}
           </p>
 
           {/* 3. Location / Connectivity Highlight Badge */}
           <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs sm:text-sm font-semibold text-neutral-200 mt-0.5">
             <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-brand shrink-0" />
-            <span>Walkable distance from JNTU Metro Station</span>
+            <span>{connectivityBadge}</span>
           </div>
 
           {/* 4. Quick Action CTAs */}

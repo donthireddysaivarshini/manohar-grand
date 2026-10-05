@@ -16,14 +16,20 @@ import { Section } from '../../components/common/Section';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { Card, CardContent } from '../../components/common/Card';
-import { PLACEHOLDER_HOTEL_INFO } from '../../data/placeholderHotelInfo';
+import { useHotelConfig } from '../../store/HotelConfigContext';
 import { Icon3D } from '../../components/common/Icon3D';
 import { ScrollReveal } from '../../components/common/ScrollReveal';
 
 export const ContactPage: React.FC = () => {
+  const { config } = useHotelConfig();
+
   useEffect(() => {
-    document.title = 'Contact & Location | Manohar Grand';
-  }, []);
+    document.title = `Contact & Location | ${config.hotel_name || 'Manohar Grand'}`;
+  }, [config.hotel_name]);
+
+  const primaryCleanPhone = config.primary_phone.replace(/[^0-9]/g, '');
+  const secondaryCleanPhone = config.secondary_phone.replace(/[^0-9]/g, '');
+  const whatsappNumber = primaryCleanPhone.startsWith('91') ? primaryCleanPhone : `91${primaryCleanPhone}`;
 
   return (
     <div className="flex flex-col w-full">
@@ -40,7 +46,7 @@ export const ContactPage: React.FC = () => {
               Contact &amp; Location
             </h1>
             <p className="text-sm sm:text-base text-neutral-300 leading-relaxed">
-              Find directions to Manohar Grand and connect directly with our 24/7 front desk team.
+              Find directions to {config.hotel_name || 'Manohar Grand'} and connect directly with our 24/7 front desk team.
             </p>
           </div>
         </Container>
@@ -52,19 +58,19 @@ export const ContactPage: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Left: Contact Information & Direct Channels (5 cols) */}
             <div className="lg:col-span-5 flex flex-col gap-5">
-              {/* Metro Connectivity Callout Box */}
+              {/* Metro / Landmark Connectivity Callout Box */}
               <ScrollReveal>
                 <div className="p-4 sm:p-5 rounded-2xl bg-neutral-100/90 border border-neutral-200 shadow-xs flex items-start gap-4">
                   <Icon3D name="connectivity" size="md" />
                   <div className="flex flex-col gap-0.5">
                     <span className="text-xs font-bold uppercase tracking-wider text-brand">
-                      Metro Transit
+                      Prime Location
                     </span>
                     <h2 className="text-base font-extrabold text-neutral-dark">
-                      Walkable distance from JNTU Metro Station
+                      {config.near_landmark ? `Located ${config.near_landmark}` : 'Centrally Located with Easy Transit'}
                     </h2>
                     <p className="text-xs text-neutral-secondary">
-                      Convenient access for business and city transit in Kukatpally.
+                      Convenient access for business, family stays, and city transit.
                     </p>
                   </div>
                 </div>
@@ -84,7 +90,7 @@ export const ContactPage: React.FC = () => {
 
                     {/* Location Card */}
                     <a
-                      href={PLACEHOLDER_HOTEL_INFO.googleMapsUrl}
+                      href={config.google_maps_url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-start gap-3.5 group p-3.5 rounded-xl border border-neutral-200 hover:border-brand/40 bg-neutral-50 hover:bg-neutral-100/70 transition-all"
@@ -102,7 +108,7 @@ export const ContactPage: React.FC = () => {
                           </span>
                         </div>
                         <p className="text-xs text-neutral-secondary mt-1 leading-relaxed">
-                          {PLACEHOLDER_HOTEL_INFO.placeholderAddress}
+                          {config.address}
                         </p>
                       </div>
                     </a>
@@ -120,13 +126,17 @@ export const ContactPage: React.FC = () => {
                           </span>
                         </div>
                         <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-neutral-secondary mt-1">
-                          <a href="tel:7997044999" className="hover:text-brand font-semibold text-neutral-dark">
-                            +91 7997044999
+                          <a href={`tel:${primaryCleanPhone}`} className="hover:text-brand font-semibold text-neutral-dark">
+                            {config.primary_phone}
                           </a>
-                          <span>•</span>
-                          <a href="tel:7997022999" className="hover:text-brand font-semibold text-neutral-dark">
-                            +91 7997022999
-                          </a>
+                          {config.secondary_phone && (
+                            <>
+                              <span>•</span>
+                              <a href={`tel:${secondaryCleanPhone}`} className="hover:text-brand font-semibold text-neutral-dark">
+                                {config.secondary_phone}
+                              </a>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -141,10 +151,10 @@ export const ContactPage: React.FC = () => {
                           Email Inquiries
                         </h4>
                         <a
-                          href={`mailto:${PLACEHOLDER_HOTEL_INFO.email}`}
+                          href={`mailto:${config.email}`}
                           className="text-xs text-neutral-secondary hover:text-brand font-medium mt-0.5 block"
                         >
-                          {PLACEHOLDER_HOTEL_INFO.email}
+                          {config.email}
                         </a>
                       </div>
                     </div>
@@ -159,10 +169,10 @@ export const ContactPage: React.FC = () => {
                           Front Desk &amp; Check-in
                         </h4>
                         <p className="text-xs text-neutral-secondary mt-0.5 font-medium">
-                          {PLACEHOLDER_HOTEL_INFO.businessHours}
+                          24/7 Front Desk Support
                         </p>
                         <p className="text-[11px] text-neutral-500 mt-1">
-                          Standard Check-in: 12:00 PM | Standard Check-out: 11:00 AM
+                          Standard Check-in: {config.standard_check_in_time} | Standard Check-out: {config.standard_check_out_time}
                         </p>
                       </div>
                     </div>
@@ -174,7 +184,7 @@ export const ContactPage: React.FC = () => {
                       </span>
                       <div className="flex items-center gap-2">
                         <a
-                          href={PLACEHOLDER_HOTEL_INFO.socialLinks.facebook}
+                          href="https://facebook.com"
                           target="_blank"
                           rel="noopener noreferrer"
                           className="px-3 py-1.5 rounded-md bg-neutral-100 hover:bg-brand text-neutral-700 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all"
@@ -185,7 +195,7 @@ export const ContactPage: React.FC = () => {
                           Facebook
                         </a>
                         <a
-                          href={PLACEHOLDER_HOTEL_INFO.socialLinks.instagram}
+                          href="https://instagram.com"
                           target="_blank"
                           rel="noopener noreferrer"
                           className="px-3 py-1.5 rounded-md bg-neutral-100 hover:bg-brand text-neutral-700 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all"
@@ -205,7 +215,7 @@ export const ContactPage: React.FC = () => {
               <ScrollReveal delay={140}>
                 <div className="flex flex-col gap-3">
                   <a
-                    href={PLACEHOLDER_HOTEL_INFO.googleMapsUrl}
+                    href={config.google_maps_url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-full"
@@ -217,7 +227,7 @@ export const ContactPage: React.FC = () => {
                   </a>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <a href="tel:7997044999" className="w-full">
+                    <a href={`tel:${primaryCleanPhone}`} className="w-full">
                       <Button variant="outline" size="md" className="w-full gap-2 font-semibold">
                         <Phone className="w-4 h-4 text-brand" />
                         Call Front Desk
@@ -225,7 +235,7 @@ export const ContactPage: React.FC = () => {
                     </a>
 
                     <a
-                      href="https://wa.me/917997044999?text=Hello%20Manohar%20Grand%20Team%2C%20I%20have%20an%20inquiry%20regarding%20room%20booking"
+                      href={`https://wa.me/${whatsappNumber}?text=Hello%20${encodeURIComponent(config.hotel_name || 'Manohar Grand')}%20Team%2C%20I%20have%20an%20inquiry%20regarding%20room%20booking`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full"
@@ -249,11 +259,11 @@ export const ContactPage: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <MapPin className="w-4 h-4 text-brand" />
                       <span className="text-xs font-bold text-neutral-dark uppercase tracking-wider">
-                        Interactive Map — Hyderabad
+                        Interactive Map — {config.hotel_name || 'Manohar Grand'}
                       </span>
                     </div>
                     <a
-                      href={PLACEHOLDER_HOTEL_INFO.googleMapsUrl}
+                      href={config.google_maps_url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-xs text-brand font-semibold hover:underline inline-flex items-center gap-1"
@@ -264,14 +274,14 @@ export const ContactPage: React.FC = () => {
 
                   <div className="relative aspect-[16/10] sm:aspect-[16/11] w-full bg-neutral-100">
                     <iframe
-                      src={PLACEHOLDER_HOTEL_INFO.googleMapsEmbedUrl}
+                      src={config.google_maps_embed_url}
                       width="100%"
                       height="100%"
                       style={{ border: 0 }}
                       allowFullScreen
                       loading="lazy"
                       referrerPolicy="strict-origin-when-cross-origin"
-                      title="Manohar Grand Luxury Hotel Rooms Google Map Location"
+                      title={`${config.hotel_name || 'Manohar Grand'} Hotel Google Map Location`}
                       className="w-full h-full"
                     />
                   </div>

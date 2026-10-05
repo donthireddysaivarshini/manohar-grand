@@ -1,24 +1,49 @@
 import React, { useState, useEffect } from 'react';
-import { Images, Eye, ShieldAlert } from 'lucide-react';
+import { Images, Eye, Image as ImageIcon } from 'lucide-react';
 import { Container } from '../../components/common/Container';
 import { Section } from '../../components/common/Section';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
-import { LightboxModal } from '../../components/common/LightboxModal';
-import { DEMO_MEDIA } from '../../data/demoMedia';
+import { LightboxModal, LightboxImageItem } from '../../components/common/LightboxModal';
+import { cmsApiService } from '../../services/api/cmsApiService';
+import { ApiGalleryMedia } from '../../types/cms';
 
 export const GalleryPage: React.FC = () => {
-  useEffect(() => {
-    document.title = 'Photo Gallery | Manohar Grand Hotel';
-  }, []);
-
-  const [activeCategory, setActiveCategory] = useState<'all' | 'rooms' | 'exterior' | 'ambience'>('all');
+  const [mediaList, setMediaList] = useState<ApiGalleryMedia[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [activeCategory, setActiveCategory] = useState<string>('all');
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
-  const filteredImages = activeCategory === 'all'
-    ? DEMO_MEDIA.gallery
-    : DEMO_MEDIA.gallery.filter((img) => img.category === activeCategory);
+  useEffect(() => {
+    document.title = 'Photo Gallery | Manohar Grand Hotel';
+    const fetchGallery = async () => {
+      try {
+        setLoading(true);
+        const data = await cmsApiService.getGallery();
+        setMediaList(data);
+      } catch (err) {
+        console.error('Failed to load gallery:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchGallery();
+  }, []);
+
+  // Derive unique categories dynamically
+  const categories = ['all', ...Array.from(new Set(mediaList.map((item) => item.category)))];
+
+  const filteredMedia = activeCategory === 'all'
+    ? mediaList
+    : mediaList.filter((img) => img.category === activeCategory);
+
+  const lightboxImages: LightboxImageItem[] = filteredMedia.map((m) => ({
+    id: m.id,
+    url: m.image_url,
+    alt: m.alt_text || m.title,
+    caption: m.caption || m.title,
+  }));
 
   const handleOpenLightbox = (index: number) => {
     setActiveImageIndex(index);
@@ -39,7 +64,7 @@ export const GalleryPage: React.FC = () => {
               Photo Gallery
             </h1>
             <p className="text-sm sm:text-base text-neutral-300 leading-relaxed">
-              Browse images of our guest accommodations, hotel surroundings, and welcoming ambience.
+              Browse authentic photographs of our guest accommodations, hotel facilities, and welcoming ambience.
             </p>
           </div>
         </Container>
@@ -48,89 +73,76 @@ export const GalleryPage: React.FC = () => {
       {/* Gallery Content */}
       <Section variant="default" padding="lg">
         <Container size="xl">
-          {/* Transparency Disclaimer */}
-          <div className="mb-8 p-4 rounded-lg bg-white border border-neutral-border shadow-sm flex items-start gap-3">
-            <ShieldAlert className="w-5 h-5 text-feedback-warning shrink-0 mt-0.5" />
-            <div className="text-xs text-neutral-secondary">
-              <span className="font-bold text-neutral-dark">Demo Imagery Notice: </span>
-              All photographs below are temporary stock hospitality images selected for layout demonstration. They will be replaced with confirmed Manohar Grand photographs.
-            </div>
-          </div>
-
           {/* Filter Pills */}
-          <div className="flex flex-wrap items-center gap-2 mb-8">
-            <Button
-              variant={activeCategory === 'all' ? 'primary' : 'outline'}
-              size="sm"
-              onClick={() => setActiveCategory('all')}
-              className="font-semibold"
-            >
-              All Images ({DEMO_MEDIA.gallery.length})
-            </Button>
-            <Button
-              variant={activeCategory === 'rooms' ? 'primary' : 'outline'}
-              size="sm"
-              onClick={() => setActiveCategory('rooms')}
-              className="font-semibold"
-            >
-              Rooms
-            </Button>
-            <Button
-              variant={activeCategory === 'exterior' ? 'primary' : 'outline'}
-              size="sm"
-              onClick={() => setActiveCategory('exterior')}
-              className="font-semibold"
-            >
-              Exterior
-            </Button>
-            <Button
-              variant={activeCategory === 'ambience' ? 'primary' : 'outline'}
-              size="sm"
-              onClick={() => setActiveCategory('ambience')}
-              className="font-semibold"
-            >
-              Ambience
-            </Button>
-          </div>
+          {categories.length > 1 && (
+            <div className="flex flex-wrap items-center gap-2 mb-8">
+              {categories.map((cat) => (
+                <Button
+                  key={cat}
+                  variant={activeCategory === cat ? 'primary' : 'outline'}
+                  size="sm"
+                  onClick={() => setActiveCategory(cat)}
+                  className="font-semibold capitalize text-xs"
+                >
+                  {cat === 'all' ? `All Images (${mediaList.length})` : cat}
+                </Button>
+              ))}
+            </div>
+          )}
 
-          {/* Responsive Gallery Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredImages.map((img, idx) => (
-              <div
-                key={img.id}
-                onClick={() => handleOpenLightbox(idx)}
-                className="group relative aspect-[4/3] rounded-card overflow-hidden bg-neutral-100 cursor-pointer shadow-card border border-neutral-border hover:shadow-card-hover transition-all"
-              >
-                <img
-                  src={img.url}
-                  alt={img.alt}
-                  loading="lazy"
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-neutral-dark/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-4 text-white">
-                  <div className="self-end p-2 rounded-full bg-white/20 backdrop-blur-sm">
-                    <Eye className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-brand text-white inline-block mb-1">
-                      {img.category}
-                    </span>
-                    <p className="text-xs font-bold leading-tight">{img.caption}</p>
-                    <span className="text-[10px] text-neutral-300 block mt-0.5">
-                      Click to view full-size
-                    </span>
+          {/* Loading Skeleton */}
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3, 4, 5, 6].map((idx) => (
+                <div key={idx} className="aspect-[4/3] rounded-2xl bg-neutral-100 animate-pulse" />
+              ))}
+            </div>
+          ) : filteredMedia.length === 0 ? (
+            <div className="text-center py-16 bg-neutral-50 rounded-2xl border border-neutral-200">
+              <ImageIcon className="w-10 h-10 text-neutral-400 mx-auto mb-3" />
+              <p className="text-sm font-bold text-neutral-dark">No photographs available in this category</p>
+              <p className="text-xs text-neutral-secondary mt-1">Please select another category or check back soon.</p>
+            </div>
+          ) : (
+            /* Responsive Gallery Grid */
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredMedia.map((img, idx) => (
+                <div
+                  key={img.id}
+                  onClick={() => handleOpenLightbox(idx)}
+                  className="group relative aspect-[4/3] rounded-2xl overflow-hidden bg-neutral-100 cursor-pointer shadow-card border border-neutral-200 hover:shadow-card-hover transition-all"
+                >
+                  <img
+                    src={img.image_url}
+                    alt={img.alt_text || img.title}
+                    loading="lazy"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-neutral-dark/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-4 text-white">
+                    <div className="self-end p-2 rounded-full bg-white/20 backdrop-blur-sm">
+                      <Eye className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-brand text-white inline-block mb-1">
+                        {img.category}
+                      </span>
+                      <p className="text-xs font-bold leading-tight">{img.caption || img.title}</p>
+                      <span className="text-[10px] text-neutral-300 block mt-0.5">
+                        Click to view full-size
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </Container>
 
         {/* Fullscreen Lightbox Modal */}
         <LightboxModal
           isOpen={lightboxOpen}
           onClose={() => setLightboxOpen(false)}
-          images={filteredImages}
+          images={lightboxImages}
           currentIndex={activeImageIndex}
           onIndexChange={setActiveImageIndex}
         />

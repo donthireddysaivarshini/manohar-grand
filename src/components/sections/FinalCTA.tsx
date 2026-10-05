@@ -1,27 +1,53 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { CalendarDays, ShieldCheck, ArrowRight } from 'lucide-react';
 import { Container } from '../common/Container';
 import { Section } from '../common/Section';
 import { Button } from '../common/Button';
+import { useHotelConfig } from '../../store/HotelConfigContext';
+import { cmsApiService } from '../../services/api/cmsApiService';
+import { ApiCMSSection } from '../../types/cms';
 
 export const FinalCTA: React.FC = () => {
+  const { config } = useHotelConfig();
+  const [ctaSection, setCtaSection] = useState<ApiCMSSection | null>(null);
+
+  useEffect(() => {
+    const loadCta = async () => {
+      try {
+        const sections = await cmsApiService.getSections('cta');
+        if (sections.length > 0) {
+          setCtaSection(sections[0]);
+        }
+      } catch (err) {
+        console.warn('Could not load CTA CMS section:', err);
+      }
+    };
+    loadCta();
+  }, []);
+
+  const title = ctaSection?.title || `Plan Your Stay at ${config.hotel_name || 'Manohar Grand'}`;
+  const subtitle = ctaSection?.subtitle || 'Direct Booking Benefits';
+  const body = ctaSection?.body || (
+    'Enjoy comfortable AC & Non-AC rooms with transparent rates and attentive hospitality. ' +
+    'Reserve directly for instant booking confirmation.'
+  );
+
   return (
     <Section variant="dark" padding="lg" className="border-t border-neutral-800">
       <Container size="lg">
         <div className="text-center max-w-2xl mx-auto flex flex-col items-center gap-5 sm:gap-6">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neutral-800 border border-neutral-700 text-xs font-semibold text-neutral-300">
             <ShieldCheck className="w-4 h-4 text-brand" />
-            <span>Direct Booking Benefits</span>
+            <span>{subtitle}</span>
           </div>
 
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight text-balance">
-            Plan Your Stay at <br />
-            <span className="text-brand">Manohar Grand</span>
+            {title}
           </h2>
 
           <p className="text-sm sm:text-base text-neutral-300 leading-relaxed max-w-lg">
-            Enjoy comfortable AC &amp; Non-AC rooms with transparent rates and attentive hospitality. Reserve directly for instant booking confirmation.
+            {body}
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-3.5 pt-2">

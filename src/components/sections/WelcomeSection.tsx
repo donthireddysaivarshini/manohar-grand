@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, CheckCircle2, MapPin } from 'lucide-react';
 import { Container } from '../common/Container';
@@ -6,45 +6,94 @@ import { Section } from '../common/Section';
 import { Badge } from '../common/Badge';
 import { Button } from '../common/Button';
 import { ScrollReveal } from '../common/ScrollReveal';
-import { DEMO_MEDIA } from '../../data/demoMedia';
+import { useHotelConfig } from '../../store/HotelConfigContext';
+import { cmsApiService } from '../../services/api/cmsApiService';
+import { ApiCMSSection } from '../../types/cms';
 
 export const WelcomeSection: React.FC = () => {
+  const { config } = useHotelConfig();
+  const [welcomeSection, setWelcomeSection] = useState<ApiCMSSection | null>(null);
+  const [primaryImage, setPrimaryImage] = useState<string>('');
+  const [secondaryImage, setSecondaryImage] = useState<string>('');
+
+  useEffect(() => {
+    const loadWelcomeData = async () => {
+      try {
+        const sections = await cmsApiService.getSections('welcome');
+        if (sections.length > 0) {
+          setWelcomeSection(sections[0]);
+        }
+      } catch (err) {
+        console.warn('Could not load welcome CMS section:', err);
+      }
+
+      try {
+        const gallery = await cmsApiService.getGallery();
+        if (gallery.length > 0) {
+          setPrimaryImage(gallery[0].image_url);
+        }
+        if (gallery.length > 1) {
+          setSecondaryImage(gallery[1].image_url);
+        }
+      } catch (err) {
+        console.warn('Could not load welcome gallery media:', err);
+      }
+    };
+
+    loadWelcomeData();
+  }, []);
+
+  const badgeText = `Welcome to ${config.hotel_name || 'Manohar Grand'}`;
+  const title = welcomeSection?.title || 'Redefines Luxury with Affordable Prices';
+  const body = welcomeSection?.body || (
+    `Located conveniently in the city, ${config.hotel_name || 'Manohar Grand'} blends comfort, value, and convenience for every traveler. ` +
+    'Our rooms feature modern amenities, plush bedding, and 24/7 dedicated hospitality.'
+  );
+
   return (
     <Section variant="white" padding="lg">
       <Container size="xl">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
           {/* Left: Dual Image Showcase */}
           <ScrollReveal direction="up" className="relative">
-            <div className="relative z-10 aspect-[4/3] rounded-2xl overflow-hidden shadow-card border border-neutral-border bg-neutral-100 group">
-              <img
-                src={DEMO_MEDIA.welcome.primary}
-                alt="Hotel reception and welcoming ambience (Demo Stock)"
-                loading="lazy"
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-            </div>
-            <div className="hidden sm:block absolute -bottom-3 -right-2 md:-bottom-4 md:-right-4 z-20 w-1/2 aspect-[4/3] rounded-xl overflow-hidden shadow-elevated border-4 border-white bg-neutral-100">
-              <img
-                src={DEMO_MEDIA.welcome.secondary}
-                alt="Guest room detail (Demo Stock)"
-                loading="lazy"
-                className="w-full h-full object-cover"
-              />
-            </div>
+            {primaryImage ? (
+              <div className="relative z-10 aspect-[4/3] rounded-2xl overflow-hidden shadow-card border border-neutral-200 bg-neutral-100 group">
+                <img
+                  src={primaryImage}
+                  alt={`${config.hotel_name || 'Manohar Grand'} welcoming ambience`}
+                  loading="lazy"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+              </div>
+            ) : (
+              <div className="relative z-10 aspect-[4/3] rounded-2xl bg-neutral-100 border border-neutral-200 flex items-center justify-center text-neutral-400 text-xs">
+                {config.hotel_name || 'Manohar Grand'}
+              </div>
+            )}
+            {secondaryImage && (
+              <div className="hidden sm:block absolute -bottom-3 -right-2 md:-bottom-4 md:-right-4 z-20 w-1/2 aspect-[4/3] rounded-xl overflow-hidden shadow-elevated border-4 border-white bg-neutral-100">
+                <img
+                  src={secondaryImage}
+                  alt={`${config.hotel_name || 'Manohar Grand'} guest accommodations`}
+                  loading="lazy"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
           </ScrollReveal>
 
           {/* Right: Editorial Intro Content */}
           <ScrollReveal direction="up" className="flex flex-col items-start gap-4 sm:gap-5">
             <Badge variant="brand" size="md">
-              Welcome to Manohar Grand
+              {badgeText}
             </Badge>
 
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-neutral-dark tracking-tight leading-snug">
-              Redefines Luxury with Affordable Prices
+              {title}
             </h2>
 
             <p className="text-sm sm:text-base text-neutral-secondary leading-relaxed">
-              Located in the heart of Hyderabad, Manohar Grand blends comfort, luxury, and convenience for every traveler. Our elegantly designed rooms feature modern amenities like high-speed Wi-Fi, plush bedding, and stunning views of Nexus Forum Mall and JNTU Metro Station, just minutes away.we promise exceptional hospitality and an unforgettable stay.
+              {body}
             </p>
 
             {/* Location & Key Feature Highlights */}
@@ -54,7 +103,7 @@ export const WelcomeSection: React.FC = () => {
                 <div>
                   <h4 className="text-xs font-bold text-neutral-dark">Prime Location</h4>
                   <p className="text-[11px] text-neutral-secondary mt-0.5">
-                    Walkable distance from JNTU Metro Station, Kukatpally
+                    {config.near_landmark ? `Walkable distance from ${config.near_landmark}` : config.address}
                   </p>
                 </div>
               </div>

@@ -1,6 +1,8 @@
 import { MultiRoomPriceCalculationParams, PriceBreakdown } from '../types/pricing';
-import { DEMO_PRICING_CONFIG } from '../data/demoPricingConfig';
 import { calculateNights } from './dateUtils';
+
+export const STANDARD_TAX_RATE_PERCENT = 5;
+export const STANDARD_TAX_DISCLAIMER = 'GST (5%) applicable as per government regulations';
 
 export function calculateBookingPrice(params: MultiRoomPriceCalculationParams): PriceBreakdown {
   const nights = calculateNights(params.checkIn, params.checkOut) || 1;
@@ -21,7 +23,7 @@ export function calculateBookingPrice(params: MultiRoomPriceCalculationParams): 
 
   const totalRooms = roomLines.reduce((acc, curr) => acc + curr.quantity, 0);
   const subtotal = roomLines.reduce((acc, curr) => acc + curr.lineSubtotal, 0);
-  const taxRatePercent = DEMO_PRICING_CONFIG.taxRatePercent;
+  const taxRatePercent = STANDARD_TAX_RATE_PERCENT;
   const taxAmount = Math.round((subtotal * taxRatePercent) / 100);
   const totalPayable = subtotal + taxAmount;
 
@@ -33,7 +35,7 @@ export function calculateBookingPrice(params: MultiRoomPriceCalculationParams): 
     taxRatePercent,
     taxAmount,
     totalPayable,
-    isDemoPricing: DEMO_PRICING_CONFIG.isDemoPricing,
-    taxDisclaimer: DEMO_PRICING_CONFIG.taxDisclaimer,
+    isDemoPricing: false,
+    taxDisclaimer: STANDARD_TAX_DISCLAIMER,
   };
 }

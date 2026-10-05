@@ -3,10 +3,14 @@ import { Link } from 'react-router-dom';
 import { MapPin, Phone, Mail, ShieldCheck, Clock } from 'lucide-react';
 import { Container } from '../common/Container';
 import { Logo } from '../common/Logo';
-import { PLACEHOLDER_HOTEL_INFO } from '../../data/placeholderHotelInfo';
+import { useHotelConfig } from '../../store/HotelConfigContext';
 
 export const Footer: React.FC = () => {
+  const { config } = useHotelConfig();
   const currentYear = new Date().getFullYear();
+
+  const primaryCleanPhone = config.primary_phone.replace(/[^0-9]/g, '');
+  const secondaryCleanPhone = config.secondary_phone.replace(/[^0-9]/g, '');
 
   return (
     <footer className="bg-neutral-dark text-white border-t border-neutral-800 pt-14 pb-8">
@@ -18,13 +22,13 @@ export const Footer: React.FC = () => {
               <Logo size="md" textVariant="light" />
             </Link>
             <p className="text-sm text-neutral-400 leading-relaxed">
-              Experience comfortable AC &amp; Non-AC rooms, 24/7 front desk service, and direct booking benefits at Manohar Grand.
+              Experience comfortable AC &amp; Non-AC rooms, 24/7 front desk service, and direct booking benefits at {config.hotel_name || 'Manohar Grand'}.
             </p>
 
             {/* Social Media Links */}
             <div className="flex items-center gap-3 pt-1">
               <a
-                href={PLACEHOLDER_HOTEL_INFO.socialLinks.facebook}
+                href="https://facebook.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Manohar Grand on Facebook"
@@ -36,7 +40,7 @@ export const Footer: React.FC = () => {
               </a>
 
               <a
-                href={PLACEHOLDER_HOTEL_INFO.socialLinks.instagram}
+                href="https://instagram.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Manohar Grand on Instagram"
@@ -134,43 +138,45 @@ export const Footer: React.FC = () => {
             </h4>
             <div className="flex flex-col gap-3 text-sm text-neutral-400">
               <a
-                href={PLACEHOLDER_HOTEL_INFO.googleMapsUrl}
+                href={config.google_maps_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-start gap-2.5 hover:text-white transition-colors group"
               >
                 <MapPin className="w-4 h-4 text-brand shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
                 <span className="text-xs leading-relaxed text-neutral-400 group-hover:text-neutral-200 break-words">
-                  {PLACEHOLDER_HOTEL_INFO.address}
+                  {config.address}
                 </span>
               </a>
 
               <div className="flex items-start gap-2.5">
                 <Phone className="w-4 h-4 text-brand shrink-0 mt-0.5" />
                 <div className="flex flex-col gap-0.5 text-xs text-neutral-400">
-                  <a href="tel:7997044999" className="hover:text-white transition-colors">
-                    +91 7997044999
+                  <a href={`tel:${primaryCleanPhone}`} className="hover:text-white transition-colors">
+                    {config.primary_phone}
                   </a>
-                  <a href="tel:7997022999" className="hover:text-white transition-colors">
-                    +91 7997022999
-                  </a>
+                  {config.secondary_phone && (
+                    <a href={`tel:${secondaryCleanPhone}`} className="hover:text-white transition-colors">
+                      {config.secondary_phone}
+                    </a>
+                  )}
                 </div>
               </div>
 
               <div className="flex items-center gap-2.5">
                 <Mail className="w-4 h-4 text-brand shrink-0" />
                 <a
-                  href={`mailto:${PLACEHOLDER_HOTEL_INFO.email}`}
+                  href={`mailto:${config.email}`}
                   className="text-xs text-neutral-400 hover:text-white transition-colors break-all"
                 >
-                  {PLACEHOLDER_HOTEL_INFO.email}
+                  {config.email}
                 </a>
               </div>
 
               <div className="flex items-start gap-2.5 pt-1 border-t border-neutral-800/80">
                 <Clock className="w-4 h-4 text-brand shrink-0 mt-0.5" />
                 <span className="text-xs text-neutral-300 font-medium">
-                  {PLACEHOLDER_HOTEL_INFO.businessHours}
+                  Check-in: {config.standard_check_in_time} | Check-out: {config.standard_check_out_time}
                 </span>
               </div>
             </div>

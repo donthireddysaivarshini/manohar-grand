@@ -21,6 +21,7 @@ import {
 import { Logo } from '../common/Logo';
 import { Button } from '../common/Button';
 import { useAuth } from '../../store/AuthContext';
+import { useHotelConfig } from '../../store/HotelConfigContext';
 import { cn } from '../../utils/cn';
 
 export interface MobileNavProps {
@@ -30,6 +31,8 @@ export interface MobileNavProps {
 
 export const MobileNav: React.FC<MobileNavProps> = ({ isOpen, onClose }) => {
   const { user, isAuthenticated, logout } = useAuth();
+  const { config } = useHotelConfig();
+  const cleanPhone = config.primary_phone ? config.primary_phone.replace(/[^0-9]/g, '') : '9490102008';
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -284,11 +287,11 @@ export const MobileNav: React.FC<MobileNavProps> = ({ isOpen, onClose }) => {
           </Link>
 
           <a
-            href="tel:7997044999"
+            href={`tel:${cleanPhone}`}
             className="w-full flex items-center justify-center gap-2 h-9 rounded-lg bg-neutral-800 border border-neutral-700 text-neutral-200 hover:text-white text-xs font-semibold transition-colors"
           >
             <Phone className="w-3.5 h-3.5 text-brand" />
-            <span>Call Reception: 7997044999</span>
+            <span>Call Reception: {config.primary_phone}</span>
           </a>
         </div>
       </div>

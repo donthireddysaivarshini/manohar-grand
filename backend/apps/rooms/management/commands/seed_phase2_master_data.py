@@ -290,7 +290,30 @@ class Command(BaseCommand):
                     ]
                 },
                 'display_order': 3,
-            }
+            },
+            {
+                'section_key': 'about',
+                'title': 'Redefines Luxury with Affordable Prices',
+                'subtitle': 'Dedicated to a Relaxing & Convenient Hotel Experience',
+                'body': (
+                    'Welcome to Manohar Grand. Located conveniently near JNTU Metro Station in Kukatpally, '
+                    'our hotel is configured to serve business professionals, transit travelers, and visiting '
+                    'families with dependable amenities, clean attached bathrooms, and warm hospitality.'
+                ),
+                'metadata': {},
+                'display_order': 4,
+            },
+            {
+                'section_key': 'cta',
+                'title': 'Plan Your Stay at Manohar Grand',
+                'subtitle': 'Direct Booking Benefits',
+                'body': (
+                    'Enjoy comfortable AC & Non-AC rooms with transparent rates and attentive hospitality. '
+                    'Reserve directly for instant booking confirmation.'
+                ),
+                'metadata': {},
+                'display_order': 5,
+            },
         ]
 
         for sec in cms_sections:

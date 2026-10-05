@@ -11,13 +11,17 @@ import { Section } from '../../components/common/Section';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { Card, CardContent } from '../../components/common/Card';
+import { useHotelConfig } from '../../store/HotelConfigContext';
 import { Icon3D } from '../../components/common/Icon3D';
 import { ScrollReveal } from '../../components/common/ScrollReveal';
 
 export const CorporateBookingPage: React.FC = () => {
+  const { config } = useHotelConfig();
+  const primaryCleanPhone = config.primary_phone.replace(/[^0-9]/g, '');
+
   useEffect(() => {
-    document.title = 'Corporate & Bulk Booking | Manohar Grand';
-  }, []);
+    document.title = `Corporate & Bulk Booking | ${config.hotel_name || 'Manohar Grand'}`;
+  }, [config.hotel_name]);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -56,7 +60,7 @@ export const CorporateBookingPage: React.FC = () => {
       icon: 'corporate' as const,
       title: 'Corporate Stays',
       description:
-        'Tailored lodging solutions for business professionals, delegates, and project teams visiting Kukatpally / HITEC City.',
+        'Tailored lodging solutions for business professionals, delegates, and project teams visiting our area.',
     },
     {
       icon: 'comfortable-stay' as const,
@@ -93,7 +97,7 @@ export const CorporateBookingPage: React.FC = () => {
               Corporate / Bulk Booking
             </h1>
             <p className="text-sm sm:text-base text-neutral-300 leading-relaxed max-w-2xl">
-              Comfortable, reliable lodging with prime metro connectivity for corporate teams, group travelers, and extended event stays in Kukatpally.
+              Comfortable, reliable lodging with prime connectivity for corporate teams, group travelers, and extended event stays at {config.hotel_name || 'Manohar Grand'}.
             </p>
           </div>
         </Container>
@@ -122,11 +126,11 @@ export const CorporateBookingPage: React.FC = () => {
 
             <div className="flex items-center gap-3 w-full sm:w-auto">
               <a
-                href="tel:7997044999"
+                href={`tel:${primaryCleanPhone}`}
                 className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-brand text-white font-bold text-xs hover:bg-brand-hover transition-colors shadow-sm"
               >
                 <Phone className="w-4 h-4" />
-                <span>Call Reception: 7997044999</span>
+                <span>Call Reception: {config.primary_phone}</span>
               </a>
             </div>
           </div>
@@ -380,7 +384,7 @@ export const CorporateBookingPage: React.FC = () => {
                         </Button>
 
                         <p className="text-[11px] text-neutral-400 text-center">
-                          Demo inquiry simulation — for immediate assistance, call 7997044999 / 7997022999.
+                          Direct inquiry submission — for immediate assistance, call {config.primary_phone} {config.secondary_phone ? `/ ${config.secondary_phone}` : ''}.
                         </p>
                       </form>
                     )}

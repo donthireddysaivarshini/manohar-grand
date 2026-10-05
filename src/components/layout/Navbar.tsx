@@ -7,6 +7,7 @@ import { Logo } from '../common/Logo';
 import { cn } from '../../utils/cn';
 
 import { UserNavMenu } from './UserNavMenu';
+import { useHotelConfig } from '../../store/HotelConfigContext';
 
 export interface NavItem {
   label: string;
@@ -24,6 +25,9 @@ export const NAV_ITEMS: NavItem[] = [
 ];
 
 export const Navbar: React.FC = () => {
+  const { config } = useHotelConfig();
+  const cleanPhone = config.primary_phone ? config.primary_phone.replace(/[^0-9]/g, '') : '9490102008';
+
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-40 w-full bg-neutral-dark text-white border-b border-neutral-800 shadow-md transition-all">
@@ -66,12 +70,12 @@ export const Navbar: React.FC = () => {
             {/* Header Actions (Phone Pill, User Menu / Sign In, Red Book Button) */}
             <div className="flex items-center gap-1.5 xs:gap-2 sm:gap-3 shrink-0">
               <a
-                href="tel:7997044999"
+                href={`tel:${cleanPhone}`}
                 className="hidden lg:inline-flex items-center justify-center gap-1.5 h-8 sm:h-9 px-2.5 sm:px-3 rounded-lg bg-neutral-800 border border-neutral-700/80 text-neutral-200 hover:text-white hover:border-neutral-500 text-xs font-semibold transition-colors"
-                aria-label="Call Reception 7997044999"
+                aria-label={`Call Reception ${config.primary_phone}`}
               >
                 <Phone className="w-3.5 h-3.5 text-brand shrink-0" />
-                <span className="font-bold">7997044999</span>
+                <span className="font-bold">{config.primary_phone}</span>
               </a>
 
               {/* Customer Account / Sign In Dropdown */}
