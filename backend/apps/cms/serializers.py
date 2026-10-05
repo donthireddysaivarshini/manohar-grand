@@ -20,6 +20,7 @@ class GalleryMediaSerializer(serializers.ModelSerializer):
             'alt_text',
             'is_featured',
             'display_order',
+            'is_active',
         ]
         read_only_fields = fields
 
@@ -29,7 +30,7 @@ class GalleryMediaSerializer(serializers.ModelSerializer):
             if request:
                 return request.build_absolute_uri(obj.image.url)
             return obj.image.url
-        return obj.image_url
+        return obj.image_url or ''
 
 
 class GalleryMediaAdminSerializer(serializers.ModelSerializer):

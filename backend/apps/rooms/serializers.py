@@ -36,6 +36,7 @@ class RoomImageSerializer(serializers.ModelSerializer):
             'alt_text',
             'is_primary',
             'display_order',
+            'is_active',
         ]
         read_only_fields = fields
 
@@ -45,7 +46,7 @@ class RoomImageSerializer(serializers.ModelSerializer):
             if request:
                 return request.build_absolute_uri(obj.image.url)
             return obj.image.url
-        return obj.image_url
+        return obj.image_url or ''
 
 
 class RoomCategoryAmenitySerializer(serializers.ModelSerializer):
@@ -55,6 +56,7 @@ class RoomCategoryAmenitySerializer(serializers.ModelSerializer):
     category = serializers.CharField(source='amenity.category', read_only=True)
     icon_name = serializers.CharField(source='amenity.icon_name', read_only=True)
     description = serializers.CharField(source='amenity.description', read_only=True)
+    is_property_wide = serializers.BooleanField(source='amenity.is_property_wide', read_only=True)
 
     class Meta:
         model = RoomCategoryAmenity
@@ -64,6 +66,7 @@ class RoomCategoryAmenitySerializer(serializers.ModelSerializer):
             'category',
             'icon_name',
             'description',
+            'is_property_wide',
             'is_highlight',
             'display_order',
         ]
@@ -120,13 +123,13 @@ class RoomCategoryListSerializer(serializers.ModelSerializer):
     def get_primary_image(self, obj):
         primary = obj.images.filter(is_active=True, is_primary=True).first()
         if not primary:
-            primary = obj.images.filter(is_active=True).first()
+            primary = obj.images.filter(is_active=True).order_by('display_order', 'created_at').first()
         if primary:
             return RoomImageSerializer(primary, context=self.context).data
         return None
 
     def get_images(self, obj):
-        active_images = obj.images.filter(is_active=True)
+        active_images = obj.images.filter(is_active=True).order_by('display_order', '-is_primary', 'created_at')
         return RoomImageSerializer(active_images, many=True, context=self.context).data
 
     def get_amenities(self, obj):

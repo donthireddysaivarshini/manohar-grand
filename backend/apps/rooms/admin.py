@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils.html import format_html
 from .models import RoomCategory, PhysicalRoom, Amenity, RoomCategoryAmenity, RoomImage
 
 
@@ -11,7 +12,17 @@ class RoomCategoryAmenityInline(admin.TabularInline):
 class RoomImageInline(admin.TabularInline):
     model = RoomImage
     extra = 1
-    fields = ['image', 'image_url', 'caption', 'alt_text', 'is_primary', 'display_order', 'is_active']
+    fields = ['thumbnail_preview', 'image', 'image_url', 'caption', 'alt_text', 'is_primary', 'display_order', 'is_active']
+    readonly_fields = ['thumbnail_preview']
+
+    @admin.display(description='Preview')
+    def thumbnail_preview(self, obj):
+        if not obj or not obj.pk:
+            return '-'
+        url = obj.image.url if obj.image else obj.image_url
+        if url:
+            return format_html('<img src="{}" style="width: 60px; height: 42px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;" />', url)
+        return '-'
 
 
 @admin.register(RoomCategory)
@@ -50,10 +61,19 @@ class RoomCategoryAmenityAdmin(admin.ModelAdmin):
 
 @admin.register(RoomImage)
 class RoomImageAdmin(admin.ModelAdmin):
-    list_display = ['category', 'caption', 'is_primary', 'display_order', 'is_active', 'updated_at']
+    list_display = ['thumbnail_preview', 'category', 'caption', 'is_primary', 'display_order', 'is_active', 'updated_at']
     list_filter = ['category', 'is_primary', 'is_active']
     search_fields = ['caption', 'alt_text', 'category__name']
-    readonly_fields = ['id', 'created_at', 'updated_at']
+    readonly_fields = ['id', 'thumbnail_preview', 'created_at', 'updated_at']
+
+    @admin.display(description='Preview')
+    def thumbnail_preview(self, obj):
+        if not obj:
+            return '-'
+        url = obj.image.url if obj.image else obj.image_url
+        if url:
+            return format_html('<img src="{}" style="width: 60px; height: 42px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;" />', url)
+        return '-'
 
 
 @admin.register(PhysicalRoom)

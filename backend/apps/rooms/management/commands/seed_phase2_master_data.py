@@ -207,7 +207,7 @@ class Command(BaseCommand):
         )
         rate_status = "Created" if ac_rate_created else "Preserved Existing"
         self.stdout.write(self.style.SUCCESS(
-            f"  - [{rate_status}] Rate Plan: AC Room Standard Tariff (₹{ac_rate_plan.base_price_per_night}/night)"
+            f"  - [{rate_status}] Rate Plan: AC Room Standard Tariff (INR {ac_rate_plan.base_price_per_night}/night)"
         ))
 
         nac_rate_plan, nac_rate_created = RoomRatePlan.objects.get_or_create(
@@ -224,7 +224,7 @@ class Command(BaseCommand):
         )
         rate_status = "Created" if nac_rate_created else "Preserved Existing"
         self.stdout.write(self.style.SUCCESS(
-            f"  - [{rate_status}] Rate Plan: Non-AC Room Standard Tariff (₹{nac_rate_plan.base_price_per_night}/night)"
+            f"  - [{rate_status}] Rate Plan: Non-AC Room Standard Tariff (INR {nac_rate_plan.base_price_per_night}/night)"
         ))
 
         # 4. Tax Rules (GST 5% Baseline)

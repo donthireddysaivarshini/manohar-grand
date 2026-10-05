@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils.html import format_html
 from core.services import record_audit_log
 from .models import GalleryMedia, HotelConfiguration, CMSSection, FAQ
 
@@ -6,10 +7,19 @@ from .models import GalleryMedia, HotelConfiguration, CMSSection, FAQ
 
 @admin.register(GalleryMedia)
 class GalleryMediaAdmin(admin.ModelAdmin):
-    list_display = ['title', 'category', 'is_featured', 'display_order', 'is_active', 'updated_at']
+    list_display = ['thumbnail_preview', 'title', 'category', 'is_featured', 'display_order', 'is_active', 'updated_at']
     list_filter = ['category', 'is_featured', 'is_active']
     search_fields = ['title', 'caption', 'alt_text']
-    readonly_fields = ['id', 'created_at', 'updated_at']
+    readonly_fields = ['id', 'thumbnail_preview', 'created_at', 'updated_at']
+
+    @admin.display(description='Preview')
+    def thumbnail_preview(self, obj):
+        if not obj:
+            return '-'
+        url = obj.image.url if obj.image else obj.image_url
+        if url:
+            return format_html('<img src="{}" style="width: 60px; height: 42px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;" />', url)
+        return '-'
 
 
 @admin.register(HotelConfiguration)
