@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { Container } from '../common/Container';
@@ -7,9 +7,21 @@ import { Badge } from '../common/Badge';
 import { Button } from '../common/Button';
 import { ScrollReveal } from '../common/ScrollReveal';
 import { RoomCategoryCard } from '../rooms/RoomCategoryCard';
-import { INITIAL_ROOM_CATEGORIES } from '../../data/roomCategories';
+import { roomApiService } from '../../services/api/roomApiService';
+import { ApiRoomCategory } from '../../types/booking';
 
 export const RoomCategoriesSection: React.FC = () => {
+  const [categories, setCategories] = useState<ApiRoomCategory[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    roomApiService
+      .getCategories()
+      .then((data) => setCategories(data))
+      .catch((err) => console.warn('Could not load room categories for home section:', err))
+      .finally(() => setIsLoading(false));
+  }, []);
+
   return (
     <Section variant="default" padding="lg">
       <Container size="xl">
@@ -35,19 +47,37 @@ export const RoomCategoriesSection: React.FC = () => {
           </Link>
         </ScrollReveal>
 
-        {/* 2 Confirmed Categories Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-5xl mx-auto">
-          {INITIAL_ROOM_CATEGORIES.map((category, index) => (
-            <ScrollReveal
-              key={category.id}
-              direction="up"
-              delayMs={index * 150}
-              className="h-full"
-            >
-              <RoomCategoryCard category={category} />
-            </ScrollReveal>
-          ))}
-        </div>
+        {/* Loading Skeletons */}
+        {isLoading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-5xl mx-auto">
+            {[1, 2].map((n) => (
+              <div key={n} className="bg-white border border-neutral-200 rounded-2xl overflow-hidden animate-pulse flex flex-col h-[480px]">
+                <div className="aspect-[16/10] bg-neutral-200 w-full" />
+                <div className="p-6 flex-1 flex flex-col justify-between gap-4">
+                  <div className="h-6 bg-neutral-200 rounded w-1/2" />
+                  <div className="h-4 bg-neutral-100 rounded w-3/4" />
+                  <div className="h-10 bg-neutral-200 rounded-xl w-full" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Dynamic Categories Grid */}
+        {!isLoading && categories.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-5xl mx-auto">
+            {categories.map((category, index) => (
+              <ScrollReveal
+                key={category.id}
+                direction="up"
+                delayMs={index * 150}
+                className="h-full"
+              >
+                <RoomCategoryCard category={category} />
+              </ScrollReveal>
+            ))}
+          </div>
+        )}
       </Container>
     </Section>
   );

@@ -11,6 +11,8 @@ import { availabilityApiService } from '../../services/api/availabilityApiServic
 import { roomApiService } from '../../services/api/roomApiService';
 import { CategoryAvailabilityResult, ApiRoomCategory } from '../../types/booking';
 
+import { getCategoryPrimaryImageUrl } from '../../utils/mediaUtils';
+
 export const BookingPage: React.FC = () => {
   const {
     searchParams,
@@ -53,7 +55,7 @@ export const BookingPage: React.FC = () => {
           ratePerNight: baseRate,
           maxAdultsPerRoom: meta?.max_adults || meta?.max_total_occupancy || 2,
           maxTotalOccupancy: meta?.max_total_occupancy || 2,
-          primaryImage: meta?.primary_image || (meta?.images && meta.images[0]?.image_url),
+          primaryImage: meta ? getCategoryPrimaryImageUrl(meta) : undefined,
           description: meta?.description,
         };
       });

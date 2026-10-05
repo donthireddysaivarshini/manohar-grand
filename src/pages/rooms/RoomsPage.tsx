@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
   CalendarDays,
@@ -10,6 +10,8 @@ import {
   Tv,
   Sparkles,
   RotateCcw,
+  RefreshCw,
+  AlertCircle,
 } from 'lucide-react';
 import { Container } from '../../components/common/Container';
 import { Section } from '../../components/common/Section';
@@ -18,12 +20,32 @@ import { Button } from '../../components/common/Button';
 import { Card } from '../../components/common/Card';
 import { ScrollReveal } from '../../components/common/ScrollReveal';
 import { RoomCategoryCard } from '../../components/rooms/RoomCategoryCard';
-import { ROOM_CATEGORIES_DATA } from '../../data/roomCategories';
+import { roomApiService } from '../../services/api/roomApiService';
+import { ApiRoomCategory } from '../../types/booking';
 
 export const RoomsPage: React.FC = () => {
+  const [categories, setCategories] = useState<ApiRoomCategory[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const fetchCategories = useCallback(async () => {
+    setIsLoading(true);
+    setErrorMessage(null);
+    try {
+      const data = await roomApiService.getCategories();
+      setCategories(data);
+    } catch (err: any) {
+      console.error('Failed to load room categories:', err);
+      setErrorMessage(err?.message || 'Unable to connect to room service. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     document.title = 'Rooms & Accommodations | Manohar Grand';
-  }, []);
+    fetchCategories();
+  }, [fetchCategories]);
 
   return (
     <div className="flex flex-col w-full">
@@ -38,7 +60,7 @@ export const RoomsPage: React.FC = () => {
               Our Room Categories
             </h1>
             <p className="text-sm sm:text-base text-neutral-300 leading-relaxed">
-              Manohar Grand offers clean, comfortable guest rooms across two main categories: Air-Conditioned rooms for climate-controlled comfort and Non-AC rooms for practical, budget-conscious stays in Kukatpally.
+              Manohar Grand offers clean, comfortable guest rooms across climate-controlled AC and practical Non-AC configurations for seamless stays in Kukatpally.
             </p>
 
             <div className="flex flex-wrap items-center gap-2.5 pt-1 text-xs text-neutral-300 font-medium">
@@ -85,19 +107,62 @@ export const RoomsPage: React.FC = () => {
             </Link>
           </div>
 
-          {/* Room Categories Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-5xl mx-auto">
-            {ROOM_CATEGORIES_DATA.map((category, index) => (
-              <ScrollReveal
-                key={category.id}
-                direction="up"
-                delayMs={index * 150}
-                className="h-full"
+          {/* Loading Skeletons */}
+          {isLoading && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-5xl mx-auto">
+              {[1, 2].map((n) => (
+                <div key={n} className="bg-white border border-neutral-200 rounded-2xl overflow-hidden animate-pulse flex flex-col h-[520px]">
+                  <div className="aspect-[16/10] bg-neutral-200 w-full" />
+                  <div className="p-6 flex-1 flex flex-col justify-between gap-4">
+                    <div className="flex flex-col gap-3">
+                      <div className="h-6 bg-neutral-200 rounded-md w-1/2" />
+                      <div className="h-4 bg-neutral-100 rounded-md w-3/4" />
+                      <div className="h-12 bg-neutral-100 rounded-xl w-full" />
+                      <div className="flex gap-2 pt-2">
+                        <div className="h-6 bg-neutral-200 rounded-md w-20" />
+                        <div className="h-6 bg-neutral-200 rounded-md w-24" />
+                      </div>
+                    </div>
+                    <div className="h-10 bg-neutral-200 rounded-xl w-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* API Error State with Retry Button */}
+          {!isLoading && errorMessage && (
+            <div className="max-w-xl mx-auto p-6 rounded-2xl bg-red-50 border border-red-200 text-center flex flex-col items-center gap-3">
+              <AlertCircle className="w-8 h-8 text-red-500" />
+              <h3 className="text-base font-bold text-neutral-dark">Unable to Load Accommodations</h3>
+              <p className="text-xs text-neutral-600">{errorMessage}</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={fetchCategories}
+                className="mt-2 gap-2 font-semibold text-xs"
               >
-                <RoomCategoryCard category={category} />
-              </ScrollReveal>
-            ))}
-          </div>
+                <RefreshCw className="w-3.5 h-3.5" />
+                Retry
+              </Button>
+            </div>
+          )}
+
+          {/* Dynamic Room Categories Grid */}
+          {!isLoading && !errorMessage && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-5xl mx-auto">
+              {categories.map((category, index) => (
+                <ScrollReveal
+                  key={category.id}
+                  direction="up"
+                  delayMs={index * 150}
+                  className="h-full"
+                >
+                  <RoomCategoryCard category={category} />
+                </ScrollReveal>
+              ))}
+            </div>
+          )}
 
           {/* Room Conditions & Stay Guidelines Cards */}
           <ScrollReveal direction="up" className="mt-12 sm:mt-16 max-w-5xl mx-auto">

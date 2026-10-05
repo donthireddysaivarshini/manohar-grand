@@ -1,11 +1,17 @@
 import React, { useEffect, useCallback } from 'react';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
-import { DemoImage } from '../../data/demoMedia';
+export interface LightboxImageItem {
+  id: string;
+  url: string;
+  alt: string;
+  caption?: string;
+  isDemoStock?: boolean;
+}
 
 export interface LightboxModalProps {
   isOpen: boolean;
   onClose: () => void;
-  images: DemoImage[];
+  images: LightboxImageItem[];
   currentIndex: number;
   onIndexChange: (index: number) => void;
 }
@@ -105,12 +111,11 @@ export const LightboxModal: React.FC<LightboxModalProps> = ({
       </div>
 
       {/* Caption Bar */}
-      <div className="w-full max-w-2xl text-center text-white py-3 z-10" onClick={(e) => e.stopPropagation()}>
-        <p className="text-sm font-semibold text-neutral-100">{currentImg.caption}</p>
-        <span className="text-[11px] text-neutral-400 block mt-1">
-          Demo stock image for layout preview
-        </span>
-      </div>
+      {currentImg.caption && (
+        <div className="w-full max-w-2xl text-center text-white py-3 z-10" onClick={(e) => e.stopPropagation()}>
+          <p className="text-sm font-semibold text-neutral-100">{currentImg.caption}</p>
+        </div>
+      )}
     </div>
   );
 };

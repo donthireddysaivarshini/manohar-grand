@@ -93,7 +93,7 @@ def setup_inventory_and_bookings(db, hotel_config):
     cust_alice = User.objects.create_user(email="alice@example.com", first_name="Alice", last_name="Sharma", auth_provider="google")
     cust_bob = User.objects.create_user(email="bob@example.com", first_name="Bob", last_name="Verma", auth_provider="google")
 
-    today = timezone.now().date()
+    today = timezone.localdate()
 
     # Booking 1: Confirmed Deluxe AC (Stay: today to +2 days)
     b1 = create_booking_hold(
@@ -309,7 +309,7 @@ class TestReportCalculationsAndOutputs:
 
     def test_occupancy_report(self, api_client, manager_user, setup_inventory_and_bookings):
         api_client.force_login(manager_user)
-        today = timezone.now().date()
+        today = timezone.localdate()
         from_d = today.isoformat()
         to_d = (today + timedelta(days=7)).isoformat()
 
@@ -356,7 +356,7 @@ class TestReportCalculationsAndOutputs:
 
     def test_frontdesk_report(self, api_client, receptionist_user, setup_inventory_and_bookings):
         api_client.force_login(receptionist_user)
-        today = timezone.now().date().isoformat()
+        today = timezone.localdate().isoformat()
         resp = api_client.get(f"{reverse('reports:report-frontdesk')}?target_date={today}")
         assert resp.status_code == status.HTTP_200_OK
         data = resp.data['data']

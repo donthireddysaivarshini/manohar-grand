@@ -10,6 +10,7 @@ import { GuestDetails } from '../types/guest';
 import { getTodayDateString, getFutureDateString, calculateNights } from '../utils/dateUtils';
 import { bookingApiService } from '../services/api/bookingApiService';
 import { roomApiService } from '../services/api/roomApiService';
+import { getCategoryPrimaryImageUrl } from '../utils/mediaUtils';
 import { useAuth } from './AuthContext';
 
 interface BookingContextType {
@@ -109,7 +110,7 @@ export const BookingProvider: React.FC<{ children: ReactNode }> = ({ children })
                   slug: category.slug,
                   quantity: 1,
                   ratePerNight: rate,
-                  heroImage: category.primary_image || category.images[0]?.image_url,
+                  heroImage: getCategoryPrimaryImageUrl(category),
                   maxAdultsPerRoom: category.max_adults,
                   maxTotalOccupancy: category.max_total_occupancy,
                 },

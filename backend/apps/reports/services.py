@@ -21,7 +21,7 @@ from core.models import AuditLog
 
 def _parse_date_range(from_date_str: Optional[str], to_date_str: Optional[str], default_days: int = 30) -> tuple[date, date]:
     """Utility to safely parse and validate ISO date ranges."""
-    today = timezone.now().date()
+    today = timezone.localdate()
     if from_date_str:
         try:
             from_d = date.fromisoformat(str(from_date_str).strip())
@@ -58,7 +58,7 @@ class ReportingService:
         """
         High-level KPI dashboard overview for hotel owner and front desk managers.
         """
-        today = timezone.now().date()
+        today = timezone.localdate()
         from_d, to_d = _parse_date_range(from_date_str, to_date_str, default_days=30)
 
         # 1. Front Desk Today
@@ -631,9 +631,9 @@ class ReportingService:
             try:
                 target_date = date.fromisoformat(str(target_date_str).strip())
             except ValueError:
-                target_date = timezone.now().date()
+                target_date = timezone.localdate()
         else:
-            target_date = timezone.now().date()
+            target_date = timezone.localdate()
 
         # 1. Expected Arrivals (Confirmed bookings arriving target_date)
         arrivals_qs = Booking.objects.select_related('customer', 'price_snapshot').prefetch_related('rooms__category', 'rooms__physical_room').filter(

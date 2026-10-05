@@ -11,7 +11,7 @@ def admin_occupancy_dashboard_view(request):
     Native Django Admin view for hotel staff and managers to view
     day-by-day room bookings, occupancy forecast, arrivals, and departures.
     """
-    today = timezone.now().date()
+    today = timezone.localdate()
     from_date_str = request.GET.get('from_date', today.isoformat())
     to_date_str = request.GET.get('to_date', (today + timedelta(days=14)).isoformat())
 

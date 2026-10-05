@@ -6,6 +6,8 @@ import { Button } from '../common/Button';
 import { CategoryAvailabilityResult } from '../../types/booking';
 import { formatCurrencyINR } from '../../utils/formatters';
 
+import { NEUTRAL_ROOM_PLACEHOLDER } from '../../utils/mediaUtils';
+
 export interface RoomSelectionCardProps {
   availability: CategoryAvailabilityResult;
   currentQuantity: number;
@@ -23,11 +25,7 @@ export const RoomSelectionCard: React.FC<RoomSelectionCardProps> = ({
   const isAcRoom = availability.slug.toLowerCase().includes('ac') && !availability.slug.toLowerCase().includes('non-ac');
   const maxAvailable = availability.availableQuantity;
 
-  const roomImage =
-    availability.primaryImage ||
-    (isAcRoom
-      ? 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=80'
-      : 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=800&q=80');
+  const roomImage = availability.primaryImage || NEUTRAL_ROOM_PLACEHOLDER;
 
   return (
     <Card

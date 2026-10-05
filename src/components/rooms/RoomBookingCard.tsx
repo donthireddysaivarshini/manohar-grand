@@ -1,15 +1,15 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { CalendarDays, ShieldCheck, Check, Phone, ArrowRight, ShieldAlert } from 'lucide-react';
+import { CalendarDays, ShieldCheck, Check, Phone, ArrowRight } from 'lucide-react';
 import { Card, CardContent } from '../common/Card';
 import { Badge } from '../common/Badge';
 import { Button } from '../common/Button';
-import { RoomCategoryExtended } from '../../data/roomCategories';
+import { ApiRoomCategory } from '../../types/booking';
 import { formatCurrencyINR } from '../../utils/formatters';
 import { useBooking } from '../../store/BookingContext';
 
 export interface RoomBookingCardProps {
-  category: RoomCategoryExtended;
+  category: ApiRoomCategory;
 }
 
 export const RoomBookingCard: React.FC<RoomBookingCardProps> = ({ category }) => {
@@ -21,14 +21,17 @@ export const RoomBookingCard: React.FC<RoomBookingCardProps> = ({ category }) =>
     navigate('/booking');
   };
 
+  const basePrice = parseFloat(category.base_price_per_night) || 0;
+  const roomCount = category.total_physical_room_count || category.active_physical_room_count;
+
   return (
-    <Card variant="elevated" className="bg-white border-neutral-border p-6 shadow-elevated sticky top-24">
+    <Card variant="elevated" className="bg-white border-neutral-200/90 p-6 shadow-elevated sticky top-24 rounded-2xl">
       <CardContent className="p-0 flex flex-col gap-5">
         {/* Pricing Header */}
-        <div className="flex flex-col gap-1 pb-4 border-b border-neutral-border">
+        <div className="flex flex-col gap-1 pb-4 border-b border-neutral-200">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-neutral-secondary">
-              Direct Booking Rate
+              Direct Tariff
             </span>
             <Badge variant="brand" size="sm" className="font-bold">
               {category.name}
@@ -37,24 +40,25 @@ export const RoomBookingCard: React.FC<RoomBookingCardProps> = ({ category }) =>
 
           <div className="flex items-baseline gap-1.5 mt-2">
             <span className="text-3xl font-black text-brand">
-              {formatCurrencyINR(category.demoBasePricePerNight)}
+              {formatCurrencyINR(basePrice)}
             </span>
             <span className="text-xs text-neutral-secondary font-medium">/ night</span>
           </div>
 
-          <div className="flex items-center gap-1.5 mt-1 text-[11px] text-amber-700 bg-amber-50 p-2 rounded-md border border-amber-200">
-            <ShieldAlert className="w-3.5 h-3.5 shrink-0 text-feedback-warning" />
-            <span>Demo rate — replace with client-confirmed rate.</span>
-          </div>
-        </div>
-
-        {/* Confirmed Inventory Badge */}
-        <div className="flex items-center justify-between p-3 rounded-lg bg-neutral-light border border-neutral-border text-xs">
-          <span className="text-neutral-secondary font-medium">Property Inventory:</span>
-          <span className="font-bold text-neutral-dark">
-            {category.totalInventory} Rooms (Confirmed)
+          <span className="text-[11px] text-neutral-500 mt-0.5">
+            Excl. 5% GST • Transparent billing at checkout
           </span>
         </div>
+
+        {/* Confirmed Inventory Badge (if available) */}
+        {roomCount > 0 && (
+          <div className="flex items-center justify-between p-3 rounded-xl bg-neutral-50 border border-neutral-200 text-xs">
+            <span className="text-neutral-secondary font-medium">Operational Capacity:</span>
+            <span className="font-bold text-neutral-dark">
+              {roomCount} Rooms
+            </span>
+          </div>
+        )}
 
         {/* Inclusions / Perks list */}
         <div className="flex flex-col gap-2.5 text-xs text-neutral-secondary">
@@ -63,15 +67,19 @@ export const RoomBookingCard: React.FC<RoomBookingCardProps> = ({ category }) =>
           </span>
           <div className="flex items-center gap-2">
             <Check className="w-4 h-4 text-feedback-success shrink-0" />
-            <span>Best rate guarantee for direct reservations</span>
+            <span>Best direct hotel rate guarantee</span>
           </div>
           <div className="flex items-center gap-2">
             <Check className="w-4 h-4 text-feedback-success shrink-0" />
-            <span>Private attached bathroom &amp; daily housekeeping</span>
+            <span>Private attached bath &amp; 24/7 hot water</span>
           </div>
           <div className="flex items-center gap-2">
             <Check className="w-4 h-4 text-feedback-success shrink-0" />
-            <span>Instant booking voucher &amp; no hidden middleman fees</span>
+            <span>WAKEFIT mattress &amp; 32" Smart TV in bedroom</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Check className="w-4 h-4 text-feedback-success shrink-0" />
+            <span>Instant booking voucher &amp; no middleman fee</span>
           </div>
         </div>
 
@@ -82,7 +90,7 @@ export const RoomBookingCard: React.FC<RoomBookingCardProps> = ({ category }) =>
             variant="primary"
             size="lg"
             onClick={handleBookNow}
-            className="w-full gap-2 font-bold shadow-md h-12"
+            className="w-full gap-2 font-bold shadow-md h-12 text-sm"
           >
             <CalendarDays className="w-5 h-5" />
             <span>Book This Room</span>
@@ -90,17 +98,17 @@ export const RoomBookingCard: React.FC<RoomBookingCardProps> = ({ category }) =>
           </Button>
 
           <Link to="/contact" className="w-full">
-            <Button variant="outline" size="md" className="w-full gap-2 font-semibold text-xs">
+            <Button variant="outline" size="md" className="w-full gap-2 font-semibold text-xs h-10">
               <Phone className="w-3.5 h-3.5" />
               Inquire with Front Desk
             </Button>
           </Link>
         </div>
 
-        {/* Security / Direct Guarantee */}
-        <div className="flex items-center justify-center gap-1.5 text-[11px] text-neutral-400 pt-1">
+        {/* Security / ID Notice */}
+        <div className="flex items-center justify-center gap-1.5 text-[11px] text-neutral-500 pt-1">
           <ShieldCheck className="w-3.5 h-3.5 text-feedback-success" />
-          <span>Secure direct reservation simulation</span>
+          <span>Original Aadhar ID required at check-in (18+)</span>
         </div>
       </CardContent>
     </Card>

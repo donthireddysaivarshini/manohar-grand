@@ -65,6 +65,38 @@ export interface CategoryAvailabilityResult {
 // Real Backend API Schema Types
 // =========================================================================
 
+export interface ApiRoomImage {
+  id: string;
+  image_url: string;
+  caption?: string;
+  alt_text?: string;
+  is_primary: boolean;
+  display_order: number;
+  is_active?: boolean;
+}
+
+export interface ApiRoomAmenity {
+  id: string;
+  name: string;
+  category: string;
+  icon_name: string;
+  description: string;
+  is_property_wide?: boolean;
+  is_highlight: boolean;
+  display_order: number;
+}
+
+export interface ApiPricingDetails {
+  rate_plan_name: string;
+  currency: string;
+  base_price_per_night: string;
+  extra_adult_charge: string;
+  extra_child_charge: string;
+  late_checkout_hourly_rate: string;
+  effective_from: string | null;
+  effective_to: string | null;
+}
+
 export interface ApiRoomCategory {
   id: string;
   slug: string;
@@ -78,26 +110,13 @@ export interface ApiRoomCategory {
   max_total_occupancy: number;
   active_physical_room_count: number;
   total_physical_room_count: number;
-  primary_image: string | null;
-  images: Array<{
-    id: string;
-    image_url: string;
-    caption?: string;
-    alt_text?: string;
-    is_primary: boolean;
-    display_order: number;
-  }>;
-  amenities: Array<{
-    id: string;
-    name: string;
-    category: string;
-    icon_name: string;
-    description: string;
-    is_highlight: boolean;
-    display_order: number;
-  }>;
+  primary_image: ApiRoomImage | null;
+  images: ApiRoomImage[];
+  amenities: ApiRoomAmenity[];
   base_price_per_night: string;
   currency: string;
+  display_order?: number;
+  pricing_details?: ApiPricingDetails | null;
 }
 
 export interface ApiNightlyAvailability {

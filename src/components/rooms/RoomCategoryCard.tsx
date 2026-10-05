@@ -1,23 +1,23 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Users, Bed, ArrowRight, Check, Car, Wind, AlertCircle, Sparkles } from 'lucide-react';
-import { RoomCategory } from '../../types/roomCategory';
+import { ApiRoomCategory } from '../../types/booking';
 import { Card } from '../common/Card';
 import { Button } from '../common/Button';
 import { formatCurrencyINR } from '../../utils/formatters';
+import { getCategoryPrimaryImageUrl } from '../../utils/mediaUtils';
 import { useBooking } from '../../store/BookingContext';
 
 export interface RoomCategoryCardProps {
-  category: RoomCategory & {
-    occupancyNote?: string;
-  };
+  category: ApiRoomCategory;
 }
 
 /**
  * Enhanced Responsive Room Category Card.
- * - Optimized for iPhone & all viewports (zero horizontal overflow or text clipping).
+ * - Dynamic data driven from DRF RoomCategory API.
+ * - Optimized for all viewports (zero horizontal overflow or text clipping).
  * - Clear occupancy & Wakefit mattress comfort badge.
- * - AC and Non-AC specific feature callouts.
+ * - AC and Non-AC specific feature callouts based on category attributes.
  */
 export const RoomCategoryCard: React.FC<RoomCategoryCardProps> = ({ category }) => {
   const navigate = useNavigate();
@@ -29,7 +29,19 @@ export const RoomCategoryCard: React.FC<RoomCategoryCardProps> = ({ category }) 
     navigate('/booking');
   };
 
-  const isAc = category.id === 'ac-room' || category.slug === 'ac-room';
+  const isAc =
+    category.id === 'ac-room' ||
+    category.slug === 'ac-room' ||
+    category.name.toLowerCase().includes('ac') && !category.name.toLowerCase().includes('non-ac');
+
+  const imageUrl = getCategoryPrimaryImageUrl(category);
+  const baseRate = parseFloat(category.base_price_per_night) || 0;
+
+  // Filter highlight amenities if available, otherwise pick first 4
+  const highlightAmenities =
+    category.amenities && category.amenities.length > 0
+      ? category.amenities.filter((a) => a.is_highlight).slice(0, 4)
+      : [];
 
   return (
     <Card
@@ -43,13 +55,13 @@ export const RoomCategoryCard: React.FC<RoomCategoryCardProps> = ({ category }) 
         aria-label={`View ${category.name} details`}
       >
         <img
-          src={category.demoImages.hero}
+          src={imageUrl}
           alt={`${category.name} room preview`}
           loading="lazy"
           className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        
+
         <div className="absolute top-2.5 left-2.5 sm:top-3.5 sm:left-3.5 flex flex-wrap gap-1.5 sm:gap-2 max-w-[90%]">
           <span className="px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold bg-brand text-white shadow-md">
             {category.name}
@@ -71,7 +83,7 @@ export const RoomCategoryCard: React.FC<RoomCategoryCardProps> = ({ category }) 
                 {category.name}
               </h3>
               <p className="text-[11px] xs:text-xs text-neutral-secondary mt-0.5">
-                {isAc ? 'Air-Conditioned Climate Control' : 'Ceiling Fan & Natural Ventilation'}
+                {category.tagline || (isAc ? 'Air-Conditioned Climate Control' : 'Ceiling Fan & Natural Ventilation')}
               </p>
             </Link>
 
@@ -81,7 +93,7 @@ export const RoomCategoryCard: React.FC<RoomCategoryCardProps> = ({ category }) 
               </span>
               <div className="flex items-baseline gap-1">
                 <span className="text-lg xs:text-xl font-black text-brand tracking-tight">
-                  {formatCurrencyINR(category.demoBasePricePerNight)}
+                  {formatCurrencyINR(baseRate)}
                 </span>
                 <span className="text-[11px] text-neutral-500 font-medium">/ night</span>
               </div>
@@ -105,7 +117,7 @@ export const RoomCategoryCard: React.FC<RoomCategoryCardProps> = ({ category }) 
           <div className="flex flex-wrap items-center gap-1.5 xs:gap-2 text-xs text-neutral-secondary">
             <span className="inline-flex items-center gap-1 px-2 py-0.5 xs:px-2.5 xs:py-1 rounded-md bg-[#F7F7F7] border border-neutral-200 text-neutral-700 font-semibold text-[11px] xs:text-xs">
               <Users className="w-3 h-3 text-brand shrink-0" />
-              Up to 2 Guests (Base)
+              Up to {category.included_adults || 2} Guests (Base)
             </span>
             <span className="inline-flex items-center gap-1 px-2 py-0.5 xs:px-2.5 xs:py-1 rounded-md bg-[#F7F7F7] border border-neutral-200 text-neutral-700 font-medium text-[11px] xs:text-xs">
               <Bed className="w-3 h-3 text-neutral-500 shrink-0" />
@@ -136,24 +148,35 @@ export const RoomCategoryCard: React.FC<RoomCategoryCardProps> = ({ category }) 
             </div>
           )}
 
-          {/* Checklist */}
+          {/* Checklist of Amenities / Inclusions */}
           <ul className="grid grid-cols-1 xs:grid-cols-2 gap-1.5 text-[11px] xs:text-xs text-neutral-secondary pt-0.5">
-            <li className="flex items-center gap-1.5">
-              <Check className="w-3.5 h-3.5 text-feedback-success shrink-0" />
-              <span className="truncate">Attached Bath &amp; Hot Water</span>
-            </li>
-            <li className="flex items-center gap-1.5">
-              <Check className="w-3.5 h-3.5 text-feedback-success shrink-0" />
-              <span className="truncate">24/7 Front Desk Support</span>
-            </li>
-            <li className="flex items-center gap-1.5">
-              <Check className="w-3.5 h-3.5 text-feedback-success shrink-0" />
-              <span className="truncate">Car Parking on Property</span>
-            </li>
-            <li className="flex items-center gap-1.5">
-              <Check className="w-3.5 h-3.5 text-feedback-success shrink-0" />
-              <span className="truncate">Daily Housekeeping</span>
-            </li>
+            {highlightAmenities.length > 0 ? (
+              highlightAmenities.map((amenity) => (
+                <li key={amenity.id} className="flex items-center gap-1.5">
+                  <Check className="w-3.5 h-3.5 text-feedback-success shrink-0" />
+                  <span className="truncate">{amenity.name}</span>
+                </li>
+              ))
+            ) : (
+              <>
+                <li className="flex items-center gap-1.5">
+                  <Check className="w-3.5 h-3.5 text-feedback-success shrink-0" />
+                  <span className="truncate">Attached Bath &amp; Hot Water</span>
+                </li>
+                <li className="flex items-center gap-1.5">
+                  <Check className="w-3.5 h-3.5 text-feedback-success shrink-0" />
+                  <span className="truncate">24/7 Front Desk Support</span>
+                </li>
+                <li className="flex items-center gap-1.5">
+                  <Check className="w-3.5 h-3.5 text-feedback-success shrink-0" />
+                  <span className="truncate">Car Parking on Property</span>
+                </li>
+                <li className="flex items-center gap-1.5">
+                  <Check className="w-3.5 h-3.5 text-feedback-success shrink-0" />
+                  <span className="truncate">Daily Housekeeping</span>
+                </li>
+              </>
+            )}
           </ul>
         </div>
 
