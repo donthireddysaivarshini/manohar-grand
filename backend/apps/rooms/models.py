@@ -276,7 +276,7 @@ class RoomImage(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['display_order', '-is_primary', 'created_at']
+        ordering = ['-is_primary', 'display_order', 'created_at']
         indexes = [
             models.Index(fields=['category', 'is_active', 'is_primary']),
         ]

@@ -34,6 +34,23 @@ class RoomCategoryAdmin(admin.ModelAdmin):
     readonly_fields = ['id', 'created_at', 'updated_at', 'active_rooms_display', 'total_rooms_display']
     inlines = [RoomCategoryAmenityInline, RoomImageInline]
 
+    def save_formset(self, request, form, formset, change):
+        if formset.model == RoomImage:
+            instances = formset.save(commit=False)
+            # Detect primary image selections in inline formset
+            primary_instances = [inst for inst in instances if getattr(inst, 'is_primary', False) and getattr(inst, 'is_active', True)]
+            if len(primary_instances) > 1:
+                # If multiple forms were checked as primary, keep only the last one as primary
+                for inst in primary_instances[:-1]:
+                    inst.is_primary = False
+            for instance in instances:
+                instance.save()
+            for obj in formset.deleted_objects:
+                obj.delete()
+            formset.save_m2m()
+        else:
+            super().save_formset(request, form, formset, change)
+
     @admin.display(description='Active Operational Rooms')
     def active_rooms_display(self, obj):
         return obj.active_physical_room_count

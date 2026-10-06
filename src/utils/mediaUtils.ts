@@ -33,6 +33,11 @@ export function getCategoryPrimaryImageUrl(category: {
     if (url !== NEUTRAL_ROOM_PLACEHOLDER) return url;
   }
   if (category.images && category.images.length > 0) {
+    const primaryInList = category.images.find((img) => img.is_primary && img.is_active !== false);
+    if (primaryInList) {
+      const url = getRoomImageUrl(primaryInList);
+      if (url !== NEUTRAL_ROOM_PLACEHOLDER) return url;
+    }
     const firstActive = category.images.find((img) => img.is_active !== false) || category.images[0];
     if (firstActive) {
       return getRoomImageUrl(firstActive);

@@ -22,30 +22,47 @@ export const RoomGallery: React.FC<RoomGalleryProps> = ({ roomName, images = [] 
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
   // Normalize image objects/strings to standard LightboxImageItem format
-  const normalizedImages: LightboxImageItem[] = [];
+  const rawItems: Array<{ item: LightboxImageItem; isPrimary: boolean; order: number }> = [];
   images.forEach((img, idx) => {
     if (typeof img === 'string') {
       const url = img.trim();
       if (url) {
-        normalizedImages.push({
-          id: `room-img-${idx}`,
-          url,
-          alt: `${roomName} photo ${idx + 1}`,
-          caption: `${roomName} — View ${idx + 1} of ${images.length}`,
+        rawItems.push({
+          item: {
+            id: `room-img-${idx}`,
+            url,
+            alt: `${roomName} photo ${idx + 1}`,
+            caption: `${roomName} — View ${idx + 1} of ${images.length}`,
+          },
+          isPrimary: false,
+          order: idx,
         });
       }
     } else if (img) {
       const url = getRoomImageUrl(img);
       if (url && url !== NEUTRAL_ROOM_PLACEHOLDER) {
-        normalizedImages.push({
-          id: img.id || `room-img-${idx}`,
-          url,
-          alt: img.alt_text || `${roomName} photo ${idx + 1}`,
-          caption: img.caption || `${roomName} — View ${idx + 1} of ${images.length}`,
+        rawItems.push({
+          item: {
+            id: img.id || `room-img-${idx}`,
+            url,
+            alt: img.alt_text || `${roomName} photo ${idx + 1}`,
+            caption: img.caption || `${roomName} — View ${idx + 1} of ${images.length}`,
+          },
+          isPrimary: Boolean(img.is_primary),
+          order: typeof img.display_order === 'number' ? img.display_order : idx,
         });
       }
     }
   });
+
+  // Sort so that is_primary is ALWAYS first (index 0), followed by display_order
+  rawItems.sort((a, b) => {
+    if (a.isPrimary && !b.isPrimary) return -1;
+    if (!a.isPrimary && b.isPrimary) return 1;
+    return a.order - b.order;
+  });
+
+  const normalizedImages: LightboxImageItem[] = rawItems.map((r) => r.item);
 
   const totalImages = normalizedImages.length;
 

@@ -129,7 +129,7 @@ class RoomCategoryListSerializer(serializers.ModelSerializer):
         return None
 
     def get_images(self, obj):
-        active_images = obj.images.filter(is_active=True).order_by('display_order', '-is_primary', 'created_at')
+        active_images = obj.images.filter(is_active=True).order_by('-is_primary', 'display_order', 'created_at')
         return RoomImageSerializer(active_images, many=True, context=self.context).data
 
     def get_amenities(self, obj):
