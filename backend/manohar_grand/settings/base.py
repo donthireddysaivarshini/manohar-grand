@@ -78,7 +78,6 @@ JAZZMIN_SETTINGS = {
     "user_avatar": None,
     "topmenu_links": [
         {"name": "Home", "url": "admin:index", "permissions": ["auth.view_user"]},
-        {"name": "⚡ Cancellation Requests", "url": "/admin/bookings/cancellationrequest/", "permissions": ["auth.view_user"]},
         {"name": "📊 Daily Occupancy & Reports", "url": "/admin/occupancy-report/", "permissions": ["auth.view_user"]},
         {"name": "🌐 Analytics Dashboard", "url": "http://localhost:3000/admin/reports", "new_window": True},
         {"name": "🏨 Live Site", "url": FRONTEND_URL, "new_window": True},
