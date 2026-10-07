@@ -170,6 +170,7 @@ export interface ApiBookingPriceSnapshot {
   taxable_subtotal: string | number;
   tax_rule_name: string;
   tax_rate_percent: string | number;
+  tax_type?: 'percentage' | 'fixed' | string;
   tax_amount: string | number;
   gross_total: string | number;
   advance_amount_due: string | number;

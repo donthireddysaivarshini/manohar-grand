@@ -46,7 +46,7 @@ export const RoomBookingCard: React.FC<RoomBookingCardProps> = ({ category }) =>
           </div>
 
           <span className="text-[11px] text-neutral-500 mt-0.5">
-            Excl. 5% GST • Transparent billing at checkout
+            Excl. applicable taxes • Transparent billing at checkout
           </span>
         </div>
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Users,
@@ -18,6 +18,8 @@ import { useBooking } from '../../store/BookingContext';
 import { useAuth } from '../../store/AuthContext';
 import { formatDateDisplay } from '../../utils/dateUtils';
 import { formatCurrencyINR } from '../../utils/formatters';
+import { pricingApiService } from '../../services/api/pricingApiService';
+import { ApiBookingPriceSnapshot } from '../../types/booking';
 
 export const BookingSummaryCard: React.FC = () => {
   const navigate = useNavigate();
@@ -34,17 +36,75 @@ export const BookingSummaryCard: React.FC = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [livePricing, setLivePricing] = useState<ApiBookingPriceSnapshot | null>(null);
 
   const totalGuests = searchParams.adults + searchParams.children;
   const isRoomSelected = totalSelectedRoomsCount > 0;
 
-  // Compute estimated room subtotal for summary preview (authoritative totals will be rendered from server snapshot at checkout)
+  // Compute estimated room subtotal for summary preview fallback
   const estimatedRoomSubtotal = selectedRooms.reduce(
     (acc, curr) => acc + curr.ratePerNight * curr.quantity * nightsCount,
     0
   );
-  const estimatedTax = Math.round(estimatedRoomSubtotal * 0.05);
-  const estimatedGross = estimatedRoomSubtotal + estimatedTax;
+
+  // Dynamically calculate authoritative live price quote from server
+  useEffect(() => {
+    if (!isRoomSelected || selectedRooms.length === 0) {
+      setLivePricing(null);
+      return;
+    }
+
+    let isMounted = true;
+    const fetchLiveQuote = async () => {
+      try {
+        const quote = await pricingApiService.calculateQuote({
+          check_in_date: searchParams.checkIn,
+          check_out_date: searchParams.checkOut,
+          rooms: selectedRooms.map((r) => ({
+            category: r.slug || r.categoryId,
+            room_quantity: r.quantity,
+          })),
+          total_adults: searchParams.adults,
+          total_children: searchParams.children,
+        });
+        if (isMounted) {
+          setLivePricing(quote);
+        }
+      } catch (err) {
+        console.warn('Could not compute dynamic server pricing quote:', err);
+      }
+    };
+
+    fetchLiveQuote();
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    selectedRooms,
+    searchParams.checkIn,
+    searchParams.checkOut,
+    searchParams.adults,
+    searchParams.children,
+    isRoomSelected,
+  ]);
+
+  const roomSubtotal = livePricing
+    ? parseFloat(String(livePricing.room_subtotal))
+    : estimatedRoomSubtotal;
+
+  const taxAmount = livePricing
+    ? parseFloat(String(livePricing.tax_amount))
+    : Math.round(roomSubtotal * 0.05);
+
+  const grossTotal = livePricing
+    ? parseFloat(String(livePricing.gross_total))
+    : roomSubtotal + taxAmount;
+
+  const taxLabel = livePricing
+    ? livePricing.tax_type === 'fixed'
+      ? `${livePricing.tax_rule_name || 'Taxes'} (Fixed ${formatCurrencyINR(parseFloat(String(livePricing.tax_rate_percent || livePricing.tax_amount)))})`
+      : `${livePricing.tax_rule_name || 'Estimated Taxes'} (${parseFloat(String(livePricing.tax_rate_percent)) || 5}%)`
+    : 'Estimated Taxes';
 
   const handleContinue = async () => {
     if (!isRoomSelected) return;
@@ -205,16 +265,16 @@ export const BookingSummaryCard: React.FC = () => {
             <div className="flex items-center justify-between text-neutral-secondary">
               <span>Room Subtotal</span>
               <span className="font-semibold text-neutral-dark">
-                {formatCurrencyINR(estimatedRoomSubtotal)}
+                {formatCurrencyINR(roomSubtotal)}
               </span>
             </div>
 
             <div className="flex items-center justify-between text-neutral-secondary">
               <span className="flex items-center gap-1">
-                <span>Estimated Taxes (GST 5%)</span>
+                <span>{taxLabel}</span>
               </span>
               <span className="font-semibold text-neutral-dark">
-                {formatCurrencyINR(estimatedTax)}
+                {formatCurrencyINR(taxAmount)}
               </span>
             </div>
 
@@ -226,7 +286,7 @@ export const BookingSummaryCard: React.FC = () => {
                 <span className="text-[10px] text-neutral-500">50% Advance payable at checkout</span>
               </div>
               <span className="text-2xl font-black text-brand">
-                {formatCurrencyINR(estimatedGross)}
+                {formatCurrencyINR(grossTotal)}
               </span>
             </div>
           </div>

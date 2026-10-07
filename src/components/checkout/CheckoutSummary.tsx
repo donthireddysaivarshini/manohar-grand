@@ -54,7 +54,11 @@ export const CheckoutSummary: React.FC = () => {
     ? parseFloat(String(pricing.tax_amount))
     : Math.round(roomSubtotal * 0.05);
 
-  const taxRate = pricing ? pricing.tax_rate_percent : 5;
+  const taxLabel = pricing
+    ? pricing.tax_type === 'fixed'
+      ? `${pricing.tax_rule_name || 'Taxes'} (Fixed ${formatCurrencyINR(parseFloat(String(pricing.tax_rate_percent || pricing.tax_amount)))})`
+      : `${pricing.tax_rule_name || 'GST'} (${parseFloat(String(pricing.tax_rate_percent)) || 5}%)`
+    : 'Taxes';
 
   const totalGuests =
     checkoutSummary
@@ -172,7 +176,7 @@ export const CheckoutSummary: React.FC = () => {
           </div>
 
           <div className="flex justify-between text-neutral-secondary">
-            <span>GST ({taxRate}%)</span>
+            <span>{taxLabel}</span>
             <span className="font-semibold text-neutral-dark">
               {formatCurrencyINR(taxAmount)}
             </span>
