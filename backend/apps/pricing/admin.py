@@ -384,12 +384,11 @@ class BookingPriceSnapshotAdmin(admin.ModelAdmin):
         'currency',
         'room_subtotal',
         'extra_guest_total',
-        'late_checkout_total',
         'tax_rule_name',
         'tax_amount',
         'gross_total',
-        'advance_amount_due',
-        'balance_amount_due',
+        'online_paid_display',
+        'balance_due_display',
         'created_at',
     )
     search_fields = ('booking__booking_reference', 'booking__guest_name', 'booking__guest_email')
@@ -454,6 +453,18 @@ class BookingPriceSnapshotAdmin(admin.ModelAdmin):
         except Exception:
             return f"{obj.booking.booking_reference} ({obj.booking.guest_name})"
     booking_link.short_description = 'Booking Reservation'
+
+    def online_paid_display(self, obj):
+        val = safe_float(obj.advance_amount_due)
+        return format_html('<span style="font-weight: 700; color: #047857;">₹{:,.2f}</span>', val)
+    online_paid_display.short_description = 'Amount Paid Online'
+
+    def balance_due_display(self, obj):
+        val = safe_float(obj.balance_amount_due)
+        if val <= 0:
+            return format_html('<span style="background-color: #D1FAE5; color: #065F46; padding: 2px 8px; border-radius: 9999px; font-weight: bold; font-size: 11px;">₹0.00 (Paid)</span>')
+        return format_html('<span style="color: #B45309; font-weight: 700;">₹{:,.2f}</span>', val)
+    balance_due_display.short_description = 'Balance Due (At Desk)'
 
     def itemized_breakdown_display(self, obj):
         return render_itemized_breakdown_html(obj)

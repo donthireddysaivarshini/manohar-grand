@@ -283,7 +283,7 @@ export const BookingSummaryCard: React.FC = () => {
                 <span className="text-sm font-extrabold text-neutral-dark block">
                   Estimated Total
                 </span>
-                <span className="text-[10px] text-neutral-500">50% Advance payable at checkout</span>
+                <span className="text-[10px] text-neutral-500">100% Instant Online Confirmation</span>
               </div>
               <span className="text-2xl font-black text-brand">
                 {formatCurrencyINR(grossTotal)}

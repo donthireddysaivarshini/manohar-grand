@@ -270,18 +270,20 @@ class BookingPriceSnapshot(models.Model):
         help_text="Authoritative total payable amount (Taxable Subtotal + Tax Amount)"
     )
     advance_amount_due = models.DecimalField(
+        verbose_name="Paid Online / Advance Amount",
         max_digits=12,
         decimal_places=2,
         default=Decimal('0.00'),
         validators=[MinValueValidator(Decimal('0.00'))],
-        help_text="50% advance deposit due online via Razorpay"
+        help_text="Authoritative amount charged and paid online via Razorpay"
     )
     balance_amount_due = models.DecimalField(
+        verbose_name="Balance Due at Desk",
         max_digits=12,
         decimal_places=2,
         default=Decimal('0.00'),
         validators=[MinValueValidator(Decimal('0.00'))],
-        help_text="Remaining 50% balance payable at front desk prior to room key handover"
+        help_text="Remaining balance payable at front desk prior to room check-in (₹0.00 for full online payment)"
     )
     itemized_breakdown = models.JSONField(
         default=dict,

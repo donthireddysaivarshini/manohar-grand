@@ -175,7 +175,7 @@ export const DashboardPage: React.FC = () => {
                       </p>
 
                       <p className="text-xs font-semibold text-neutral-dark">
-                        Total: {formatCurrencyINR(gross)} • Advance Paid:{' '}
+                        Total: {formatCurrencyINR(gross)} • Amount Paid:{' '}
                         <span className="text-emerald-700 font-bold">{formatCurrencyINR(advance)}</span>
                       </p>
                     </div>
