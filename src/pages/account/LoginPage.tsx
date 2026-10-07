@@ -8,6 +8,8 @@ import { Button } from '../../components/common/Button';
 import { Lock, Mail, ShieldCheck, Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../store/AuthContext';
 
+import { extractErrorMessage } from '../../utils/errorUtils';
+
 export const LoginPage: React.FC = () => {
   const { isAuthenticated, login, loginWithGoogle, isLoading } = useAuth();
   const navigate = useNavigate();
@@ -33,19 +35,7 @@ export const LoginPage: React.FC = () => {
         await loginWithGoogle(codeResponse.code);
         navigate('/account/dashboard', { replace: true });
       } catch (err: unknown) {
-        const error = err as any;
-        const errData = error.response?.data;
-        let msg = 'Google sign-in failed. Please try again.';
-        if (typeof errData?.error === 'string') {
-          msg = errData.error;
-        } else if (errData?.error?.message) {
-          msg = errData.error.message;
-        } else if (errData?.message) {
-          msg = errData.message;
-        } else if (error.message) {
-          msg = error.message;
-        }
-        setError(msg);
+        setError(extractErrorMessage(err, 'Google sign-in failed. Please try again.'));
       } finally {
         setIsSubmitting(false);
       }
@@ -69,13 +59,7 @@ export const LoginPage: React.FC = () => {
       await login(email.trim(), password);
       navigate('/account/dashboard', { replace: true });
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { detail?: string; error?: string; message?: string } }; message?: string };
-      const msg =
-        error.response?.data?.detail ||
-        error.response?.data?.error ||
-        error.response?.data?.message ||
-        'Invalid email or password credentials.';
-      setError(msg);
+      setError(extractErrorMessage(err, 'Invalid email or password credentials.'));
     } finally {
       setIsSubmitting(false);
     }

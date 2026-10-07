@@ -5,6 +5,8 @@ import { useAuth } from '../../store/AuthContext';
 import { Button } from '../common/Button';
 import { cn } from '../../utils/cn';
 
+import { extractErrorMessage } from '../../utils/errorUtils';
+
 export interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -69,19 +71,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         await loginWithGoogle(codeResponse.code);
         onClose();
       } catch (err: unknown) {
-        const error = err as any;
-        const errData = error.response?.data;
-        let msg = 'Google authentication failed. Please try again.';
-        if (typeof errData?.error === 'string') {
-          msg = errData.error;
-        } else if (errData?.error?.message) {
-          msg = errData.error.message;
-        } else if (errData?.message) {
-          msg = errData.message;
-        } else if (error.message) {
-          msg = error.message;
-        }
-        setError(msg);
+        setError(extractErrorMessage(err, 'Google sign-in could not be completed.'));
       } finally {
         setIsSubmitting(false);
       }
@@ -137,24 +127,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         onClose();
       }
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { error?: { message?: string } | string; details?: Record<string, string[]>; message?: string } }; message?: string };
-      let msg = 'Authentication failed. Please check your details.';
-      if (error.response?.data) {
-        const data = error.response.data;
-        if (data.details && typeof data.details === 'object') {
-          const firstKey = Object.keys(data.details)[0];
-          msg = `${firstKey}: ${data.details[firstKey][0]}`;
-        } else if (data.error && typeof data.error === 'object' && data.error.message) {
-          msg = data.error.message;
-        } else if (typeof data.error === 'string') {
-          msg = data.error;
-        } else if (data.message) {
-          msg = data.message;
-        }
-      } else if (error.message) {
-        msg = error.message;
-      }
-      setError(msg);
+      setError(extractErrorMessage(err, 'Invalid email or password. Please check your credentials.'));
     } finally {
       setIsSubmitting(false);
     }

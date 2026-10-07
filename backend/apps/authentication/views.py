@@ -51,6 +51,8 @@ class CustomTokenObtainPairView(TokenObtainPairView):
     JWT Login endpoint returning access, refresh tokens and the full user profile.
     """
     serializer_class = CustomTokenObtainPairSerializer
+    permission_classes = [AllowAny]
+    authentication_classes = []
 
 class UserProfileView(generics.RetrieveAPIView):
     """
@@ -74,6 +76,8 @@ class GoogleLoginView(SocialLoginView):
     adapter_class = CustomGoogleOAuth2Adapter
     client_class = OAuth2Client
     callback_url = "postmessage"
+    permission_classes = [AllowAny]
+    authentication_classes = []
 
     def post(self, request, *args, **kwargs):
         try:
