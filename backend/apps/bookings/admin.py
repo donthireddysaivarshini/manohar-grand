@@ -21,6 +21,7 @@ class BookingRoomInline(admin.TabularInline):
 from django.utils.html import format_html
 from django.contrib import messages
 from .services import process_booking_cancellation_decision
+from apps.pricing.admin import render_itemized_breakdown_html
 
 
 @admin.register(Booking)
@@ -41,7 +42,7 @@ class BookingAdmin(admin.ModelAdmin):
     ]
     list_filter = ['status', 'refund_status', 'source', 'is_overbooking', 'check_in_date', 'check_out_date']
     search_fields = ['booking_reference', 'guest_name', 'guest_phone', 'guest_email', 'refund_reference', 'cancellation_reason']
-    readonly_fields = ['id', 'booking_reference', 'access_token', 'cancellation_requested_at', 'cancelled_at', 'created_at', 'updated_at']
+    readonly_fields = ['id', 'booking_reference', 'access_token', 'financial_breakdown_display', 'cancellation_requested_at', 'cancelled_at', 'created_at', 'updated_at']
     inlines = [BookingRoomInline, BookingGuestInline]
     actions = ['approve_cancellation_and_refund', 'approve_cancellation_zero_refund', 'reject_cancellation_request']
 
@@ -55,6 +56,11 @@ class BookingAdmin(admin.ModelAdmin):
                 ('check_in_date', 'check_out_date'),
                 ('total_adults', 'total_children'),
             )
+        }),
+        ('Financial Price Breakdown & Taxes', {
+            'fields': (
+                'financial_breakdown_display',
+            ),
         }),
         ('Guest Details', {
             'fields': (
@@ -86,6 +92,12 @@ class BookingAdmin(admin.ModelAdmin):
             'classes': ('collapse',),
         }),
     )
+
+    def financial_breakdown_display(self, obj):
+        if hasattr(obj, 'price_snapshot') and obj.price_snapshot:
+            return render_itemized_breakdown_html(obj.price_snapshot)
+        return format_html('<span style="color: #9CA3AF;">No financial price snapshot generated yet.</span>')
+    financial_breakdown_display.short_description = 'Financial Breakdown'
 
     def status_badge(self, obj):
         colors = {
