@@ -8,7 +8,6 @@ import {
   Calendar,
   BedDouble,
   CheckCircle2,
-  Clock,
   ArrowRight,
   ShieldCheck,
   Phone,
@@ -41,8 +40,11 @@ export const DashboardPage: React.FC = () => {
   const confirmedBookings = bookings.filter(
     (b) => b.status === 'confirmed' || b.status === 'checked_in'
   );
-  const activeHolds = bookings.filter((b) => b.status === 'held');
-  const recentBookings = bookings.slice(0, 3);
+  const completedStays = bookings.filter((b) => b.status === 'checked_out');
+  const actualBookings = bookings.filter(
+    (b) => b.status !== 'held' && b.status !== 'expired'
+  );
+  const recentBookings = actualBookings.slice(0, 3);
 
   const displayName = user?.full_name || user?.first_name || user?.email.split('@')[0];
 
@@ -68,7 +70,7 @@ export const DashboardPage: React.FC = () => {
           <CardContent className="p-0 flex items-center justify-between">
             <div className="space-y-1">
               <span className="text-xs text-neutral-secondary font-medium">Total Reservations</span>
-              <p className="text-2xl font-black text-neutral-dark">{bookings.length}</p>
+              <p className="text-2xl font-black text-neutral-dark">{actualBookings.length}</p>
             </div>
             <div className="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
               <Receipt className="w-5 h-5" />
@@ -91,11 +93,11 @@ export const DashboardPage: React.FC = () => {
         <Card variant="bordered" className="bg-white p-5 rounded-2xl border-neutral-border shadow-xs">
           <CardContent className="p-0 flex items-center justify-between">
             <div className="space-y-1">
-              <span className="text-xs text-neutral-secondary font-medium">Active Holds</span>
-              <p className="text-2xl font-black text-amber-600">{activeHolds.length}</p>
+              <span className="text-xs text-neutral-secondary font-medium">Completed Stays</span>
+              <p className="text-2xl font-black text-indigo-600">{completedStays.length}</p>
             </div>
-            <div className="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
-              <Clock className="w-5 h-5" />
+            <div className="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <BedDouble className="w-5 h-5" />
             </div>
           </CardContent>
         </Card>
@@ -108,12 +110,12 @@ export const DashboardPage: React.FC = () => {
             <h2 className="text-lg font-bold text-neutral-dark">Recent Activity & Stays</h2>
             <p className="text-xs text-neutral-secondary">Your latest reservations and status updates</p>
           </div>
-          {bookings.length > 0 && (
+          {actualBookings.length > 0 && (
             <Link
               to="/account/bookings"
               className="text-xs font-bold text-brand hover:underline inline-flex items-center gap-1"
             >
-              <span>View All ({bookings.length})</span>
+              <span>View All ({actualBookings.length})</span>
               <ArrowRight className="w-3 h-3" />
             </Link>
           )}

@@ -36,6 +36,10 @@ export const MyBookingsPage: React.FC = () => {
     fetchBookings();
   }, []);
 
+  const visibleBookings = bookings.filter(
+    (b) => b.status !== 'held' && b.status !== 'expired'
+  );
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
@@ -59,7 +63,7 @@ export const MyBookingsPage: React.FC = () => {
           <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
           <div>{error}</div>
         </div>
-      ) : bookings.length === 0 ? (
+      ) : visibleBookings.length === 0 ? (
         <Card variant="bordered" className="bg-white p-8 text-center flex flex-col items-center gap-4 rounded-2xl border-neutral-border shadow-xs">
           <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-400">
             <BedDouble className="w-6 h-6" />
@@ -77,7 +81,7 @@ export const MyBookingsPage: React.FC = () => {
         </Card>
       ) : (
         <div className="flex flex-col gap-4">
-          {bookings.map((b) => {
+          {visibleBookings.map((b) => {
             const isConfirmed = b.status === 'confirmed';
             const isRequested = b.status === 'cancellation_requested';
             const isCancelled = b.status === 'cancelled' || b.status === 'refunded';
