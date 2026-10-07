@@ -144,6 +144,19 @@ def render_itemized_breakdown_html(obj):
         </div>
     """ if discount_amount > 0 else ""
 
+    if balance_due <= 0:
+        payment_summary_text = "100% Full Payment Online"
+        advance_label = "Full Online Payment (100%)"
+        advance_sub = "Paid securely in full online via Razorpay"
+        balance_label = "Balance Due At Hotel Check-In"
+        balance_sub = "₹0.00 — Fully Paid Online"
+    else:
+        payment_summary_text = f"Advance: {currency_symbol}{advance_due:,.2f} | Balance: {currency_symbol}{balance_due:,.2f}"
+        advance_label = "Advance Deposit Paid Online"
+        advance_sub = "Paid securely during booking checkout"
+        balance_label = "Balance Due At Hotel Check-In"
+        balance_sub = "Payable at front desk on arrival"
+
     html = f"""
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 900px; color: #1f2937;">
         
@@ -167,7 +180,7 @@ def render_itemized_breakdown_html(obj):
             <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px;">
                 <div style="font-size: 11px; color: #2563eb; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Gross Total Payable</div>
                 <div style="font-size: 20px; font-weight: 800; color: #1e40af; margin-top: 2px;">{currency_symbol}{gross_total:,.2f}</div>
-                <div style="font-size: 11px; color: #3b82f6; margin-top: 2px; font-weight: 600;">Advance: {currency_symbol}{advance_due:,.2f} | Balance: {currency_symbol}{balance_due:,.2f}</div>
+                <div style="font-size: 11px; color: #3b82f6; margin-top: 2px; font-weight: 600;">{payment_summary_text}</div>
             </div>
         </div>
 
@@ -206,14 +219,14 @@ def render_itemized_breakdown_html(obj):
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 1px solid #e2e8f0;">
                 <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 10px 14px;">
-                    <div style="font-size: 11px; color: #065f46; text-transform: uppercase; font-weight: 700;">50% Advance Online Deposit</div>
+                    <div style="font-size: 11px; color: #065f46; text-transform: uppercase; font-weight: 700;">{advance_label}</div>
                     <div style="font-size: 16px; font-weight: 800; color: #047857; margin-top: 2px;">{currency_symbol}{advance_due:,.2f}</div>
-                    <div style="font-size: 11px; color: #059669; margin-top: 2px;">Paid securely during booking checkout</div>
+                    <div style="font-size: 11px; color: #059669; margin-top: 2px;">{advance_sub}</div>
                 </div>
                 <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 14px;">
-                    <div style="font-size: 11px; color: #92400e; text-transform: uppercase; font-weight: 700;">50% Balance Due At Hotel Check-In</div>
+                    <div style="font-size: 11px; color: #92400e; text-transform: uppercase; font-weight: 700;">{balance_label}</div>
                     <div style="font-size: 16px; font-weight: 800; color: #b45309; margin-top: 2px;">{currency_symbol}{balance_due:,.2f}</div>
-                    <div style="font-size: 11px; color: #d97706; margin-top: 2px;">Payable at front desk on arrival</div>
+                    <div style="font-size: 11px; color: #d97706; margin-top: 2px;">{balance_sub}</div>
                 </div>
             </div>
         </div>

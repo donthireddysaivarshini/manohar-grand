@@ -15,9 +15,9 @@ class PaymentOrder(models.Model):
     Stores exact monetary figures in Decimal (INR) and provider integer paise.
     """
     PURPOSE_CHOICES = [
-        ('advance', '50% Advance Deposit'),
-        ('balance', 'Remaining Balance'),
+        ('advance', 'Full Online Payment'),
         ('full', 'Full Stay Payment'),
+        ('balance', 'Remaining Balance'),
     ]
 
     STATUS_CHOICES = [
