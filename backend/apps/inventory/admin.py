@@ -2,7 +2,7 @@
 Django Admin interface for RoomBlock and MaintenanceBlock models.
 """
 from django.contrib import admin
-from .models import RoomBlock, MaintenanceBlock
+from .models import RoomBlock, MaintenanceBlock, StopSell
 from core.services import record_audit_log
 
 
@@ -127,3 +127,29 @@ class MaintenanceBlockAdmin(admin.ModelAdmin):
             reason=f"MaintenanceBlock for Room {obj.physical_room.room_number} saved via admin",
             ip_address=request.META.get('REMOTE_ADDR'),
         )
+
+
+@admin.register(StopSell)
+class StopSellAdmin(admin.ModelAdmin):
+    list_display = [
+        'get_scope',
+        'start_date',
+        'end_date',
+        'nights_count',
+        'reason',
+        'is_active',
+        'created_by',
+        'created_at',
+    ]
+    list_filter = ['is_active', 'is_hotel_wide', 'category', 'start_date']
+    search_fields = ['reason', 'notes']
+    readonly_fields = ['id', 'created_at', 'updated_at']
+
+    def get_scope(self, obj):
+        return "Entire Hotel (All Rooms)" if obj.is_hotel_wide else f"Category: {obj.category.name if obj.category else 'N/A'}"
+    get_scope.short_description = 'Scope'
+
+    def save_model(self, request, obj, form, change):
+        if not obj.created_by and request.user.is_authenticated:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)

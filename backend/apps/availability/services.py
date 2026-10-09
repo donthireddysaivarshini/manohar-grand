@@ -21,7 +21,7 @@ from django.utils import timezone
 
 from apps.inventory.services import get_stay_nights
 from apps.rooms.models import RoomCategory, PhysicalRoom
-from apps.inventory.models import RoomBlock, MaintenanceBlock
+from apps.inventory.models import RoomBlock, MaintenanceBlock, StopSell
 from apps.bookings.models import Booking, BookingRoom
 
 
@@ -127,6 +127,16 @@ class AvailabilityService:
         room_blocks_list = list(room_blocks_qs)
         maint_blocks_list = list(maint_blocks_qs)
 
+        # 5b. Fetch active StopSell (Hotel Full Booked / Stop-Sell) records overlapping the stay
+        stop_sells_qs = StopSell.objects.filter(
+            is_active=True,
+            start_date__lt=check_out,
+            end_date__gt=check_in,
+        ).filter(
+            Q(is_hotel_wide=True) | Q(category__in=categories_list)
+        ).values('is_hotel_wide', 'category_id', 'start_date', 'end_date', 'reason')
+        stop_sells_list = list(stop_sells_qs)
+
         # 6. Compute availability per category across stay nights
         results_categories = []
 
@@ -179,7 +189,24 @@ class AvailabilityService:
                         if br['category_id'] == cat_id and br['booking__check_in_date'] <= night < br['booking__check_out_date']
                     )
 
-                    avail_on_night = max(0, total_capacity - operational_blocked_count - booked_count)
+                    # Check if stop-sell applies to this night for this category or entire hotel
+                    stop_sell_match = next(
+                        (
+                            s for s in stop_sells_list
+                            if (s['is_hotel_wide'] or s['category_id'] == cat_id)
+                            and s['start_date'] <= night < s['end_date']
+                        ),
+                        None
+                    )
+
+                    is_stop_sell_night = stop_sell_match is not None
+                    if is_stop_sell_night:
+                        avail_on_night = 0
+                        stop_sell_reason = stop_sell_match['reason']
+                    else:
+                        avail_on_night = max(0, total_capacity - operational_blocked_count - booked_count)
+                        stop_sell_reason = None
+
                     nightly_avail_counts.append(avail_on_night)
 
                     nightly_breakdown.append({
@@ -188,10 +215,18 @@ class AvailabilityService:
                         "blocked_rooms": operational_blocked_count,
                         "booked_rooms": booked_count,
                         "available_rooms": avail_on_night,
+                        "is_stop_sell": is_stop_sell_night,
+                        "stop_sell_reason": stop_sell_reason,
                     })
 
                 min_available = min(nightly_avail_counts) if nightly_avail_counts else 0
                 is_available = (min_available >= requested_quantity) and (total_capacity > 0)
+
+            cat_has_stop_sell = any(nb.get("is_stop_sell") for nb in nightly_breakdown)
+            cat_stop_sell_reason = next(
+                (nb.get("stop_sell_reason") for nb in nightly_breakdown if nb.get("is_stop_sell")),
+                None
+            )
 
             results_categories.append({
                 "category_id": str(category.id),
@@ -202,15 +237,19 @@ class AvailabilityService:
                 "minimum_available_rooms": min_available,
                 "requested_quantity": requested_quantity,
                 "is_available": is_available,
+                "is_stop_sell": cat_has_stop_sell,
+                "stop_sell_reason": cat_stop_sell_reason,
                 "nightly_availability": nightly_breakdown,
             })
 
+        hotel_wide_stop_sell = any(s['is_hotel_wide'] for s in stop_sells_list)
         return {
             "check_in": check_in.isoformat(),
             "check_out": check_out.isoformat(),
             "nights_count": nights_count,
             "stay_nights": [d.isoformat() for d in stay_nights],
             "requested_quantity": requested_quantity,
+            "is_hotel_fully_booked": hotel_wide_stop_sell,
             "categories": results_categories
         }
 

@@ -183,3 +183,91 @@ class MaintenanceBlock(models.Model):
                 raise ValidationError({
                     'end_date': 'End date must be strictly after start date.'
                 })
+
+
+class StopSell(models.Model):
+    """
+    Administrative Stop-Sell / Hotel Full Booked Blackout model.
+    Overrides calculated availability to 0 across nights in [start_date, end_date).
+    Can be hotel-wide or scoped to a specific room category.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    start_date = models.DateField(
+        db_index=True,
+        help_text="Start date of stop-sell (inclusive)"
+    )
+    end_date = models.DateField(
+        db_index=True,
+        help_text="End date of stop-sell (exclusive checkout date)"
+    )
+    is_hotel_wide = models.BooleanField(
+        default=True,
+        db_index=True,
+        help_text="If True, all room categories in the entire hotel are closed / marked sold out"
+    )
+    category = models.ForeignKey(
+        'rooms.RoomCategory',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='stop_sells',
+        help_text="Target category if stop-sell is category-specific"
+    )
+    reason = models.CharField(
+        max_length=255,
+        default='Hotel Fully Booked',
+        help_text="Reason for stop sell (e.g. Full House, Private Event, Renovation)"
+    )
+    notes = models.TextField(
+        blank=True,
+        help_text="Internal staff notes"
+    )
+    is_active = models.BooleanField(
+        default=True,
+        db_index=True,
+        help_text="Status toggle. Inactive stop-sells do not block inventory"
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_stop_sells',
+        help_text="Staff member who created the stop sell"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-start_date', '-created_at']
+        indexes = [
+            models.Index(fields=['start_date', 'end_date', 'is_active']),
+            models.Index(fields=['is_hotel_wide', 'is_active', 'start_date', 'end_date']),
+        ]
+        verbose_name = 'Stop Sell / Blackout'
+        verbose_name_plural = 'Stop Sells / Blackouts'
+
+    def __str__(self):
+        scope = "Entire Hotel" if self.is_hotel_wide else f"Category {self.category.name if self.category else 'N/A'}"
+        status = "Active" if self.is_active else "Inactive"
+        return f"StopSell [{scope}] [{self.start_date} -> {self.end_date}] ({status})"
+
+    @property
+    def nights_count(self) -> int:
+        return calculate_nights_count(self.start_date, self.end_date)
+
+    @property
+    def consumed_nights(self) -> List[date]:
+        return get_stay_nights(self.start_date, self.end_date)
+
+    def clean(self):
+        super().clean()
+        if self.start_date and self.end_date:
+            if self.end_date <= self.start_date:
+                raise ValidationError({
+                    'end_date': 'End date must be strictly after start date.'
+                })
+        if not self.is_hotel_wide and not self.category:
+            raise ValidationError({
+                'category': 'Room Category must be specified if stop sell is not hotel-wide.'
+            })

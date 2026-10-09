@@ -193,4 +193,40 @@ export const bookingApiService = {
     }
     throw new Error(res.error?.message || 'Failed to process cancellation decision');
   },
+
+  /**
+   * Staff/Admin quick offline reservation entry (Walk-in, Phone, Reception).
+   * Bypasses customer personal details requirement and immediately decreases available room inventory.
+   * Endpoint: POST /api/v1/admin/bookings/walk-in/
+   */
+  async createQuickWalkInBooking(payload: {
+    category_id?: string;
+    category?: string;
+    room_quantity: number;
+    check_in: string;
+    check_out: string;
+    guest_name?: string;
+    guest_phone?: string;
+    guest_email?: string;
+    source?: 'walk_in' | 'phone' | 'whatsapp' | 'reception' | 'corporate';
+    internal_notes?: string;
+    total_adults?: number;
+    total_children?: number;
+  }): Promise<any> {
+    const res = await fetchApi<any>('/api/v1/admin/bookings/walk-in/', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+
+    if (res.success && res.data) {
+      return res.data;
+    }
+    const errMsg =
+      res.error?.message ||
+      (typeof res.error === 'string' ? res.error : 'Failed to create offline walk-in booking');
+    const err = new Error(errMsg);
+    (err as any).code = res.error?.code;
+    (err as any).details = res.error?.details;
+    throw err;
+  },
 };

@@ -196,6 +196,9 @@ export const Footer: React.FC = () => {
             <span className="hover:text-neutral-400 cursor-pointer">
               Cancellation Policy
             </span>
+            <a href="/admin" className="hover:text-amber-400 transition-colors cursor-pointer text-neutral-400 font-medium">
+              Staff Portal
+            </a>
           </div>
         </div>
       </Container>

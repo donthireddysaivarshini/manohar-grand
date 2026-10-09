@@ -104,6 +104,7 @@ class BookingHoldCreateSerializer(serializers.Serializer):
     category_id = serializers.UUIDField(required=False)
     category_slug = serializers.CharField(required=False, allow_blank=True)
     room_quantity = serializers.IntegerField(required=False, min_value=1, max_value=50)
+    room_count = serializers.IntegerField(required=False, min_value=1, max_value=50)
 
     guest_name = serializers.CharField(required=True, max_length=150)
     guest_phone = serializers.CharField(required=False, allow_blank=True, max_length=20, default="")
@@ -145,7 +146,7 @@ class BookingHoldCreateSerializer(serializers.Serializer):
             # Single-category shorthand
             cat_id = attrs.get('category_id')
             cat_slug = attrs.get('category_slug') or attrs.get('category')
-            single_qty = attrs.get('room_quantity', 1)
+            single_qty = attrs.get('room_quantity') or attrs.get('room_count') or 1
 
             category_obj = None
             if cat_id:
@@ -171,6 +172,25 @@ class BookingHoldCreateSerializer(serializers.Serializer):
             })
 
         attrs['resolved_rooms'] = parsed_rooms
+
+        # Enforce occupancy restrictions: Max 3 adults & Max 1 child (<10 yrs) per room
+        total_rooms_count = sum(r['room_quantity'] for r in parsed_rooms)
+        max_adults_allowed = total_rooms_count * 3
+        max_children_allowed = total_rooms_count * 1
+
+        total_adults = attrs.get('total_adults', 1)
+        total_children = attrs.get('total_children', 0)
+
+        if total_adults > max_adults_allowed:
+            raise serializers.ValidationError({
+                "total_adults": f"Maximum 3 adults permitted per room. For {total_rooms_count} room(s), max adults is {max_adults_allowed}."
+            })
+
+        if total_children > max_children_allowed:
+            raise serializers.ValidationError({
+                "total_children": f"Maximum 1 child (below 10 years) permitted per room. For {total_rooms_count} room(s), max children is {max_children_allowed}."
+            })
+
         return attrs
 
 
@@ -602,7 +622,9 @@ class BookingAdminStaffDetailSerializer(serializers.ModelSerializer):
 class AdminWalkInCreateSerializer(BookingHoldCreateSerializer):
     """
     Serializer for staff creating an offline booking (walk_in, phone, whatsapp, reception, corporate).
+    Allows quick offline reservation without mandatory customer personal details.
     """
+    guest_name = serializers.CharField(required=False, allow_blank=True, max_length=150, default="Front Desk Walk-In")
     source = serializers.ChoiceField(
         choices=[
             ('walk_in', 'Front Desk Walk-In'),
@@ -615,6 +637,11 @@ class AdminWalkInCreateSerializer(BookingHoldCreateSerializer):
     )
     internal_notes = serializers.CharField(required=False, allow_blank=True, default="")
     physical_room_ids = serializers.ListField(child=serializers.CharField(), required=False, default=list)
+
+    def validate(self, attrs):
+        if not attrs.get('guest_name') or not attrs['guest_name'].strip():
+            attrs['guest_name'] = "Front Desk Walk-In"
+        return super().validate(attrs)
 
 
 class AdminOverbookingCreateSerializer(AdminWalkInCreateSerializer):

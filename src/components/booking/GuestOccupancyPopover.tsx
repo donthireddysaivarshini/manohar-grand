@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Users, Plus, Minus, ChevronDown, Check } from 'lucide-react';
+import { Users, Plus, Minus, ChevronDown, Check, Info } from 'lucide-react';
 import { Button } from '../common/Button';
-import { DEMO_OCCUPANCY_CONFIG } from '../../data/demoOccupancyConfig';
+import { HOTEL_OCCUPANCY_POLICY } from '../../data/demoOccupancyConfig';
 
 export interface GuestOccupancyPopoverProps {
   adults: number;
@@ -31,6 +31,19 @@ export const GuestOccupancyPopover: React.FC<GuestOccupancyPopoverProps> = ({
   }, []);
 
   const totalGuests = adults + childrenCount;
+  const maxAdultsAllowed = rooms * HOTEL_OCCUPANCY_POLICY.perRoomLimits.maxAdults;
+  const maxChildrenAllowed = rooms * HOTEL_OCCUPANCY_POLICY.perRoomLimits.maxChildrenBelow10;
+
+  const handleRoomsChange = (newRooms: number) => {
+    if (newRooms < 1 || newRooms > 10) return;
+    const clampedAdults = Math.min(adults, newRooms * HOTEL_OCCUPANCY_POLICY.perRoomLimits.maxAdults);
+    const clampedChildren = Math.min(childrenCount, newRooms * HOTEL_OCCUPANCY_POLICY.perRoomLimits.maxChildrenBelow10);
+    onChange({
+      adults: Math.max(newRooms, clampedAdults),
+      children: clampedChildren,
+      rooms: newRooms,
+    });
+  };
 
   return (
     <div className="relative w-full" ref={containerRef}>
@@ -44,25 +57,59 @@ export const GuestOccupancyPopover: React.FC<GuestOccupancyPopoverProps> = ({
         <span className="flex items-center gap-2 truncate">
           <Users className="w-4 h-4 text-brand shrink-0" />
           <span>
-            {totalGuests} {totalGuests === 1 ? 'Guest' : 'Guests'} • {rooms} {rooms === 1 ? 'Room' : 'Rooms'}
+            {totalGuests} {totalGuests === 1 ? 'Guest' : 'Guests'}  {rooms} {rooms === 1 ? 'Room' : 'Rooms'}
           </span>
         </span>
         <ChevronDown className={`w-4 h-4 text-neutral-secondary transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-2 z-30 p-4 bg-white rounded-card border border-neutral-border shadow-elevated animate-in fade-in zoom-in-95 duration-150 min-w-[280px]">
+        <div className="absolute top-full left-0 right-0 mt-2 z-30 p-4 bg-white rounded-card border border-neutral-border shadow-elevated animate-in fade-in zoom-in-95 duration-150 min-w-[300px]">
           <div className="flex flex-col gap-4">
-            {/* Adults Stepper */}
+            {/* Rooms Stepper */}
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-xs font-bold text-neutral-dark block">Adults</span>
-                <span className="text-[11px] text-neutral-secondary">Ages 13 and above (Demo)</span>
+                <span className="text-xs font-bold text-neutral-dark block">Rooms</span>
+                <span className="text-[11px] text-neutral-secondary">Number of rooms</span>
               </div>
               <div className="flex items-center gap-2.5">
                 <button
                   type="button"
-                  disabled={adults <= DEMO_OCCUPANCY_CONFIG.limits.minAdults}
+                  disabled={rooms <= 1}
+                  onClick={() => handleRoomsChange(rooms - 1)}
+                  aria-label="Decrease rooms count"
+                  className="w-8 h-8 rounded-full border border-neutral-border flex items-center justify-center text-neutral-dark hover:bg-neutral-light disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <Minus className="w-3.5 h-3.5" />
+                </button>
+                <span className="w-6 text-center text-sm font-bold text-neutral-dark">{rooms}</span>
+                <button
+                  type="button"
+                  disabled={rooms >= 10}
+                  onClick={() => handleRoomsChange(rooms + 1)}
+                  aria-label="Increase rooms count"
+                  className="w-8 h-8 rounded-full border border-neutral-border flex items-center justify-center text-neutral-dark hover:bg-neutral-light disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Adults Stepper */}
+            <div className="flex items-center justify-between border-t border-neutral-border/60 pt-3">
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-bold text-neutral-dark block">Adults</span>
+                  <span className="text-[10px] bg-brand/10 text-brand px-1.5 py-0.5 rounded font-medium">
+                    Max 3 / room
+                  </span>
+                </div>
+                <span className="text-[11px] text-neutral-secondary">Age 10+ years</span>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  disabled={adults <= rooms}
                   onClick={() => onChange({ adults: adults - 1, children: childrenCount, rooms })}
                   aria-label="Decrease adult guests"
                   className="w-8 h-8 rounded-full border border-neutral-border flex items-center justify-center text-neutral-dark hover:bg-neutral-light disabled:opacity-40 disabled:cursor-not-allowed"
@@ -72,9 +119,10 @@ export const GuestOccupancyPopover: React.FC<GuestOccupancyPopoverProps> = ({
                 <span className="w-6 text-center text-sm font-bold text-neutral-dark">{adults}</span>
                 <button
                   type="button"
-                  disabled={adults >= DEMO_OCCUPANCY_CONFIG.limits.maxAdults}
+                  disabled={adults >= maxAdultsAllowed}
                   onClick={() => onChange({ adults: adults + 1, children: childrenCount, rooms })}
                   aria-label="Increase adult guests"
+                  title={adults >= maxAdultsAllowed ? `Maximum 3 adults per room (Max ${maxAdultsAllowed} for ${rooms} room${rooms > 1 ? 's' : ''})` : ''}
                   className="w-8 h-8 rounded-full border border-neutral-border flex items-center justify-center text-neutral-dark hover:bg-neutral-light disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <Plus className="w-3.5 h-3.5" />
@@ -82,16 +130,21 @@ export const GuestOccupancyPopover: React.FC<GuestOccupancyPopoverProps> = ({
               </div>
             </div>
 
-            {/* Children Stepper */}
+            {/* Children Stepper (under 10 yrs) */}
             <div className="flex items-center justify-between border-t border-neutral-border/60 pt-3">
               <div>
-                <span className="text-xs font-bold text-neutral-dark block">Children</span>
-                <span className="text-[11px] text-neutral-secondary">Ages 0 to 12 (Demo)</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-bold text-neutral-dark block">Children (Below 10 yrs)</span>
+                  <span className="text-[10px] bg-emerald-50 text-emerald-800 px-1.5 py-0.5 rounded font-medium">
+                    Max 1 / room
+                  </span>
+                </div>
+                <span className="text-[11px] text-neutral-secondary">Age 0 to 9 years</span>
               </div>
               <div className="flex items-center gap-2.5">
                 <button
                   type="button"
-                  disabled={childrenCount <= DEMO_OCCUPANCY_CONFIG.limits.minChildren}
+                  disabled={childrenCount <= 0}
                   onClick={() => onChange({ adults, children: childrenCount - 1, rooms })}
                   aria-label="Decrease children"
                   className="w-8 h-8 rounded-full border border-neutral-border flex items-center justify-center text-neutral-dark hover:bg-neutral-light disabled:opacity-40 disabled:cursor-not-allowed"
@@ -101,9 +154,10 @@ export const GuestOccupancyPopover: React.FC<GuestOccupancyPopoverProps> = ({
                 <span className="w-6 text-center text-sm font-bold text-neutral-dark">{childrenCount}</span>
                 <button
                   type="button"
-                  disabled={childrenCount >= DEMO_OCCUPANCY_CONFIG.limits.maxChildren}
+                  disabled={childrenCount >= maxChildrenAllowed}
                   onClick={() => onChange({ adults, children: childrenCount + 1, rooms })}
                   aria-label="Increase children"
+                  title={childrenCount >= maxChildrenAllowed ? `Maximum 1 child below 10 years per room (Max ${maxChildrenAllowed} for ${rooms} room${rooms > 1 ? 's' : ''})` : ''}
                   className="w-8 h-8 rounded-full border border-neutral-border flex items-center justify-center text-neutral-dark hover:bg-neutral-light disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <Plus className="w-3.5 h-3.5" />
@@ -111,32 +165,16 @@ export const GuestOccupancyPopover: React.FC<GuestOccupancyPopoverProps> = ({
               </div>
             </div>
 
-            {/* Rooms Stepper */}
-            <div className="flex items-center justify-between border-t border-neutral-border/60 pt-3">
-              <div>
-                <span className="text-xs font-bold text-neutral-dark block">Rooms</span>
-                <span className="text-[11px] text-neutral-secondary">Target room count (Demo)</span>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <button
-                  type="button"
-                  disabled={rooms <= DEMO_OCCUPANCY_CONFIG.limits.minRooms}
-                  onClick={() => onChange({ adults, children: childrenCount, rooms: rooms - 1 })}
-                  aria-label="Decrease rooms count"
-                  className="w-8 h-8 rounded-full border border-neutral-border flex items-center justify-center text-neutral-dark hover:bg-neutral-light disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <Minus className="w-3.5 h-3.5" />
-                </button>
-                <span className="w-6 text-center text-sm font-bold text-neutral-dark">{rooms}</span>
-                <button
-                  type="button"
-                  disabled={rooms >= DEMO_OCCUPANCY_CONFIG.limits.maxRooms}
-                  onClick={() => onChange({ adults, children: childrenCount, rooms: rooms + 1 })}
-                  aria-label="Increase rooms count"
-                  className="w-8 h-8 rounded-full border border-neutral-border flex items-center justify-center text-neutral-dark hover:bg-neutral-light disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                </button>
+            {/* Policy Notice Box */}
+            <div className="rounded-lg bg-neutral-light/80 border border-neutral-border/60 p-2.5 text-[11px] text-neutral-secondary flex items-start gap-2">
+              <Info className="w-3.5 h-3.5 text-brand shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p>
+                  <strong>Hotel Policy:</strong> Max 3 Adults and 1 Child (under 10 yrs) per room.
+                </p>
+                <p className="text-[10px] text-neutral-dark/80">
+                   <strong>Children above 10 years:</strong> Must be counted as Adults (max 3 adults/room).
+                </p>
               </div>
             </div>
 
@@ -145,7 +183,7 @@ export const GuestOccupancyPopover: React.FC<GuestOccupancyPopoverProps> = ({
               variant="primary"
               size="sm"
               onClick={() => setIsOpen(false)}
-              className="w-full mt-2 font-bold gap-1.5"
+              className="w-full font-bold gap-1.5"
             >
               <Check className="w-4 h-4" />
               Apply

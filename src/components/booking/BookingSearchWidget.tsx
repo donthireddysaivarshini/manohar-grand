@@ -1,43 +1,78 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, Users, Home, Search, ArrowRight } from 'lucide-react';
 import { Button } from '../common/Button';
 import { useBooking } from '../../store/BookingContext';
-import { DEMO_OCCUPANCY_CONFIG } from '../../data/demoOccupancyConfig';
+import { HOTEL_OCCUPANCY_POLICY } from '../../data/demoOccupancyConfig';
 import { cn } from '../../utils/cn';
 
 export interface BookingSearchWidgetProps {
   className?: string;
   variant?: 'floating' | 'inline';
+  onSearch?: (params: {
+    checkIn: string;
+    checkOut: string;
+    adults: number;
+    rooms: number;
+  }) => void;
+  initialParams?: {
+    checkIn?: string;
+    checkOut?: string;
+    adults?: number;
+    rooms?: number;
+  };
 }
 
 export const BookingSearchWidget: React.FC<BookingSearchWidgetProps> = ({
   className,
   variant = 'floating',
+  onSearch,
+  initialParams = {},
 }) => {
   const navigate = useNavigate();
   const { searchParams, setSearchParams } = useBooking();
 
   // Local widget state for smooth editing
-  const [checkIn, setCheckIn] = useState(searchParams.checkIn || '');
-  const [checkOut, setCheckOut] = useState(searchParams.checkOut || '');
-  const [adults, setAdults] = useState(searchParams.adults || 2);
-  const [rooms, setRooms] = useState(searchParams.rooms || 1);
+  const [checkIn, setCheckIn] = useState(
+    initialParams.checkIn || searchParams.checkIn || ''
+  );
+  const [checkOut, setCheckOut] = useState(
+    initialParams.checkOut || searchParams.checkOut || ''
+  );
+  const [rooms, setRooms] = useState(
+    initialParams.rooms || searchParams.rooms || 1
+  );
+  const [adults, setAdults] = useState(
+    initialParams.adults || searchParams.adults || 2
+  );
 
-  // Get tomorrow's date for default minimum date
   const today = new Date().toISOString().split('T')[0];
+  const maxGuestsForRooms = rooms * HOTEL_OCCUPANCY_POLICY.perRoomLimits.maxAdults;
+
+  const handleRoomsChange = (newRooms: number) => {
+    setRooms(newRooms);
+    const maxAllowed = newRooms * HOTEL_OCCUPANCY_POLICY.perRoomLimits.maxAdults;
+    if (adults > maxAllowed) {
+      setAdults(maxAllowed);
+    }
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // Update booking store context
-    setSearchParams({
+    const finalParams = {
       checkIn: checkIn || today,
       checkOut: checkOut || today,
       adults: Number(adults),
       rooms: Number(rooms),
-    });
-    // Navigate to booking page
-    navigate('/booking');
+    };
+
+    setSearchParams(finalParams);
+
+    if (onSearch) {
+      onSearch(finalParams);
+    } else {
+      navigate('/booking');
+    }
   };
 
   return (
@@ -79,29 +114,7 @@ export const BookingSearchWidget: React.FC<BookingSearchWidgetProps> = ({
           />
         </div>
 
-        {/* Field 3: Guests */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-bold uppercase tracking-wider text-neutral-dark flex items-center gap-1.5">
-            <Users className="w-3.5 h-3.5 text-brand" />
-            Guests
-          </label>
-          <select
-            value={adults}
-            onChange={(e) => setAdults(Number(e.target.value))}
-            className="w-full px-3.5 py-2.5 rounded-lg text-sm bg-neutral-light border border-neutral-border text-neutral-text focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand font-medium"
-          >
-            {Array.from(
-              { length: DEMO_OCCUPANCY_CONFIG.limits.maxAdults - DEMO_OCCUPANCY_CONFIG.limits.minAdults + 1 },
-              (_, i) => i + DEMO_OCCUPANCY_CONFIG.limits.minAdults
-            ).map((num) => (
-              <option key={num} value={num}>
-                {num} {num === 1 ? 'Guest' : 'Guests'}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Field 4: Rooms */}
+        {/* Field 3: Rooms */}
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-bold uppercase tracking-wider text-neutral-dark flex items-center gap-1.5">
             <Home className="w-3.5 h-3.5 text-brand" />
@@ -109,15 +122,36 @@ export const BookingSearchWidget: React.FC<BookingSearchWidgetProps> = ({
           </label>
           <select
             value={rooms}
-            onChange={(e) => setRooms(Number(e.target.value))}
+            onChange={(e) => handleRoomsChange(Number(e.target.value))}
             className="w-full px-3.5 py-2.5 rounded-lg text-sm bg-neutral-light border border-neutral-border text-neutral-text focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand font-medium"
           >
-            {Array.from(
-              { length: DEMO_OCCUPANCY_CONFIG.limits.maxRooms - DEMO_OCCUPANCY_CONFIG.limits.minRooms + 1 },
-              (_, i) => i + DEMO_OCCUPANCY_CONFIG.limits.minRooms
-            ).map((num) => (
+            {Array.from({ length: 10 }, (_, i) => i + 1).map((num) => (
               <option key={num} value={num}>
                 {num} {num === 1 ? 'Room' : 'Rooms'}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Field 4: Guests (Max 3 adults per room) */}
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-bold uppercase tracking-wider text-neutral-dark flex items-center gap-1.5">
+              <Users className="w-3.5 h-3.5 text-brand" />
+              Guests
+            </label>
+            <span className="text-[10px] text-neutral-secondary font-medium">
+              Max 3/room
+            </span>
+          </div>
+          <select
+            value={adults}
+            onChange={(e) => setAdults(Number(e.target.value))}
+            className="w-full px-3.5 py-2.5 rounded-lg text-sm bg-neutral-light border border-neutral-border text-neutral-text focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand font-medium"
+          >
+            {Array.from({ length: maxGuestsForRooms }, (_, i) => i + 1).map((num) => (
+              <option key={num} value={num}>
+                {num} {num === 1 ? 'Guest' : 'Guests'} (Max {maxGuestsForRooms})
               </option>
             ))}
           </select>

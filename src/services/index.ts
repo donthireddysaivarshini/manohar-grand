@@ -7,6 +7,7 @@ export * from './api/pricingApiService';
 export * from './api/razorpayService';
 export * from './api/reportApiService';
 export * from './api/cmsApiService';
+export * from './api/stopSellApiService';
 
 // Contract Interfaces
 export * from './contracts/IRoomService';
@@ -21,3 +22,4 @@ export { MockAvailabilityService } from './mock/MockAvailabilityService';
 export { MockBookingService } from './mock/MockBookingService';
 export { MockAuthService } from './mock/MockAuthService';
 export { MockPaymentService } from './mock/MockPaymentService';
+

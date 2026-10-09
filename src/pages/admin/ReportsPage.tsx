@@ -12,8 +12,12 @@ import {
   Building,
   ShieldCheck,
   ChevronRight,
-  Filter
+  Filter,
+  Ban,
+  Zap
 } from 'lucide-react';
+import { StopSellManagerModal } from '../../components/admin/StopSellManagerModal';
+import { QuickOfflineBookingModal } from '../../components/admin/QuickOfflineBookingModal';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/common/Card';
@@ -67,6 +71,8 @@ export const ReportsPage: React.FC = () => {
   const [utilizationData, setUtilizationData] = useState<RoomUtilizationResponse | null>(null);
   const [overbookingData, setOverbookingData] = useState<OverbookingReportResponse | null>(null);
   const [reconData, setReconData] = useState<ReconciliationReportResponse | null>(null);
+  const [isStopSellOpen, setIsStopSellOpen] = useState<boolean>(false);
+  const [isQuickBookingOpen, setIsQuickBookingOpen] = useState<boolean>(false);
 
   const fetchReportData = async () => {
     setLoading(true);
@@ -148,6 +154,26 @@ export const ReportsPage: React.FC = () => {
           <p className="text-sm text-neutral-500 mt-1">
             Authoritative real-time metrics for Manohar Grand (28 Physical Rooms, Category Capacity & Financial Audits)
           </p>
+        </div>
+
+        {/* Front-Desk Quick Operations */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setIsStopSellOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all cursor-pointer"
+          >
+            <Ban className="w-3.5 h-3.5" />
+            Hotel Full Booked (Stop-Sell)
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsQuickBookingOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all cursor-pointer"
+          >
+            <Zap className="w-3.5 h-3.5" />
+            Quick Offline Booking
+          </button>
         </div>
 
         {/* Global Date Filter Controls */}
@@ -890,6 +916,17 @@ export const ReportsPage: React.FC = () => {
           </Card>
         </div>
       )}
+      {/* Management Modals */}
+      <StopSellManagerModal
+        isOpen={isStopSellOpen}
+        onClose={() => setIsStopSellOpen(false)}
+        onUpdated={fetchReportData}
+      />
+      <QuickOfflineBookingModal
+        isOpen={isQuickBookingOpen}
+        onClose={() => setIsQuickBookingOpen(false)}
+        onSuccess={fetchReportData}
+      />
     </div>
   );
 };
