@@ -315,10 +315,36 @@ def send_all_booking_confirmations(booking) -> Dict[str, Any]:
     }
 
 
+def _async_notification_worker(booking_id: Any) -> None:
+    """Background worker executing both dispatches with thread-safe DB lifecycle."""
+    try:
+        from apps.bookings.models import Booking
+        fresh_booking = (
+            Booking.objects.select_related('customer', 'price_snapshot')
+            .prefetch_related('rooms__category')
+            .filter(id=booking_id)
+            .first()
+        )
+        if fresh_booking:
+            send_all_booking_confirmations(fresh_booking)
+        else:
+            logger.warning(f"[MSG91 WhatsApp] Async dispatch skipped: Booking ID {booking_id} not found.")
+    except Exception as exc:
+        logger.error(f"[MSG91 WhatsApp Error] Async background dispatch failed for booking ID {booking_id}: {exc}", exc_info=True)
+    finally:
+        try:
+            from django.db import connections
+            connections.close_all()
+        except Exception:
+            pass
+
+
 def send_booking_whatsapp_async(booking) -> None:
     """
     Fires both WhatsApp notifications in a separate daemon thread so it does not add
     any latency to the user checkout HTTP response.
+    Accepts either a Booking instance or a booking primary key.
     """
-    thread = threading.Thread(target=send_all_booking_confirmations, args=(booking,), daemon=True)
+    booking_id = getattr(booking, 'id', booking)
+    thread = threading.Thread(target=_async_notification_worker, args=(booking_id,), daemon=True)
     thread.start()
