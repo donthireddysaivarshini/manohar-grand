@@ -182,13 +182,18 @@ def _call_msg91_whatsapp_api(
         "Accept": "application/json",
     }
 
-    body_parameters = [{"type": "text", "text": str(p)} for p in parameters]
+    body_components = {}
+    for idx, p in enumerate(parameters, start=1):
+        body_components[f"body_{idx}"] = {
+            "type": "text",
+            "value": str(p),
+        }
 
     payload = {
         "integrated_number": sender_number,
         "content_type": "template",
         "payload": {
-            "to": to_phone,
+            "messaging_product": "whatsapp",
             "type": "template",
             "template": {
                 "name": template_name,
@@ -196,10 +201,10 @@ def _call_msg91_whatsapp_api(
                     "code": "en",
                     "policy": "deterministic",
                 },
-                "components": [
+                "to_and_components": [
                     {
-                        "type": "body",
-                        "parameters": body_parameters,
+                        "to": [to_phone],
+                        "components": body_components,
                     }
                 ],
             },
