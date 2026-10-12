@@ -469,7 +469,11 @@ def confirm_booking_after_verified_payment(
         ip_address=ip_address,
     )
 
-    # 8. Record immutable AuditLog
+    # 8. Dispatch WhatsApp Confirmation Notification via MSG91
+    from apps.bookings.notifications import send_booking_whatsapp_async
+    transaction.on_commit(lambda: send_booking_whatsapp_async(booking))
+
+    # 9. Record immutable AuditLog
     record_audit_log(
         action='status_change',
         resource_type='PaymentOrder',

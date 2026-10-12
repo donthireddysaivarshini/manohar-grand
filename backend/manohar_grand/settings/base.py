@@ -195,6 +195,11 @@ RAZORPAY_KEY_SECRET = os.environ.get('RAZORPAY_KEY_SECRET', 'placeholder_secret_
 RAZORPAY_WEBHOOK_SECRET = os.environ.get('RAZORPAY_WEBHOOK_SECRET', 'placeholder_webhook_secret')
 RAZORPAY_CURRENCY = os.environ.get('RAZORPAY_CURRENCY', 'INR')
 
+# MSG91 WhatsApp Business API Configuration
+MSG91_AUTH_KEY = os.environ.get('MSG91_AUTH_KEY', '')
+MSG91_WHATSAPP_NUMBER = os.environ.get('MSG91_WHATSAPP_NUMBER', '917997022999')
+MSG91_WHATSAPP_TEMPLATE = os.environ.get('MSG91_WHATSAPP_TEMPLATE', 'booking_confirmation')
+
 BOOKING_HOLD_DURATION_MINUTES = 15
 
 SITE_ID = 1
