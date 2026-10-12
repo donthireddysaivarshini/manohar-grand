@@ -9,7 +9,9 @@ from django.conf import settings
 from apps.bookings.models import Booking
 from apps.bookings.notifications import (
     send_booking_whatsapp_confirmation,
+    send_admin_new_booking_alert,
     extract_booking_template_parameters,
+    extract_admin_booking_template_parameters,
     format_phone_number_for_whatsapp,
 )
 
@@ -21,26 +23,39 @@ class Command(BaseCommand):
         parser.add_argument(
             '--phone',
             type=str,
-            help="Target phone number (e.g. 917997022999 or 7997044999)",
+            help="Target phone number (e.g. 917997022999 or 8179993330)",
         )
         parser.add_argument(
             '--ref',
             type=str,
             help="Optional existing Booking reference to use (e.g. MG-2026-A8A27)",
         )
+        parser.add_argument(
+            '--target',
+            type=str,
+            choices=['customer', 'admin', 'both'],
+            default='both',
+            help="Which notification to test: 'customer', 'admin', or 'both' (default)",
+        )
 
     def handle(self, *args, **options):
         phone = options.get('phone')
         ref = options.get('ref')
+        target = options.get('target', 'both')
 
         auth_key = getattr(settings, 'MSG91_AUTH_KEY', '') or ''
         sender = getattr(settings, 'MSG91_WHATSAPP_NUMBER', '917997022999')
-        template = getattr(settings, 'MSG91_WHATSAPP_TEMPLATE', 'booking_confirmation')
+        cust_template = getattr(settings, 'MSG91_WHATSAPP_TEMPLATE', 'booking_confirmation')
+        admin_template = getattr(settings, 'MSG91_ADMIN_TEMPLATE', 'admin_new_booking_alert')
+        admin_number = getattr(settings, 'MSG91_ADMIN_WHATSAPP_NUMBER', '918179993330')
 
         self.stdout.write(self.style.NOTICE("=== MSG91 WhatsApp Notification Test ==="))
-        self.stdout.write(f"Sender Number   : {sender}")
-        self.stdout.write(f"Template Name   : {template}")
-        self.stdout.write(f"AuthKey Config  : {'[Configured]' if auth_key else '[Not Configured - Mock Mode]'}")
+        self.stdout.write(f"Sender Number       : {sender}")
+        self.stdout.write(f"Customer Template   : {cust_template}")
+        self.stdout.write(f"Admin Template      : {admin_template}")
+        self.stdout.write(f"Admin Target Phone  : {admin_number}")
+        self.stdout.write(f"AuthKey Status      : {'[Configured]' if auth_key else '[Not Configured - Mock Mode]'}")
+        self.stdout.write(f"Testing Target      : {target.upper()}")
 
         booking = None
         if ref:
@@ -50,41 +65,70 @@ class Command(BaseCommand):
                 return
 
         if not booking:
-            # Pick latest confirmed or existing booking
             booking = Booking.objects.order_by('-created_at').first()
 
         if not booking:
             self.stderr.write(self.style.ERROR("No bookings found in database. Create a booking first."))
             return
 
-        # Override phone if passed explicitly
         if phone:
             booking.guest_phone = phone
 
-        params = extract_booking_template_parameters(booking)
-        dest_phone = format_phone_number_for_whatsapp(booking.guest_phone)
+        # 1. Customer Notification Test
+        if target in ('customer', 'both'):
+            self.stdout.write(self.style.HTTP_INFO("\n--- Testing [1/2] Customer Notification ---"))
+            cust_phone = format_phone_number_for_whatsapp(booking.guest_phone)
+            cust_params = extract_booking_template_parameters(booking)
+            self.stdout.write(f"Recipient: {cust_phone}")
+            self.stdout.write("Extracted 9 Customer Parameters:")
+            labels = [
+                "{{1}} Guest Name",
+                "{{2}} Booking ID",
+                "{{3}} Room Category",
+                "{{4}} Rooms Booked",
+                "{{5}} Adults Count",
+                "{{6}} Children Count",
+                "{{7}} Check-in Date",
+                "{{8}} Check-out Date",
+                "{{9}} Total Paid",
+            ]
+            for label, val in zip(labels, cust_params):
+                self.stdout.write(f"  • {label:<22}: {val}")
 
-        self.stdout.write("\nExtracted 9 Template Parameters:")
-        labels = [
-            "{{1}} Guest Name",
-            "{{2}} Booking ID",
-            "{{3}} Room Category",
-            "{{4}} Rooms Booked",
-            "{{5}} Adults Count",
-            "{{6}} Children Count",
-            "{{7}} Check-in Date",
-            "{{8}} Check-out Date",
-            "{{9}} Total Paid",
-        ]
-        for label, val in zip(labels, params):
-            self.stdout.write(f"  • {label:<22}: {val}")
+            cust_result = send_booking_whatsapp_confirmation(booking)
+            if cust_result.get('mock'):
+                self.stdout.write(self.style.WARNING("  Result: [MOCK MODE] Success!"))
+            elif cust_result.get('success'):
+                self.stdout.write(self.style.SUCCESS(f"  Result: [LIVE SUCCESS] {cust_result.get('response')}"))
+            else:
+                self.stdout.write(self.style.ERROR(f"  Result: [FAILED] {cust_result}"))
 
-        self.stdout.write(f"\nDispatching to: {dest_phone} ...")
-        result = send_booking_whatsapp_confirmation(booking)
+        # 2. Admin Notification Test
+        if target in ('admin', 'both'):
+            self.stdout.write(self.style.HTTP_INFO("\n--- Testing [2/2] Admin Notification ---"))
+            adm_phone = format_phone_number_for_whatsapp(admin_number)
+            adm_params = extract_admin_booking_template_parameters(booking)
+            self.stdout.write(f"Recipient: {adm_phone}")
+            self.stdout.write("Extracted 10 Admin Parameters:")
+            labels = [
+                "{{1}} Booking ID",
+                "{{2}} Guest Name",
+                "{{3}} Guest Phone",
+                "{{4}} Room Category",
+                "{{5}} Rooms Booked",
+                "{{6}} Adults Count",
+                "{{7}} Children Count",
+                "{{8}} Check-in Date",
+                "{{9}} Check-out Date",
+                "{{10}} Total Paid",
+            ]
+            for label, val in zip(labels, adm_params):
+                self.stdout.write(f"  • {label:<22}: {val}")
 
-        if result.get('mock'):
-            self.stdout.write(self.style.WARNING("\n[MOCK MODE] Success! Add MSG91_AUTH_KEY to .env to send live message."))
-        elif result.get('success'):
-            self.stdout.write(self.style.SUCCESS(f"\n[LIVE DISPATCH SUCCESS] Status {result.get('status_code')}: {result.get('response')}"))
-        else:
-            self.stdout.write(self.style.ERROR(f"\n[DISPATCH FAILED]: {result}"))
+            adm_result = send_admin_new_booking_alert(booking)
+            if adm_result.get('mock'):
+                self.stdout.write(self.style.WARNING("  Result: [MOCK MODE] Success!"))
+            elif adm_result.get('success'):
+                self.stdout.write(self.style.SUCCESS(f"  Result: [LIVE SUCCESS] {adm_result.get('response')}"))
+            else:
+                self.stdout.write(self.style.ERROR(f"  Result: [FAILED] {adm_result}"))

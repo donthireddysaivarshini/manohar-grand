@@ -1,6 +1,8 @@
 """
 MSG91 WhatsApp Notification Service for Hotel Manohar Grand.
-Dispatches automated, template-based booking confirmation vouchers to guests via WhatsApp Cloud API.
+Dispatches automated, template-based booking confirmations:
+1. Customer Voucher: Sent to the guest's mobile number using 'booking_confirmation' template.
+2. Admin Alert: Sent to hotel management at 8179993330 using 'admin_new_booking_alert' template.
 """
 import re
 import logging
@@ -50,7 +52,7 @@ def format_phone_number_for_whatsapp(phone: Optional[str]) -> str:
 
 def extract_booking_template_parameters(booking) -> List[str]:
     """
-    Extracts the 9 required template parameters matching the approved WhatsApp template:
+    Extracts the 9 required template parameters for the customer's 'booking_confirmation' template:
     {{1}}: Guest Name
     {{2}}: Booking ID
     {{3}}: Room Category
@@ -61,39 +63,25 @@ def extract_booking_template_parameters(booking) -> List[str]:
     {{8}}: Check-out Date
     {{9}}: Total Amount Paid
     """
-    # 1. Guest Name
     guest_name = (booking.guest_name or "Guest").strip()
-
-    # 2. Booking Reference
     booking_ref = booking.booking_reference
 
-    # 3. Room Category (e.g. Deluxe AC Room)
     category_names = []
     for br in booking.rooms.all():
         if br.category and br.category.name not in category_names:
             category_names.append(br.category.name)
     room_category_str = ", ".join(category_names) if category_names else "Standard Room"
 
-    # 4. Total Rooms Booked
     total_rooms = booking.total_rooms_count or 1
     rooms_str = str(total_rooms)
-
-    # 5. Adults Count
     adults_str = str(booking.total_adults if booking.total_adults is not None else 1)
-
-    # 6. Children Count
     children_str = str(booking.total_children if booking.total_children is not None else 0)
 
-    # 7. Check-in Date (e.g. 15 Oct 2026)
     check_in_str = booking.check_in_date.strftime("%d %b %Y") if booking.check_in_date else "-"
-
-    # 8. Check-out Date (e.g. 17 Oct 2026)
     check_out_str = booking.check_out_date.strftime("%d %b %Y") if booking.check_out_date else "-"
 
-    # 9. Total Amount Paid
     if hasattr(booking, 'price_snapshot') and booking.price_snapshot:
         gross_val = booking.price_snapshot.gross_total
-        # Format as e.g. 3,358 or 3358
         total_paid_str = f"{gross_val:,.2f}".replace(".00", "")
     else:
         total_paid_str = "0"
@@ -111,79 +99,147 @@ def extract_booking_template_parameters(booking) -> List[str]:
     ]
 
 
+def extract_admin_booking_template_parameters(booking) -> List[str]:
+    """
+    Extracts the 10 required template parameters for the admin's 'admin_new_booking_alert' template:
+    {{1}}: Booking ID
+    {{2}}: Guest Name
+    {{3}}: Guest Phone
+    {{4}}: Room Category
+    {{5}}: Rooms Booked
+    {{6}}: Adult Count
+    {{7}}: Child Count
+    {{8}}: Check-in Date
+    {{9}}: Check-out Date
+    {{10}}: Total Amount Paid
+    """
+    booking_ref = booking.booking_reference
+    guest_name = (booking.guest_name or "Guest").strip()
+    guest_phone = booking.guest_phone or "-"
+
+    category_names = []
+    for br in booking.rooms.all():
+        if br.category and br.category.name not in category_names:
+            category_names.append(br.category.name)
+    room_category_str = ", ".join(category_names) if category_names else "Standard Room"
+
+    total_rooms = booking.total_rooms_count or 1
+    rooms_str = str(total_rooms)
+    adults_str = str(booking.total_adults if booking.total_adults is not None else 1)
+    children_str = str(booking.total_children if booking.total_children is not None else 0)
+
+    check_in_str = booking.check_in_date.strftime("%d %b %Y") if booking.check_in_date else "-"
+    check_out_str = booking.check_out_date.strftime("%d %b %Y") if booking.check_out_date else "-"
+
+    if hasattr(booking, 'price_snapshot') and booking.price_snapshot:
+        gross_val = booking.price_snapshot.gross_total
+        total_paid_str = f"{gross_val:,.2f}".replace(".00", "")
+    else:
+        total_paid_str = "0"
+
+    return [
+        booking_ref,
+        guest_name,
+        guest_phone,
+        room_category_str,
+        rooms_str,
+        adults_str,
+        children_str,
+        check_in_str,
+        check_out_str,
+        total_paid_str,
+    ]
+
+
+def _call_msg91_whatsapp_api(
+    to_phone: str,
+    template_name: str,
+    parameters: List[str],
+    booking_reference: str,
+    recipient_type: str = "customer"
+) -> Dict[str, Any]:
+    """Helper to dispatch payload to MSG91 WhatsApp endpoint."""
+    auth_key = getattr(settings, 'MSG91_AUTH_KEY', '') or ''
+    sender_number = getattr(settings, 'MSG91_WHATSAPP_NUMBER', '917997022999') or '917997022999'
+
+    if not auth_key:
+        logger.info(
+            f"[MSG91 Mock - {recipient_type.upper()}] No MSG91_AUTH_KEY. Mock message to {to_phone} ({template_name}) for {booking_reference} with params: {parameters}"
+        )
+        return {
+            "success": True,
+            "mock": True,
+            "recipient_type": recipient_type,
+            "phone": to_phone,
+            "template": template_name,
+            "parameters": parameters,
+        }
+
+    url = "https://control.msg91.com/api/v5/whatsapp/whatsapp-outbound-message/bulk/"
+    headers = {
+        "authkey": auth_key,
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+
+    body_parameters = [{"type": "text", "text": str(p)} for p in parameters]
+
+    payload = {
+        "integrated_number": sender_number,
+        "content_type": "template",
+        "payload": {
+            "to": to_phone,
+            "type": "template",
+            "template": {
+                "name": template_name,
+                "language": {
+                    "code": "en",
+                    "policy": "deterministic",
+                },
+                "components": [
+                    {
+                        "type": "body",
+                        "parameters": body_parameters,
+                    }
+                ],
+            },
+        },
+    }
+
+    response = requests.post(url, json=payload, headers=headers, timeout=10)
+    resp_data = response.json() if response.headers.get('content-type', '').startswith('application/json') else {"raw": response.text}
+
+    logger.info(
+        f"[MSG91 WhatsApp - {recipient_type.upper()}] Sent to {to_phone} for {booking_reference}. Status: {response.status_code}, Response: {resp_data}"
+    )
+
+    return {
+        "success": response.status_code in (200, 201),
+        "status_code": response.status_code,
+        "response": resp_data,
+        "recipient_type": recipient_type,
+    }
+
+
 def send_booking_whatsapp_confirmation(booking) -> Dict[str, Any]:
-    """
-    Authoritative function to dispatch a WhatsApp booking confirmation message via MSG91.
-    Guarantees:
-    - Never raises unhandled exceptions or interrupts checkout transactions.
-    - Sanitizes destination phone number.
-    - Gracefully mocks if MSG91_AUTH_KEY is not configured yet.
-    - Records AuditLog of dispatch status.
-    """
+    """Dispatches WhatsApp confirmation voucher to the customer."""
     try:
         phone = format_phone_number_for_whatsapp(booking.guest_phone)
         if not phone:
             logger.warning(
-                f"[MSG91 WhatsApp] Skipped notification: Booking {booking.booking_reference} has invalid or missing guest phone '{booking.guest_phone}'."
+                f"[MSG91 WhatsApp] Skipped customer notification: Booking {booking.booking_reference} has invalid guest phone '{booking.guest_phone}'."
             )
             return {"success": False, "reason": "Missing or invalid phone number"}
 
-        auth_key = getattr(settings, 'MSG91_AUTH_KEY', '') or ''
-        sender_number = getattr(settings, 'MSG91_WHATSAPP_NUMBER', '917997022999') or '917997022999'
         template_name = getattr(settings, 'MSG91_WHATSAPP_TEMPLATE', 'booking_confirmation') or 'booking_confirmation'
-
         params = extract_booking_template_parameters(booking)
 
-        # Mock mode if AuthKey has not been entered into settings
-        if not auth_key:
-            logger.info(
-                f"[MSG91 WhatsApp Mock] No MSG91_AUTH_KEY configured. Mock message to {phone} for {booking.booking_reference} with params: {params}"
-            )
-            return {
-                "success": True,
-                "mock": True,
-                "phone": phone,
-                "template": template_name,
-                "parameters": params,
-            }
-
-        # Real MSG91 API Payload
-        url = "https://control.msg91.com/api/v5/whatsapp/whatsapp-outbound-message/bulk/"
-        headers = {
-            "authkey": auth_key,
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-        }
-
-        body_parameters = [{"type": "text", "text": str(p)} for p in params]
-
-        payload = {
-            "integrated_number": sender_number,
-            "content_type": "template",
-            "payload": {
-                "to": phone,
-                "type": "template",
-                "template": {
-                    "name": template_name,
-                    "language": {
-                        "code": "en",
-                        "policy": "deterministic",
-                    },
-                    "components": [
-                        {
-                            "type": "body",
-                            "parameters": body_parameters,
-                        }
-                    ],
-                },
-            },
-        }
-
-        response = requests.post(url, json=payload, headers=headers, timeout=10)
-        resp_data = response.json() if response.headers.get('content-type', '').startswith('application/json') else {"raw": response.text}
-
-        logger.info(
-            f"[MSG91 WhatsApp] Sent confirmation to {phone} for {booking.booking_reference}. Status: {response.status_code}, Response: {resp_data}"
+        result = _call_msg91_whatsapp_api(
+            to_phone=phone,
+            template_name=template_name,
+            parameters=params,
+            booking_reference=booking.booking_reference,
+            recipient_type="customer"
         )
 
         record_audit_log(
@@ -195,30 +251,74 @@ def send_booking_whatsapp_confirmation(booking) -> Dict[str, Any]:
             new_values={
                 'channel': 'whatsapp',
                 'recipient': phone,
-                'status_code': response.status_code,
-                'response': resp_data,
+                'type': 'customer_voucher',
+                'result': result,
             },
-            reason=f"WhatsApp booking confirmation dispatched via MSG91 for {booking.booking_reference}",
+            reason=f"Customer WhatsApp voucher dispatched via MSG91 for {booking.booking_reference}",
         )
-
-        return {
-            "success": response.status_code in (200, 201),
-            "status_code": response.status_code,
-            "response": resp_data,
-        }
+        return result
 
     except Exception as exc:
-        logger.error(f"[MSG91 WhatsApp Error] Failed sending message for {booking.booking_reference}: {exc}", exc_info=True)
-        return {
-            "success": False,
-            "error": str(exc),
-        }
+        logger.error(f"[MSG91 WhatsApp Error] Failed sending customer voucher for {booking.booking_reference}: {exc}", exc_info=True)
+        return {"success": False, "error": str(exc)}
+
+
+def send_admin_new_booking_alert(booking) -> Dict[str, Any]:
+    """Dispatches real-time WhatsApp alert to hotel admin (8179993330) when a new booking is confirmed."""
+    try:
+        raw_admin_phone = getattr(settings, 'MSG91_ADMIN_WHATSAPP_NUMBER', '918179993330') or '918179993330'
+        admin_phone = format_phone_number_for_whatsapp(raw_admin_phone)
+
+        if not admin_phone:
+            logger.warning(f"[MSG91 WhatsApp] Skipped admin alert: Invalid admin phone '{raw_admin_phone}'.")
+            return {"success": False, "reason": "Missing or invalid admin phone number"}
+
+        template_name = getattr(settings, 'MSG91_ADMIN_TEMPLATE', 'admin_new_booking_alert') or 'admin_new_booking_alert'
+        params = extract_admin_booking_template_parameters(booking)
+
+        result = _call_msg91_whatsapp_api(
+            to_phone=admin_phone,
+            template_name=template_name,
+            parameters=params,
+            booking_reference=booking.booking_reference,
+            recipient_type="admin"
+        )
+
+        record_audit_log(
+            action='notification',
+            resource_type='Booking',
+            resource_id=str(booking.id),
+            actor=None,
+            old_values=None,
+            new_values={
+                'channel': 'whatsapp',
+                'recipient': admin_phone,
+                'type': 'admin_booking_alert',
+                'result': result,
+            },
+            reason=f"Admin WhatsApp alert dispatched to {admin_phone} for {booking.booking_reference}",
+        )
+        return result
+
+    except Exception as exc:
+        logger.error(f"[MSG91 WhatsApp Error] Failed sending admin alert for {booking.booking_reference}: {exc}", exc_info=True)
+        return {"success": False, "error": str(exc)}
+
+
+def send_all_booking_confirmations(booking) -> Dict[str, Any]:
+    """Sends both the Customer Confirmation Voucher AND the Admin Alert."""
+    customer_res = send_booking_whatsapp_confirmation(booking)
+    admin_res = send_admin_new_booking_alert(booking)
+    return {
+        "customer": customer_res,
+        "admin": admin_res,
+    }
 
 
 def send_booking_whatsapp_async(booking) -> None:
     """
-    Fires the WhatsApp notification in a separate daemon thread so it does not add
+    Fires both WhatsApp notifications in a separate daemon thread so it does not add
     any latency to the user checkout HTTP response.
     """
-    thread = threading.Thread(target=send_booking_whatsapp_confirmation, args=(booking,), daemon=True)
+    thread = threading.Thread(target=send_all_booking_confirmations, args=(booking,), daemon=True)
     thread.start()
