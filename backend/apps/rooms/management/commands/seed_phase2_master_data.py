@@ -48,14 +48,15 @@ class Command(BaseCommand):
                 ),
                 'included_adults': 2,
                 'included_children': 0,
-                'max_total_occupancy': 2,
+                'max_adults': 3,
+                'max_total_occupancy': 4,
                 'display_order': 2,
                 'is_active': True,
             }
         )
         status_text = "Created" if nac_created else "Preserved Existing"
         self.stdout.write(self.style.SUCCESS(
-            f"  - [{status_text}] Category: Non-AC Room (Current DB Occupancy: {nac_category.max_total_occupancy} PAX [UNRESOLVED: 2 vs 3 PAX])"
+            f"  - [{status_text}] Category: Non-AC Room (Current DB Occupancy: {nac_category.max_total_occupancy} PAX, Max Adults: {nac_category.max_adults})"
         ))
 
         # 2. Master Amenities Definition (Generic & Confirmed Hotel Features)

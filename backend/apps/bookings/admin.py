@@ -58,7 +58,8 @@ class BookingAdmin(admin.ModelAdmin):
                 'source',
                 'check_in_date',
                 'check_out_date',
-                ('total_adults', 'total_children'),
+                'total_adults',
+                'total_children',
             )
         }),
         ('Financial Price Breakdown & Taxes', {
@@ -246,13 +247,18 @@ class BookingAdmin(admin.ModelAdmin):
         super().save_related(request, form, formsets, change)
         obj = form.instance
         if obj.rooms.exists():
-            # Ensure price snapshot exists
-            if not hasattr(obj, 'price_snapshot') or obj.price_snapshot is None:
-                try:
-                    from apps.pricing.services import create_booking_price_snapshot
-                    create_booking_price_snapshot(obj)
-                except Exception as exc:
-                    self.message_user(request, f"Note: Could not auto-generate price snapshot: {exc}", level=messages.INFO)
+            try:
+                from apps.pricing.services import create_booking_price_snapshot
+                snapshot = create_booking_price_snapshot(obj)
+                if snapshot:
+                    extra_text = f" (Includes extra guest charges: ₹{snapshot.extra_guest_total})" if snapshot.extra_guest_total > 0 else ""
+                    self.message_user(
+                        request,
+                        f"Financial price snapshot generated: Gross Total ₹{snapshot.gross_total}{extra_text}.",
+                        level=messages.SUCCESS
+                    )
+            except Exception as exc:
+                self.message_user(request, f"Note: Could not calculate price snapshot: {exc}", level=messages.WARNING)
         else:
             self.message_user(
                 request,
