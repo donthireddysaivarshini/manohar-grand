@@ -175,16 +175,16 @@ export const GuestOccupancyPopover: React.FC<GuestOccupancyPopoverProps> = ({
               <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
               <div className="space-y-1">
                 <p className="font-bold text-amber-950">
-                  Occupancy &amp; Extra Charges Policy:
+                  Room Occupancy &amp; Pricing:
                 </p>
                 <p className="text-[11px] text-amber-900 leading-snug">
-                  • <strong>Base Room Tariff:</strong> Includes <strong>2 Adults</strong> per room.
+                  • <strong>Standard Room Price:</strong> Includes up to <strong>2 Adults</strong> per room.
                 </p>
                 <p className="text-[11px] text-amber-900 leading-snug">
-                  • <strong>3rd Adult Surcharge:</strong> ₹350/night (Max 3 adults/room).
+                  • <strong>Additional Adult:</strong> ₹350/night for a 3rd adult (Max 3 adults/room).
                 </p>
                 <p className="text-[11px] text-amber-900 leading-snug">
-                  • <strong>Extra Child Surcharge:</strong> ₹300/night (Age 0-9, max 1 child/room). Children aged 10+ count as adults.
+                  • <strong>Additional Child:</strong> ₹300/night (Age 0-9, max 1 child/room). Children aged 10+ count as adults.
                 </p>
               </div>
             </div>

@@ -283,7 +283,7 @@ export const ConfirmationPage: React.FC = () => {
                 {/* Authoritative Financial Breakdown */}
                 <div className="flex flex-col gap-2 p-4 rounded-lg bg-neutral-light border border-neutral-border text-xs print-avoid-break">
                   <div className="flex justify-between text-neutral-secondary">
-                    <span>Room Tariff Subtotal</span>
+                    <span>Room Price (2 Adults included)</span>
                     <span className="font-semibold text-neutral-dark">
                       {formatCurrencyINR(roomSubtotal)}
                     </span>
@@ -292,12 +292,12 @@ export const ConfirmationPage: React.FC = () => {
                   {extraGuestTotal > 0 && (
                     <div className="flex flex-col gap-0.5 py-1.5 px-2.5 rounded bg-amber-50 border border-amber-200">
                       <div className="flex justify-between text-amber-900 font-semibold">
-                        <span>Extra Guest Surcharge</span>
+                        <span>Extra Guest Charge</span>
                         <span className="font-bold">+{formatCurrencyINR(extraGuestTotal)}</span>
                       </div>
                       <div className="text-[10px] text-amber-800">
-                        {extraAdultTotal > 0 && `• 3rd Adult: ${extraAdults || 1} guest (${formatCurrencyINR(extraAdultTotal)}) `}
-                        {extraChildTotal > 0 && `• Extra Child: ${extraChildren || 1} child (${formatCurrencyINR(extraChildTotal)})`}
+                        {extraAdultTotal > 0 && `• Additional Adult: ${extraAdults || 1} guest (${formatCurrencyINR(extraAdultTotal)}) `}
+                        {extraChildTotal > 0 && `• Additional Child: ${extraChildren || 1} child (${formatCurrencyINR(extraChildTotal)})`}
                       </div>
                     </div>
                   )}
@@ -341,7 +341,7 @@ export const ConfirmationPage: React.FC = () => {
                       <strong>Mandatory ID:</strong> Original Aadhar Card is required for every guest upon arrival (Primary guest 18+).
                     </li>
                     <li>
-                      <strong>Occupancy Policy:</strong> Base room tariff includes 2 Adults. Additional 3rd adult surcharge (₹350/night) and extra child (₹300/night) are included in confirmed total.
+                      <strong>Guest Pricing Policy:</strong> Room price covers 2 adults. Additional adult (₹350/night) and extra child (₹300/night) are included in confirmed total.
                     </li>
                     <li>
                       <strong>Bedding:</strong> All bedrooms feature premium Wakefit Memory Foam mattresses.

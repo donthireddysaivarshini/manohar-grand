@@ -184,19 +184,19 @@ export const CheckoutSummary: React.FC = () => {
         {/* Price Breakdown from Server Snapshot */}
         <div className="flex flex-col gap-2 pt-2 border-t border-neutral-border text-xs">
           <div className="flex justify-between text-neutral-secondary">
-            <span>Room Subtotal</span>
+            <span>Room Price ({checkoutSummary?.total_rooms_count || totalSelectedRoomsCount || 1} Rooms • 2 Adults included)</span>
             <span className="font-semibold text-neutral-dark">
               {formatCurrencyINR(roomSubtotal)}
             </span>
           </div>
 
-          {/* Extra Guest Surcharge (3rd Person / Extra Adult / Child) */}
+          {/* Extra Guest Charge */}
           {extraGuestTotal > 0 && (
             <div className="flex flex-col gap-1 py-2 px-2.5 rounded-lg bg-amber-50/90 border border-amber-200">
               <div className="flex items-center justify-between font-semibold text-amber-900">
                 <span className="flex items-center gap-1.5">
                   <Info className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                  <span>Extra Guest Surcharge</span>
+                  <span>Extra Guest Charge</span>
                 </span>
                 <span className="font-bold text-amber-950">
                   +{formatCurrencyINR(extraGuestTotal)}
@@ -205,16 +205,16 @@ export const CheckoutSummary: React.FC = () => {
               <div className="text-[11px] text-amber-800/90 pl-5 flex flex-col gap-0.5">
                 {extraAdultTotal > 0 && (
                   <span>
-                    • 3rd Adult: {extraAdults || 1} guest × ₹350/night × {displayNights} {displayNights === 1 ? 'night' : 'nights'} ({formatCurrencyINR(extraAdultTotal)})
+                    • Additional Adult: {extraAdults || 1} guest × ₹350/night × {displayNights} {displayNights === 1 ? 'night' : 'nights'} ({formatCurrencyINR(extraAdultTotal)})
                   </span>
                 )}
                 {extraChildTotal > 0 && (
                   <span>
-                    • Extra Child: {extraChildren || 1} child × ₹300/night × {displayNights} {displayNights === 1 ? 'night' : 'nights'} ({formatCurrencyINR(extraChildTotal)})
+                    • Additional Child: {extraChildren || 1} child × ₹300/night × {displayNights} {displayNights === 1 ? 'night' : 'nights'} ({formatCurrencyINR(extraChildTotal)})
                   </span>
                 )}
                 <span className="text-[10px] text-amber-700 italic">
-                  Base tariff covers 2 adults per room
+                  (Standard room price includes 2 adults)
                 </span>
               </div>
             </div>
@@ -260,8 +260,8 @@ export const CheckoutSummary: React.FC = () => {
           <div className="flex items-start gap-1.5 text-amber-900 bg-amber-50/70 p-2 rounded-lg border border-amber-200/80">
             <Info className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
             <div className="space-y-0.5 leading-tight">
-              <span className="font-bold block">Occupancy &amp; Extra Guest Policy:</span>
-              <span>Base tariff covers 2 Adults. 3rd Adult: ₹350/night • Extra Child: ₹300/night.</span>
+              <span className="font-bold block">Guest Pricing Policy:</span>
+              <span>Room price covers 2 adults. Additional adult: ₹350/night • Additional child (under 10): ₹300/night.</span>
             </div>
           </div>
           <div className="flex items-start gap-1.5 text-brand font-medium">
