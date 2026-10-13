@@ -14,8 +14,10 @@ class BookingGuestInline(admin.TabularInline):
 
 class BookingRoomInline(admin.TabularInline):
     model = BookingRoom
-    extra = 0
-    readonly_fields = ['created_at', 'updated_at']
+    extra = 1
+    verbose_name = "Room Category Selection"
+    verbose_name_plural = "BOOKING ROOMS (Select Category & Quantity Below)"
+    fields = ['category', 'room_quantity', 'physical_room']
 
 
 from django.utils.html import format_html
