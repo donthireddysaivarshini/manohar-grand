@@ -24,10 +24,10 @@ export const RoomSpecGrid: React.FC<RoomSpecGridProps> = ({ category }) => {
 
   const specs = [
     {
-      label: 'Occupancy',
-      value: `Up to ${category.included_adults || 2} Adults (Max ${category.max_total_occupancy || 2} Guests)`,
+      label: 'Occupancy & Surcharges',
+      value: `Base: 2 Adults • Max: ${category.max_total_occupancy || 4} Guests (3rd Adult: ₹350/n, Child: ₹300/n)`,
       icon: <Users className="w-5 h-5 text-brand" />,
-      badge: 'Authoritative',
+      badge: 'Transparent Tariff',
     },
     {
       label: 'Bedding & Mattress',

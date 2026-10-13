@@ -94,8 +94,7 @@ export const GuestOccupancyPopover: React.FC<GuestOccupancyPopoverProps> = ({
                 </button>
               </div>
             </div>
-
-            {/* Adults Stepper */}
+            {/* Adults Stepper */}
             <div className="flex items-center justify-between border-t border-neutral-border/60 pt-3">
               <div>
                 <div className="flex items-center gap-1.5">
@@ -104,7 +103,10 @@ export const GuestOccupancyPopover: React.FC<GuestOccupancyPopoverProps> = ({
                     Max 3 / room
                   </span>
                 </div>
-                <span className="text-[11px] text-neutral-secondary">Age 10+ years</span>
+                <span className="text-[11px] text-neutral-secondary block">Age 10+ years</span>
+                <span className="text-[10px] font-semibold text-amber-800 block">
+                  Base covers 2 • 3rd adult: ₹350/night
+                </span>
               </div>
               <div className="flex items-center gap-2.5">
                 <button
@@ -139,7 +141,10 @@ export const GuestOccupancyPopover: React.FC<GuestOccupancyPopoverProps> = ({
                     Max 1 / room
                   </span>
                 </div>
-                <span className="text-[11px] text-neutral-secondary">Age 0 to 9 years</span>
+                <span className="text-[11px] text-neutral-secondary block">Age 0 to 9 years</span>
+                <span className="text-[10px] font-semibold text-amber-800 block">
+                  Extra child: ₹300/night
+                </span>
               </div>
               <div className="flex items-center gap-2.5">
                 <button
@@ -166,14 +171,20 @@ export const GuestOccupancyPopover: React.FC<GuestOccupancyPopoverProps> = ({
             </div>
 
             {/* Policy Notice Box */}
-            <div className="rounded-lg bg-neutral-light/80 border border-neutral-border/60 p-2.5 text-[11px] text-neutral-secondary flex items-start gap-2">
-              <Info className="w-3.5 h-3.5 text-brand shrink-0 mt-0.5" />
+            <div className="rounded-lg bg-amber-50/80 border border-amber-200/80 p-3 text-[11px] text-amber-900 flex items-start gap-2.5">
+              <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
               <div className="space-y-1">
-                <p>
-                  <strong>Hotel Policy:</strong> Max 3 Adults and 1 Child (under 10 yrs) per room.
+                <p className="font-bold text-amber-950">
+                  Occupancy &amp; Extra Charges Policy:
                 </p>
-                <p className="text-[10px] text-neutral-dark/80">
-                   <strong>Children above 10 years:</strong> Must be counted as Adults (max 3 adults/room).
+                <p className="text-[11px] text-amber-900 leading-snug">
+                  • <strong>Base Room Tariff:</strong> Includes <strong>2 Adults</strong> per room.
+                </p>
+                <p className="text-[11px] text-amber-900 leading-snug">
+                  • <strong>3rd Adult Surcharge:</strong> ₹350/night (Max 3 adults/room).
+                </p>
+                <p className="text-[11px] text-amber-900 leading-snug">
+                  • <strong>Extra Child Surcharge:</strong> ₹300/night (Age 0-9, max 1 child/room). Children aged 10+ count as adults.
                 </p>
               </div>
             </div>

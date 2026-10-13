@@ -10,6 +10,7 @@ import {
   AlertCircle,
   Loader2,
   LogIn,
+  Info,
 } from 'lucide-react';
 import { Card, CardContent } from '../common/Card';
 import { Badge } from '../common/Badge';
@@ -92,13 +93,28 @@ export const BookingSummaryCard: React.FC = () => {
     ? parseFloat(String(livePricing.room_subtotal))
     : estimatedRoomSubtotal;
 
+  const extraGuestTotal = livePricing
+    ? parseFloat(String(livePricing.extra_guest_total || 0))
+    : 0;
+
+  const extraAdultTotal = livePricing
+    ? parseFloat(String(livePricing.extra_adult_total || 0))
+    : 0;
+
+  const extraChildTotal = livePricing
+    ? parseFloat(String(livePricing.extra_child_total || 0))
+    : 0;
+
+  const extraAdults = livePricing?.extra_adults ?? Math.max(0, searchParams.adults - (totalSelectedRoomsCount * 2));
+  const extraChildren = livePricing?.extra_children ?? 0;
+
   const taxAmount = livePricing
     ? parseFloat(String(livePricing.tax_amount))
-    : Math.round(roomSubtotal * 0.05);
+    : Math.round((roomSubtotal + extraGuestTotal) * 0.05);
 
   const grossTotal = livePricing
     ? parseFloat(String(livePricing.gross_total))
-    : roomSubtotal + taxAmount;
+    : roomSubtotal + extraGuestTotal + taxAmount;
 
   const taxLabel = livePricing
     ? livePricing.tax_type === 'fixed'
@@ -269,6 +285,36 @@ export const BookingSummaryCard: React.FC = () => {
               </span>
             </div>
 
+            {/* Extra Guest Surcharge (3rd Person / Extra Adult / Child) */}
+            {extraGuestTotal > 0 && (
+              <div className="flex flex-col gap-1 py-2 px-2.5 rounded-lg bg-amber-50/90 border border-amber-200">
+                <div className="flex items-center justify-between font-semibold text-amber-900">
+                  <span className="flex items-center gap-1.5">
+                    <Info className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                    <span>Extra Guest Surcharge</span>
+                  </span>
+                  <span className="font-bold text-amber-950">
+                    +{formatCurrencyINR(extraGuestTotal)}
+                  </span>
+                </div>
+                <div className="text-[11px] text-amber-800/90 pl-5 flex flex-col gap-0.5">
+                  {extraAdultTotal > 0 && (
+                    <span>
+                      • 3rd Adult: {extraAdults} guest{extraAdults > 1 ? 's' : ''} × ₹350/night × {nightsCount} {nightsCount === 1 ? 'night' : 'nights'} ({formatCurrencyINR(extraAdultTotal)})
+                    </span>
+                  )}
+                  {extraChildTotal > 0 && (
+                    <span>
+                      • Extra Child: {extraChildren} child{extraChildren > 1 ? 'ren' : ''} × ₹300/night × {nightsCount} {nightsCount === 1 ? 'night' : 'nights'} ({formatCurrencyINR(extraChildTotal)})
+                    </span>
+                  )}
+                  <span className="text-[10px] text-amber-700 italic">
+                    Base tariff covers 2 adults per room
+                  </span>
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center justify-between text-neutral-secondary">
               <span className="flex items-center gap-1">
                 <span>{taxLabel}</span>
@@ -301,6 +347,13 @@ export const BookingSummaryCard: React.FC = () => {
           <div className="flex items-start gap-1.5">
             <CheckCircle2 className="w-3.5 h-3.5 text-feedback-success shrink-0 mt-0.5" />
             <span>Instant 15-minute hold upon reservation lock</span>
+          </div>
+          <div className="flex items-start gap-1.5 text-amber-900 bg-amber-50/70 p-2 rounded-lg border border-amber-200/80">
+            <Info className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+            <div className="space-y-0.5 leading-tight">
+              <span className="font-bold block">Occupancy &amp; Extra Charges Policy:</span>
+              <span>Base tariff covers 2 Adults. 3rd Adult: ₹350/night extra • Extra Child: ₹300/night extra.</span>
+            </div>
           </div>
           <div className="flex items-start gap-1.5 text-brand font-medium">
             <ShieldAlert className="w-3.5 h-3.5 text-brand shrink-0 mt-0.5" />

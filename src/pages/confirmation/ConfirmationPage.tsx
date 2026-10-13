@@ -117,6 +117,11 @@ export const ConfirmationPage: React.FC = () => {
   const advancePaid = pricing ? parseFloat(String(pricing.advance_amount_due)) : 0;
   const balanceDue = pricing ? parseFloat(String(pricing.balance_amount_due)) : 0;
   const roomSubtotal = pricing ? parseFloat(String(pricing.room_subtotal)) : 0;
+  const extraGuestTotal = pricing ? parseFloat(String(pricing.extra_guest_total || 0)) : 0;
+  const extraAdultTotal = pricing ? parseFloat(String(pricing.extra_adult_total || 0)) : 0;
+  const extraChildTotal = pricing ? parseFloat(String(pricing.extra_child_total || 0)) : 0;
+  const extraAdults = pricing?.extra_adults ?? 0;
+  const extraChildren = pricing?.extra_children ?? 0;
   const taxAmount = pricing ? parseFloat(String(pricing.tax_amount)) : 0;
   const taxRate = pricing ? pricing.tax_rate_percent : 5;
 
@@ -283,6 +288,20 @@ export const ConfirmationPage: React.FC = () => {
                       {formatCurrencyINR(roomSubtotal)}
                     </span>
                   </div>
+
+                  {extraGuestTotal > 0 && (
+                    <div className="flex flex-col gap-0.5 py-1.5 px-2.5 rounded bg-amber-50 border border-amber-200">
+                      <div className="flex justify-between text-amber-900 font-semibold">
+                        <span>Extra Guest Surcharge</span>
+                        <span className="font-bold">+{formatCurrencyINR(extraGuestTotal)}</span>
+                      </div>
+                      <div className="text-[10px] text-amber-800">
+                        {extraAdultTotal > 0 && `• 3rd Adult: ${extraAdults || 1} guest (${formatCurrencyINR(extraAdultTotal)}) `}
+                        {extraChildTotal > 0 && `• Extra Child: ${extraChildren || 1} child (${formatCurrencyINR(extraChildTotal)})`}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex justify-between text-neutral-secondary">
                     <span>Goods &amp; Services Tax (GST {taxRate}%)</span>
                     <span className="font-semibold text-neutral-dark">
@@ -320,6 +339,9 @@ export const ConfirmationPage: React.FC = () => {
                   <ul className="text-[11px] text-neutral-600 space-y-1 pl-4 list-disc">
                     <li>
                       <strong>Mandatory ID:</strong> Original Aadhar Card is required for every guest upon arrival (Primary guest 18+).
+                    </li>
+                    <li>
+                      <strong>Occupancy Policy:</strong> Base room tariff includes 2 Adults. Additional 3rd adult surcharge (₹350/night) and extra child (₹300/night) are included in confirmed total.
                     </li>
                     <li>
                       <strong>Bedding:</strong> All bedrooms feature premium Wakefit Memory Foam mattresses.

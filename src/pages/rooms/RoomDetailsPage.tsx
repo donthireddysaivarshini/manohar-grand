@@ -186,31 +186,17 @@ export const RoomDetailsPage: React.FC = () => {
 
               {/* Occupancy & Parking Callouts */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {isAc ? (
-                  <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-200 flex items-start gap-3.5 shadow-2xs">
-                    <div className="w-9 h-9 rounded-lg bg-white border border-neutral-200 flex items-center justify-center shrink-0 text-brand shadow-xs">
-                      <Users className="w-4 h-4" />
-                    </div>
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-xs font-bold text-neutral-dark">Guest Occupancy</span>
-                      <p className="text-xs text-neutral-600 leading-relaxed">
-                        Included tariff for {category.included_adults} adults. Max total occupancy: {category.max_total_occupancy} guests.
-                      </p>
-                    </div>
+                <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-200 flex items-start gap-3.5 shadow-2xs">
+                  <div className="w-9 h-9 rounded-lg bg-white border border-neutral-200 flex items-center justify-center shrink-0 text-brand shadow-xs">
+                    <Users className="w-4 h-4" />
                   </div>
-                ) : (
-                  <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-200 flex items-start gap-3.5 shadow-2xs">
-                    <div className="w-9 h-9 rounded-lg bg-white border border-neutral-200 flex items-center justify-center shrink-0 text-brand shadow-xs">
-                      <Users className="w-4 h-4" />
-                    </div>
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-xs font-bold text-neutral-dark">Standard Occupancy</span>
-                      <p className="text-xs text-neutral-600 leading-relaxed">
-                        Comfortable accommodation for <strong>up to {category.included_adults || 2} guests</strong>.
-                      </p>
-                    </div>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-xs font-bold text-neutral-dark">Guest Occupancy &amp; Tariff</span>
+                    <p className="text-xs text-neutral-600 leading-relaxed">
+                      Base tariff covers <strong>2 Adults</strong>. 3rd Adult: <strong>₹350/night</strong> • Extra child (under 10 yrs): <strong>₹300/night</strong>. Max occupancy: {category.max_total_occupancy || 4} guests.
+                    </p>
                   </div>
-                )}
+                </div>
 
                 <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-200 flex items-start gap-3.5 shadow-2xs">
                   <div className="w-9 h-9 rounded-lg bg-white border border-neutral-200 flex items-center justify-center shrink-0 text-brand shadow-xs">

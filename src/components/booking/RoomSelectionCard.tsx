@@ -82,7 +82,7 @@ export const RoomSelectionCard: React.FC<RoomSelectionCardProps> = ({
                 {/* Price Display */}
                 <div className="text-left sm:text-right mt-2 sm:mt-0">
                   <span className="text-[11px] text-neutral-secondary font-medium block">
-                    Base tariff
+                    Base tariff (2 Adults)
                   </span>
                   <div className="flex items-baseline sm:justify-end gap-1">
                     <span className="text-2xl font-black text-brand">
@@ -91,6 +91,9 @@ export const RoomSelectionCard: React.FC<RoomSelectionCardProps> = ({
                     <span className="text-xs text-neutral-secondary font-medium">/ night</span>
                   </div>
                   <span className="text-[10px] text-neutral-400 block -mt-0.5">Excl. 5% GST</span>
+                  <span className="text-[10px] text-amber-700 font-semibold block mt-0.5">
+                    3rd Adult: +₹350/n • Extra Child: +₹300/n
+                  </span>
                 </div>
               </div>
 
@@ -98,7 +101,7 @@ export const RoomSelectionCard: React.FC<RoomSelectionCardProps> = ({
               <div className="flex flex-wrap items-center gap-3 text-xs text-neutral-secondary py-2 border-y border-neutral-border/60">
                 <span className="flex items-center gap-1.5 font-medium">
                   <Users className="w-3.5 h-3.5 text-brand" />
-                  Up to {availability.maxAdultsPerRoom || availability.maxTotalOccupancy || 2} Guests per room
+                  Up to {availability.maxAdultsPerRoom || availability.maxTotalOccupancy || 3} Guests (2 in Base Tariff)
                 </span>
                 <span className="flex items-center gap-1.5 font-medium">
                   <Bed className="w-3.5 h-3.5 text-brand" />
@@ -123,6 +126,10 @@ export const RoomSelectionCard: React.FC<RoomSelectionCardProps> = ({
                     ? 'Spacious climate-controlled room with private attached bathroom, hot water amenities, and daily housekeeping.'
                     : 'Practical, well-ventilated accommodation with ceiling fan cooling, attached private bathroom, and daily housekeeping.')}
               </p>
+
+              <div className="p-2 rounded-lg bg-amber-50/80 border border-amber-200/80 text-[11px] text-amber-900 leading-snug">
+                <strong>Tariff Policy:</strong> Base price includes 2 Adults. Additional 3rd adult is ₹350/night. Extra child (under 10 yrs) is ₹300/night.
+              </div>
             </div>
 
             {/* Room Quantity Selector & Actions */}

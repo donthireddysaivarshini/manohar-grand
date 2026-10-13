@@ -164,6 +164,14 @@ export interface ApiBookingPriceSnapshot {
   currency: string;
   room_subtotal: string | number;
   extra_guest_total: string | number;
+  extra_adult_total?: string | number;
+  extra_child_total?: string | number;
+  extra_adults?: number;
+  extra_children?: number;
+  extra_adult_rate?: string | number;
+  extra_child_rate?: string | number;
+  included_adults?: number;
+  included_children?: number;
   late_checkout_total: string | number;
   miscellaneous_charges: string | number;
   discount_amount: string | number;

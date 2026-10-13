@@ -184,6 +184,43 @@ class PricingQuoteRequestSerializer(serializers.Serializer):
 class BookingPriceSnapshotSerializer(serializers.ModelSerializer):
     """Serializer for immutable BookingPriceSnapshot representation."""
     booking_reference = serializers.CharField(source='booking.booking_reference', read_only=True)
+    extra_adult_total = serializers.SerializerMethodField()
+    extra_child_total = serializers.SerializerMethodField()
+    extra_adults = serializers.SerializerMethodField()
+    extra_children = serializers.SerializerMethodField()
+    extra_adult_rate = serializers.SerializerMethodField()
+    extra_child_rate = serializers.SerializerMethodField()
+    included_adults = serializers.SerializerMethodField()
+    included_children = serializers.SerializerMethodField()
+
+    def _get_itemized(self, obj, key, default):
+        if obj.itemized_breakdown and isinstance(obj.itemized_breakdown, dict):
+            return obj.itemized_breakdown.get(key, default)
+        return default
+
+    def get_extra_adult_total(self, obj):
+        return self._get_itemized(obj, 'extra_adult_total', '0.00')
+
+    def get_extra_child_total(self, obj):
+        return self._get_itemized(obj, 'extra_child_total', '0.00')
+
+    def get_extra_adults(self, obj):
+        return self._get_itemized(obj, 'extra_adults', 0)
+
+    def get_extra_children(self, obj):
+        return self._get_itemized(obj, 'extra_children', 0)
+
+    def get_extra_adult_rate(self, obj):
+        return self._get_itemized(obj, 'extra_adult_rate', '350.00')
+
+    def get_extra_child_rate(self, obj):
+        return self._get_itemized(obj, 'extra_child_rate', '300.00')
+
+    def get_included_adults(self, obj):
+        return self._get_itemized(obj, 'included_adults', 2)
+
+    def get_included_children(self, obj):
+        return self._get_itemized(obj, 'included_children', 1)
 
     class Meta:
         model = BookingPriceSnapshot
@@ -193,6 +230,14 @@ class BookingPriceSnapshotSerializer(serializers.ModelSerializer):
             'currency',
             'room_subtotal',
             'extra_guest_total',
+            'extra_adult_total',
+            'extra_child_total',
+            'extra_adults',
+            'extra_children',
+            'extra_adult_rate',
+            'extra_child_rate',
+            'included_adults',
+            'included_children',
             'late_checkout_total',
             'miscellaneous_charges',
             'discount_amount',

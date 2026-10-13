@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, CheckCircle2, ShieldAlert, Clock } from 'lucide-react';
+import { ShieldCheck, CheckCircle2, ShieldAlert, Clock, Info } from 'lucide-react';
 import { Card, CardContent } from '../common/Card';
 import { Badge } from '../common/Badge';
 import { useBooking } from '../../store/BookingContext';
@@ -50,9 +50,24 @@ export const CheckoutSummary: React.FC = () => {
     ? parseFloat(String(pricing.room_subtotal))
     : selectedRooms.reduce((acc, curr) => acc + curr.ratePerNight * curr.quantity * nightsCount, 0);
 
+  const extraGuestTotal = pricing
+    ? parseFloat(String(pricing.extra_guest_total || 0))
+    : 0;
+
+  const extraAdultTotal = pricing
+    ? parseFloat(String(pricing.extra_adult_total || 0))
+    : 0;
+
+  const extraChildTotal = pricing
+    ? parseFloat(String(pricing.extra_child_total || 0))
+    : 0;
+
+  const extraAdults = pricing?.extra_adults ?? 0;
+  const extraChildren = pricing?.extra_children ?? 0;
+
   const taxAmount = pricing
     ? parseFloat(String(pricing.tax_amount))
-    : Math.round(roomSubtotal * 0.05);
+    : Math.round((roomSubtotal + extraGuestTotal) * 0.05);
 
   const taxLabel = pricing
     ? pricing.tax_type === 'fixed'
@@ -175,6 +190,36 @@ export const CheckoutSummary: React.FC = () => {
             </span>
           </div>
 
+          {/* Extra Guest Surcharge (3rd Person / Extra Adult / Child) */}
+          {extraGuestTotal > 0 && (
+            <div className="flex flex-col gap-1 py-2 px-2.5 rounded-lg bg-amber-50/90 border border-amber-200">
+              <div className="flex items-center justify-between font-semibold text-amber-900">
+                <span className="flex items-center gap-1.5">
+                  <Info className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  <span>Extra Guest Surcharge</span>
+                </span>
+                <span className="font-bold text-amber-950">
+                  +{formatCurrencyINR(extraGuestTotal)}
+                </span>
+              </div>
+              <div className="text-[11px] text-amber-800/90 pl-5 flex flex-col gap-0.5">
+                {extraAdultTotal > 0 && (
+                  <span>
+                    • 3rd Adult: {extraAdults || 1} guest × ₹350/night × {displayNights} {displayNights === 1 ? 'night' : 'nights'} ({formatCurrencyINR(extraAdultTotal)})
+                  </span>
+                )}
+                {extraChildTotal > 0 && (
+                  <span>
+                    • Extra Child: {extraChildren || 1} child × ₹300/night × {displayNights} {displayNights === 1 ? 'night' : 'nights'} ({formatCurrencyINR(extraChildTotal)})
+                  </span>
+                )}
+                <span className="text-[10px] text-amber-700 italic">
+                  Base tariff covers 2 adults per room
+                </span>
+              </div>
+            </div>
+          )}
+
           <div className="flex justify-between text-neutral-secondary">
             <span>{taxLabel}</span>
             <span className="font-semibold text-neutral-dark">
@@ -211,6 +256,13 @@ export const CheckoutSummary: React.FC = () => {
           <div className="flex items-start gap-1.5">
             <CheckCircle2 className="w-3.5 h-3.5 text-feedback-success shrink-0 mt-0.5" />
             <span>Non-refundable direct booking rate</span>
+          </div>
+          <div className="flex items-start gap-1.5 text-amber-900 bg-amber-50/70 p-2 rounded-lg border border-amber-200/80">
+            <Info className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+            <div className="space-y-0.5 leading-tight">
+              <span className="font-bold block">Occupancy &amp; Extra Guest Policy:</span>
+              <span>Base tariff covers 2 Adults. 3rd Adult: ₹350/night • Extra Child: ₹300/night.</span>
+            </div>
           </div>
           <div className="flex items-start gap-1.5 text-brand font-medium">
             <ShieldAlert className="w-3.5 h-3.5 text-brand shrink-0 mt-0.5" />

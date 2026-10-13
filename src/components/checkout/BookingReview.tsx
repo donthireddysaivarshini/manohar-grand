@@ -10,6 +10,7 @@ import {
   AlertCircle,
   Loader2,
   Lock,
+  Info,
 } from 'lucide-react';
 import { Card, CardContent } from '../common/Card';
 import { Badge } from '../common/Badge';
@@ -70,6 +71,11 @@ export const BookingReview: React.FC<BookingReviewProps> = ({ onBackToDetails })
   const advanceAmountDue = pricing ? parseFloat(String(pricing.advance_amount_due)) : 0;
   const grossTotal = pricing ? parseFloat(String(pricing.gross_total)) : 0;
   const roomSubtotal = pricing ? parseFloat(String(pricing.room_subtotal)) : 0;
+  const extraGuestTotal = pricing ? parseFloat(String(pricing.extra_guest_total || 0)) : 0;
+  const extraAdultTotal = pricing ? parseFloat(String(pricing.extra_adult_total || 0)) : 0;
+  const extraChildTotal = pricing ? parseFloat(String(pricing.extra_child_total || 0)) : 0;
+  const extraAdults = pricing?.extra_adults ?? 0;
+  const extraChildren = pricing?.extra_children ?? 0;
   const taxAmount = pricing ? parseFloat(String(pricing.tax_amount)) : 0;
   const taxRate = pricing ? pricing.tax_rate_percent : 5;
 
@@ -354,6 +360,36 @@ export const BookingReview: React.FC<BookingReviewProps> = ({ onBackToDetails })
               </span>
             </div>
 
+            {/* Extra Guest Surcharge (3rd Person / Extra Adult / Child) */}
+            {extraGuestTotal > 0 && (
+              <div className="flex flex-col gap-1 py-2 px-2.5 rounded-lg bg-amber-50/90 border border-amber-200">
+                <div className="flex items-center justify-between font-semibold text-amber-900">
+                  <span className="flex items-center gap-1.5">
+                    <Info className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                    <span>Extra Guest Surcharge</span>
+                  </span>
+                  <span className="font-bold text-amber-950">
+                    +{formatCurrencyINR(extraGuestTotal)}
+                  </span>
+                </div>
+                <div className="text-[11px] text-amber-800/90 pl-5 flex flex-col gap-0.5">
+                  {extraAdultTotal > 0 && (
+                    <span>
+                      • 3rd Adult: {extraAdults || 1} guest × ₹350/night × {nightsCount} {nightsCount === 1 ? 'night' : 'nights'} ({formatCurrencyINR(extraAdultTotal)})
+                    </span>
+                  )}
+                  {extraChildTotal > 0 && (
+                    <span>
+                      • Extra Child: {extraChildren || 1} child × ₹300/night × {nightsCount} {nightsCount === 1 ? 'night' : 'nights'} ({formatCurrencyINR(extraChildTotal)})
+                    </span>
+                  )}
+                  <span className="text-[10px] text-amber-700 italic">
+                    Base tariff covers 2 adults per room
+                  </span>
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-between text-neutral-secondary">
               <span>GST ({taxRate}%)</span>
               <span className="font-semibold text-neutral-dark">
@@ -410,6 +446,15 @@ export const BookingReview: React.FC<BookingReviewProps> = ({ onBackToDetails })
               <p className="text-neutral-600 text-[11px] leading-relaxed">
                 {checkoutSummary?.cancellation_policy ||
                   'Confirmed reservations are strictly non-refundable per hotel direct booking policy.'}
+              </p>
+            </div>
+
+            <div className="p-3 rounded-lg bg-amber-50/70 border border-amber-200/90 sm:col-span-2">
+              <span className="font-bold text-amber-950 block mb-1">
+                👥 Occupancy &amp; Extra Guest Policy
+              </span>
+              <p className="text-amber-900 text-[11px] leading-relaxed">
+                Base tariff covers 2 Adults per room. Surcharge for 3rd adult is ₹350/night. Surcharge for extra child (under 10 years) is ₹300/night. All extra charges are transparently itemized in your total stay cost.
               </p>
             </div>
           </div>

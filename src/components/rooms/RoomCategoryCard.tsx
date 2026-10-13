@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Users, Bed, ArrowRight, Check, Car, Wind, AlertCircle, Sparkles } from 'lucide-react';
+import { Users, Bed, ArrowRight, Check, Car, Wind, Sparkles, Info } from 'lucide-react';
 import { ApiRoomCategory } from '../../types/booking';
 import { Card } from '../common/Card';
 import { Button } from '../common/Button';
@@ -130,23 +130,13 @@ export const RoomCategoryCard: React.FC<RoomCategoryCardProps> = ({ category }) 
           </div>
 
           {/* Occupancy Notice Box */}
-          {isAc ? (
-            <div className="p-2.5 xs:p-3 rounded-xl bg-[#F7F7F7] border border-neutral-200/90 flex items-start gap-2 text-[11px] xs:text-xs text-neutral-600">
-              <AlertCircle className="w-4 h-4 text-brand shrink-0 mt-0.5" />
-              <div className="leading-snug">
-                <strong className="text-neutral-dark">Occupancy: </strong>
-                Extra charge applies for 3rd &amp; 4th guest (confirmed at check-in).
-              </div>
+          <div className="p-2.5 xs:p-3 rounded-xl bg-amber-50/70 border border-amber-200/80 flex items-start gap-2 text-[11px] xs:text-xs text-amber-900">
+            <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <div className="leading-snug">
+              <strong className="text-amber-950">Tariff Policy: </strong>
+              Base rate includes 2 Adults. 3rd Adult: ₹350/night extra • Extra Child: ₹300/night extra.
             </div>
-          ) : (
-            <div className="p-2.5 xs:p-3 rounded-xl bg-[#F7F7F7] border border-neutral-200/90 flex items-start gap-2 text-[11px] xs:text-xs text-neutral-600">
-              <Check className="w-4 h-4 text-feedback-success shrink-0 mt-0.5" />
-              <div className="leading-snug">
-                <strong className="text-neutral-dark">Economical: </strong>
-                Clean, budget stay with Wakefit comfort and attached bath.
-              </div>
-            </div>
-          )}
+          </div>
 
           {/* Checklist of Amenities / Inclusions */}
           <ul className="grid grid-cols-1 xs:grid-cols-2 gap-1.5 text-[11px] xs:text-xs text-neutral-secondary pt-0.5">
