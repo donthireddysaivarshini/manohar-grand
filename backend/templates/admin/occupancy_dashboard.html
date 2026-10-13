@@ -110,41 +110,43 @@
                 <tbody>
                     {% for day in occupancy.daily_occupancy %}
                     <tr>
-                        <td style="text-align: left; padding-left: 15px;" class="font-weight-bold text-dark">
+                        <td style="text-align: left; padding-left: 15px; color: #0f172a; font-weight: 700;">
                             {{ day.date }}
                         </td>
                         <td>
-                            <span class="badge badge-light border px-2 py-1">{{ day.total_operational_rooms }}</span>
+                            <span class="badge px-2 py-1" style="background-color: #f1f5f9; color: #0f172a; border: 1px solid #cbd5e1; font-weight: 700; font-size: 13px;">
+                                {{ day.total_operational_rooms }}
+                            </span>
                         </td>
                         <td>
                             {% if day.rooms_occupied > 0 %}
-                                <span class="badge badge-success font-weight-bold px-2 py-1" style="font-size: 13px;">
+                                <span class="badge font-weight-bold px-2 py-1" style="background-color: #15803d; color: #ffffff; font-size: 13px;">
                                     {{ day.rooms_occupied }} Rooms
                                 </span>
                             {% else %}
-                                <span class="text-muted font-weight-bold">0</span>
+                                <span class="font-weight-bold" style="color: #64748b;">0</span>
                             {% endif %}
                         </td>
                         <td>
                             {% if day.rooms_held > 0 %}
-                                <span class="badge badge-warning font-weight-bold px-2 py-1">
+                                <span class="badge font-weight-bold px-2 py-1" style="background-color: #f59e0b; color: #1e293b; font-size: 13px;">
                                     {{ day.rooms_held }} Held
                                 </span>
                             {% else %}
-                                <span class="text-muted">0</span>
+                                <span style="color: #94a3b8;">0</span>
                             {% endif %}
                         </td>
                         <td>
                             {% if day.rooms_blocked > 0 %}
-                                <span class="badge badge-secondary px-2 py-1">
+                                <span class="badge px-2 py-1" style="background-color: #64748b; color: #ffffff; font-size: 13px;">
                                     {{ day.rooms_blocked }}
                                 </span>
                             {% else %}
-                                <span class="text-muted">0</span>
+                                <span style="color: #94a3b8;">0</span>
                             {% endif %}
                         </td>
                         <td>
-                            <span class="badge badge-primary font-weight-bold px-2 py-1" style="font-size: 13px;">
+                            <span class="badge font-weight-bold px-2 py-1" style="background-color: #0284c7; color: #ffffff; font-size: 13px;">
                                 {{ day.rooms_available }} Available
                             </span>
                         </td>
@@ -153,16 +155,16 @@
                                 <div class="progress progress-xs mr-2" style="width: 60px; height: 8px;">
                                     <div class="progress-bar {% if day.occupancy_rate_percent >= 80 %}bg-danger{% elif day.occupancy_rate_percent >= 40 %}bg-warning{% else %}bg-success{% endif %}" style="width: {{ day.occupancy_rate_percent }}%"></div>
                                 </div>
-                                <span class="font-weight-bold text-dark">{{ day.occupancy_rate_percent }}%</span>
+                                <span class="font-weight-bold" style="color: #0f172a; font-size: 13px;">{{ day.occupancy_rate_percent }}%</span>
                             </div>
                         </td>
                         <td>
                             {% if day.rooms_available == 0 %}
-                                <span class="badge badge-danger font-weight-bold px-2 py-1">SOLD OUT</span>
+                                <span class="badge font-weight-bold px-2 py-1" style="background-color: #dc2626; color: #ffffff; font-size: 11px;">SOLD OUT</span>
                             {% elif day.rooms_occupied > 0 %}
-                                <span class="badge badge-info font-weight-bold px-2 py-1">ACTIVE BOOKINGS</span>
+                                <span class="badge font-weight-bold px-2 py-1" style="background-color: #0284c7; color: #ffffff; font-size: 11px;">ACTIVE BOOKINGS</span>
                             {% else %}
-                                <span class="badge badge-success font-weight-bold px-2 py-1">ALL AVAILABLE</span>
+                                <span class="badge font-weight-bold px-2 py-1" style="background-color: #16a34a; color: #ffffff; font-size: 11px;">ALL AVAILABLE</span>
                             {% endif %}
                         </td>
                     </tr>

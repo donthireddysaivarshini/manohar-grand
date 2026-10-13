@@ -47,13 +47,15 @@ class BookingAdmin(admin.ModelAdmin):
     actions = ['approve_cancellation_and_refund', 'approve_cancellation_zero_refund', 'reject_cancellation_request']
 
     fieldsets = (
-        ('Reservation Core', {
+        ('Reservation Core & Stay Dates', {
+            'description': 'Important: To reserve inventory, you MUST add at least one room under "BOOKING ROOMS" below.',
             'fields': (
                 'booking_reference',
                 'status',
                 'customer',
                 'source',
-                ('check_in_date', 'check_out_date'),
+                'check_in_date',
+                'check_out_date',
                 ('total_adults', 'total_children'),
             )
         }),
@@ -237,6 +239,25 @@ class BookingAdmin(admin.ModelAdmin):
             reason=f"Booking {obj.booking_reference} saved via admin",
             ip_address=request.META.get('REMOTE_ADDR'),
         )
+
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        obj = form.instance
+        if obj.rooms.exists():
+            # Ensure price snapshot exists
+            if not hasattr(obj, 'price_snapshot') or obj.price_snapshot is None:
+                try:
+                    from apps.pricing.services import create_booking_price_snapshot
+                    create_booking_price_snapshot(obj)
+                except Exception as exc:
+                    self.message_user(request, f"Note: Could not auto-generate price snapshot: {exc}", level=messages.INFO)
+        else:
+            self.message_user(
+                request,
+                f"⚠️ ATTENTION: Booking '{obj.booking_reference}' has 0 rooms assigned! "
+                f"You must add at least one room under 'BOOKING ROOMS' below, otherwise it will not deduct inventory or appear in occupancy reports.",
+                level=messages.WARNING
+            )
 
 
 @admin.register(CancellationRequest)
