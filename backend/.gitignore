@@ -1,0 +1,25 @@
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Database
+*.sqlite3
+*.sqlite3-journal
+
+# Python & Virtual Environments
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+.pytest_cache/
+htmlcov/
+.coverage
+*.egg-info/
+
+# Media and Logs
+media/
+logs/
+*.log
