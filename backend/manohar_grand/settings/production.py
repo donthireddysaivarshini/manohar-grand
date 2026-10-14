@@ -28,6 +28,14 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 X_FRAME_OPTIONS = 'DENY'
 
+# Production DRF: Enforce JSON-only renderer (disable browsable API)
+REST_FRAMEWORK = {
+    **REST_FRAMEWORK,
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+    ],
+}
+
 # Database Configuration (PostgreSQL 16+)
 DATABASE_URL = os.environ.get('DATABASE_URL')
 if DATABASE_URL:
