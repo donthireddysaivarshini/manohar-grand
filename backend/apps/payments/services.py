@@ -371,7 +371,7 @@ def confirm_booking_after_verified_payment(
             "payment": f"No payment order found matching gateway order ID '{razorpay_order_id}'."
         })
 
-    booking = Booking.objects.select_for_update().select_related('customer', 'price_snapshot').get(id=payment_order.booking_id)
+    booking = Booking.objects.select_for_update().get(id=payment_order.booking_id)
 
     # 2. Idempotency Check
     if payment_order.status == 'captured' and booking.status == 'confirmed':
@@ -686,7 +686,7 @@ class PaymentReconciliationService:
         """
         Reconciles payment and booking state for a single reservation.
         """
-        booking = Booking.objects.select_for_update().select_related('customer', 'price_snapshot').get(id=booking.id)
+        booking = Booking.objects.select_for_update().get(id=booking.id)
         payment_orders = list(PaymentOrder.objects.select_for_update().filter(booking=booking).order_by('-created_at'))
 
         captured_orders = [po for po in payment_orders if po.status == 'captured']
