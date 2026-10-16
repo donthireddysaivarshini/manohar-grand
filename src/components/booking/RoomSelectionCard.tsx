@@ -98,7 +98,7 @@ export const RoomSelectionCard: React.FC<RoomSelectionCardProps> = ({
               </div>
 
               {/* Quick Specs */}
-              <div className="flex flex-wrap items-center gap-3 text-xs text-neutral-secondary py-2 border-y border-neutral-border/60">
+              <div className="flex flex-col gap-1.5 text-xs text-neutral-secondary py-2.5 border-y border-neutral-border/60">
                 <span className="flex items-center gap-1.5 font-medium">
                   <Users className="w-3.5 h-3.5 text-brand" />
                   Up to {availability.maxAdultsPerRoom || availability.maxTotalOccupancy || 3} Guests (2 Adults included)

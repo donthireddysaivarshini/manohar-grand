@@ -165,12 +165,9 @@ export const Footer: React.FC = () => {
 
               <div className="flex items-center gap-2.5">
                 <Mail className="w-4 h-4 text-brand shrink-0" />
-                <a
-                  href={`mailto:${config.email}`}
-                  className="text-xs text-neutral-400 hover:text-white transition-colors break-all"
-                >
+                <span className="text-xs text-neutral-400 select-all break-all">
                   {config.email}
-                </a>
+                </span>
               </div>
 
               <div className="flex items-start gap-2.5 pt-1 border-t border-neutral-800/80">

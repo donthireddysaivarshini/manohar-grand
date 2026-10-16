@@ -150,12 +150,9 @@ export const ContactPage: React.FC = () => {
                         <h4 className="text-xs font-bold text-neutral-dark uppercase tracking-wider">
                           Email Inquiries
                         </h4>
-                        <a
-                          href={`mailto:${config.email}`}
-                          className="text-xs text-neutral-secondary hover:text-brand font-medium mt-0.5 block"
-                        >
+                        <span className="text-xs text-neutral-dark font-medium mt-0.5 block select-all">
                           {config.email}
-                        </a>
+                        </span>
                       </div>
                     </div>
 

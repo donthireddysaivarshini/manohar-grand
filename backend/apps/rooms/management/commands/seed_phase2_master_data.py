@@ -244,9 +244,25 @@ class Command(BaseCommand):
 
         # 5. Hotel Configuration (Singleton)
         hotel_config = HotelConfiguration.get_solo()
+        if not hotel_config.primary_phone:
+            hotel_config.primary_phone = '+91 79970 44999'
+        if not hotel_config.secondary_phone:
+            hotel_config.secondary_phone = '+91 79970 22999'
+        if not hotel_config.email:
+            hotel_config.email = 'manohargrand1@gmail.com'
+        if not hotel_config.address:
+            hotel_config.address = 'D.No. 15-31-2M-15/5/1, Beside Nexus Hyderabad Mall, Near JNTU Metro Station, KPHB Colony, Kukatpally, Hyderabad, Telangana 500072'
+        if not hotel_config.near_landmark:
+            hotel_config.near_landmark = 'Beside Nexus Hyderabad Mall & Walkable distance from JNTU Metro Station'
+        if not hotel_config.google_maps_url:
+            hotel_config.google_maps_url = 'https://maps.google.com/?q=Manohar+Grand+Kukatpally+Hyderabad'
+        if not hotel_config.google_maps_embed_url:
+            hotel_config.google_maps_embed_url = 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3805.2831!2d78.3908!3d17.4947!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bcb91f3a5555555%3A0x0!2sManohar%20Grand!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin'
+        hotel_config.save()
+
         self.stdout.write(self.style.SUCCESS(
             f"  - [Initialized Singleton] Hotel Configuration: {hotel_config.hotel_name} "
-            f"(Check-in: {hotel_config.standard_check_in_time}, Check-out: {hotel_config.standard_check_out_time}, Max Late: {hotel_config.max_late_checkout_hours}h)"
+            f"(Phone: {hotel_config.primary_phone}, Address: {hotel_config.address[:30]}...)"
         ))
 
         # 6. Structural CMS Sections (Idempotent, preserves admin modifications)

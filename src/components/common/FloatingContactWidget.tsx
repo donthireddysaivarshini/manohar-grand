@@ -140,24 +140,22 @@ export const FloatingContactWidget: React.FC = () => {
               <ArrowUpRight className="w-4 h-4 text-emerald-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
             </a>
 
-            {/* Email */}
-            <a
-              href={`mailto:${config.email}`}
-              className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-neutral-200/80 hover:border-emerald-500 hover:bg-emerald-50/40 transition-all group"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-neutral-100 text-neutral-700 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-colors">
-                  <Mail className="w-4 h-4" />
-                </div>
-                <div className="text-left truncate max-w-[170px]">
-                  <span className="text-[10px] font-semibold text-neutral-500 block uppercase">Email Reception</span>
-                  <span className="text-[11px] font-bold text-neutral-900 group-hover:text-emerald-600 transition-colors truncate block">
-                    {config.email}
-                  </span>
+            {/* Email (Static Display - No Redirection) */}
+            {config.email && (
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-neutral-200/80">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-neutral-100 text-neutral-700 flex items-center justify-center">
+                    <Mail className="w-4 h-4" />
+                  </div>
+                  <div className="text-left truncate max-w-[200px]">
+                    <span className="text-[10px] font-semibold text-neutral-500 block uppercase">Email Reception</span>
+                    <span className="text-[11px] font-bold text-neutral-900 select-all truncate block">
+                      {config.email}
+                    </span>
+                  </div>
                 </div>
               </div>
-              <ArrowUpRight className="w-4 h-4 text-neutral-400 group-hover:text-emerald-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
-            </a>
+            )}
           </div>
 
           {/* Full Contact Page Footer Link */}
