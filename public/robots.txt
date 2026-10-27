@@ -1,0 +1,24 @@
+# Production Robots.txt for Manohar Grand Hotel Platform
+# Canonical Domain: https://www.manohargrand.com
+
+User-agent: *
+Allow: /
+Allow: /rooms
+Allow: /rooms/*
+Allow: /about
+Allow: /amenities
+Allow: /gallery
+Allow: /contact
+Allow: /corporate-booking
+
+# Disallow private user flows, checkout, and admin routes
+Disallow: /booking/
+Disallow: /checkout
+Disallow: /checkout/
+Disallow: /payment-demo
+Disallow: /account/
+Disallow: /auth/
+Disallow: /admin/
+
+# Sitemap Location
+Sitemap: https://www.manohargrand.com/sitemap.xml

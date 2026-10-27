@@ -10,6 +10,7 @@ import { ScrollReveal } from '../../components/common/ScrollReveal';
 import { useHotelConfig } from '../../store/HotelConfigContext';
 import { cmsApiService } from '../../services/api/cmsApiService';
 import { ApiCMSSection } from '../../types/cms';
+import { SEO } from '../../components/common/SEO';
 
 export const AboutPage: React.FC = () => {
   const { config } = useHotelConfig();
@@ -53,6 +54,11 @@ export const AboutPage: React.FC = () => {
 
   return (
     <div className="flex flex-col w-full">
+      <SEO
+        title="About Us | Manohar Grand Hotel Kukatpally Hyderabad"
+        description="Learn about Manohar Grand, premier hospitality offering 28 contemporary AC & Non-AC rooms beside Nexus Hyderabad Mall, Kukatpally. Dedicated to exceptional comfort."
+        canonical="https://www.manohargrand.com/about"
+      />
       {/* Page Header */}
       <section className="bg-neutral-dark text-white py-12 lg:py-16 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#FE0000_1px,transparent_1px)] [background-size:16px_16px]" />

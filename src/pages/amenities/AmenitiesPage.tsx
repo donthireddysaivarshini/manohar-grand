@@ -10,6 +10,7 @@ import { Icon3D } from '../../components/common/Icon3D';
 import { ScrollReveal } from '../../components/common/ScrollReveal';
 import { cmsApiService } from '../../services/api/cmsApiService';
 import { ApiAmenityItem } from '../../types/cms';
+import { SEO } from '../../components/common/SEO';
 
 export const AmenitiesPage: React.FC = () => {
   const [amenities, setAmenities] = useState<ApiAmenityItem[]>([]);
@@ -33,6 +34,11 @@ export const AmenitiesPage: React.FC = () => {
 
   return (
     <div className="flex flex-col w-full">
+      <SEO
+        title="Hotel Amenities & Services | Manohar Grand Hyderabad"
+        description="Discover amenities at Manohar Grand: 24/7 front desk, high-speed Wi-Fi, elevator access, full power backup, daily housekeeping, and parking beside Nexus Mall Kukatpally."
+        canonical="https://www.manohargrand.com/amenities"
+      />
       {/* Page Header */}
       <Section variant="dark" padding="md" className="border-b border-neutral-800">
         <Container size="xl">

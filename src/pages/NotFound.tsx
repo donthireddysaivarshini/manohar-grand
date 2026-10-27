@@ -4,10 +4,16 @@ import { Container } from '../components/common/Container';
 import { Button } from '../components/common/Button';
 import { Badge } from '../components/common/Badge';
 import { Home } from 'lucide-react';
+import { SEO } from '../components/common/SEO';
 
 export const NotFoundPage: React.FC = () => {
   return (
     <div className="py-20 flex-1 flex items-center justify-center">
+      <SEO
+        title="404 - Page Not Found | Manohar Grand"
+        description="The page you are looking for does not exist."
+        robots="noindex, nofollow"
+      />
       <Container size="md">
         <div className="text-center flex flex-col items-center gap-5 max-w-md mx-auto">
           <Badge variant="error" size="md">

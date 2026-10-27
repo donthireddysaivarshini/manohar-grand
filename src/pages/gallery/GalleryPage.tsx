@@ -7,6 +7,7 @@ import { Button } from '../../components/common/Button';
 import { LightboxModal, LightboxImageItem } from '../../components/common/LightboxModal';
 import { cmsApiService } from '../../services/api/cmsApiService';
 import { ApiGalleryMedia } from '../../types/cms';
+import { SEO } from '../../components/common/SEO';
 
 export const GalleryPage: React.FC = () => {
   const [mediaList, setMediaList] = useState<ApiGalleryMedia[]>([]);
@@ -52,6 +53,11 @@ export const GalleryPage: React.FC = () => {
 
   return (
     <div className="flex flex-col w-full">
+      <SEO
+        title="Photo Gallery | Manohar Grand Hotel Kukatpally"
+        description="View photos of Manohar Grand hotel rooms, reception lobby, corridors, and exterior located beside Nexus Hyderabad Mall, Kukatpally."
+        canonical="https://www.manohargrand.com/gallery"
+      />
       {/* Page Header */}
       <Section variant="dark" padding="md" className="border-b border-neutral-800">
         <Container size="xl">

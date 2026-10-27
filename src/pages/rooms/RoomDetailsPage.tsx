@@ -23,6 +23,7 @@ import { RoomBookingCard } from '../../components/rooms/RoomBookingCard';
 import { Icon3D } from '../../components/common/Icon3D';
 import { roomApiService } from '../../services/api/roomApiService';
 import { ApiRoomCategory } from '../../types/booking';
+import { SEO } from '../../components/common/SEO';
 
 const AMENITY_ICON_MAP: Record<string, React.ReactNode> = {
   'air-conditioning': <Icon3D name="air-conditioning" size="sm" />,
@@ -94,6 +95,11 @@ export const RoomDetailsPage: React.FC = () => {
   if (errorMessage || !category) {
     return (
       <div className="py-20 flex-1 flex items-center justify-center">
+        <SEO
+          title="Room Category Not Found | Manohar Grand"
+          description="The requested room category could not be found."
+          robots="noindex, nofollow"
+        />
         <Container size="md">
           <div className="text-center flex flex-col items-center gap-5 max-w-md mx-auto">
             <Badge variant="error" size="md">
@@ -128,8 +134,31 @@ export const RoomDetailsPage: React.FC = () => {
     category.slug === 'ac-room' ||
     category.name.toLowerCase().includes('ac') && !category.name.toLowerCase().includes('non-ac');
 
+  const roomSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'HotelRoom',
+    name: category.name,
+    description: category.description || `Comfortable ${category.name} at Manohar Grand, Kukatpally Hyderabad.`,
+    bed: 'WAKEFIT Memory Foam Double Bed',
+    occupancy: {
+      '@type': 'QuantitativeValue',
+      maxValue: category.max_adults || 2,
+    },
+    amenityFeature: category.amenities?.map((a) => ({
+      '@type': 'LocationFeatureSpecification',
+      name: typeof a === 'string' ? a : a.name,
+      value: true,
+    })),
+  };
+
   return (
     <div className="flex flex-col w-full">
+      <SEO
+        title={`${category.name} | Manohar Grand Hyderabad`}
+        description={category.description || `Stay in our ${category.name} at Manohar Grand Kukatpally, beside Nexus Mall. Features Wakefit memory foam bed, free Wi-Fi, 24/7 room service & direct booking.`}
+        canonical={`https://www.manohargrand.com/rooms/${category.slug || slug}`}
+        jsonLd={roomSchema}
+      />
       {/* Breadcrumb Navigation Bar */}
       <div className="bg-white border-b border-neutral-border py-3">
         <Container size="xl">

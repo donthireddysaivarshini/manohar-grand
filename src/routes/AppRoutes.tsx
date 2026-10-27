@@ -28,6 +28,7 @@ import { ProfilePage } from '../pages/account/ProfilePage';
 import { AuthCallbackPage } from '../pages/account/AuthCallbackPage';
 import { ReportsPage } from '../pages/admin/ReportsPage';
 import { NotFoundPage } from '../pages/NotFound';
+import { GoogleAnalytics } from '../components/common/GoogleAnalytics';
 
 // Scroll restoration helper
 const ScrollToTop: React.FC = () => {
@@ -44,6 +45,7 @@ export const AppRoutes: React.FC = () => {
   return (
     <>
       <ScrollToTop />
+      <GoogleAnalytics />
       <Routes>
         {/* Main Public Website Layout */}
         <Route element={<MainLayout />}>

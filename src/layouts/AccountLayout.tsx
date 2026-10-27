@@ -7,6 +7,7 @@ import { useAuth } from '../store/AuthContext';
 import { LayoutDashboard, BookOpen, User, LogOut, Loader2, Lock } from 'lucide-react';
 import { Button } from '../components/common/Button';
 import { cn } from '../utils/cn';
+import { SEO } from '../components/common/SEO';
 
 export const AccountLayout: React.FC = () => {
   const { user, isAuthenticated, isLoading, logout, openAuthModal } = useAuth();
@@ -73,6 +74,11 @@ export const AccountLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-neutral-light text-neutral-text antialiased">
+      <SEO
+        title="Guest Account Portal | Manohar Grand"
+        description="Access and manage your bookings and account settings."
+        robots="noindex, nofollow"
+      />
       <Navbar />
 
       {/* Account Hero Bar */}

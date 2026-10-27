@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../store/AuthContext';
 import { Container } from '../../components/common/Container';
 import { Loader2, AlertCircle } from 'lucide-react';
+import { SEO } from '../../components/common/SEO';
 
 export const AuthCallbackPage: React.FC = () => {
   const { hydrate } = useAuth();
@@ -41,6 +42,10 @@ export const AuthCallbackPage: React.FC = () => {
 
   return (
     <div className="py-20 flex-1 flex items-center justify-center min-h-[60vh]">
+      <SEO
+        title="Signing In... | Manohar Grand"
+        robots="noindex, nofollow"
+      />
       <Container size="sm">
         <div className="text-center flex flex-col items-center gap-4 bg-white p-8 rounded-2xl border border-neutral-light shadow-sm">
           {!error ? (

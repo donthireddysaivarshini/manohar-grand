@@ -1,6 +1,7 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Container } from '../../components/common/Container';
 import { BookingSearchWidget } from '../../components/booking/BookingSearchWidget';
+import { SEO } from '../../components/common/SEO';
 import {
   HeroSection,
   WelcomeSection,
@@ -11,13 +12,37 @@ import {
   FinalCTA,
 } from '../../components/sections';
 
-export const HomePage: React.FC = () => {
-  useEffect(() => {
-    document.title = 'Manohar Grand | Hotel & Direct Booking Platform';
-  }, []);
+const HOTEL_SCHEMA = {
+  '@context': 'https://schema.org',
+  '@type': 'Hotel',
+  name: 'Manohar Grand',
+  description: 'Premier hotel offering 28 contemporary AC and Non-AC rooms located beside Nexus Hyderabad Mall, Kukatpally.',
+  url: 'https://www.manohargrand.com',
+  telephone: '+91-7997022999',
+  image: 'https://www.manohargrand.com/logomg.jpeg',
+  priceRange: '₹1,799 - ₹2,999',
+  numberOfRooms: 28,
+  checkinTime: '12:00',
+  checkoutTime: '11:00',
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: 'Beside Nexus Hyderabad Mall, Kukatpally',
+    addressLocality: 'Hyderabad',
+    addressRegion: 'Telangana',
+    postalCode: '500072',
+    addressCountry: 'IN',
+  },
+};
 
+export const HomePage: React.FC = () => {
   return (
     <div className="flex flex-col w-full">
+      <SEO
+        title="Manohar Grand | Luxury Hotel & Rooms in Kukatpally, Hyderabad"
+        description="Book your stay at Manohar Grand, premier hotel beside Nexus Hyderabad Mall, Kukatpally. Featuring 28 premium AC & Non-AC rooms, 24/7 room service & direct booking."
+        canonical="https://www.manohargrand.com/"
+        jsonLd={HOTEL_SCHEMA}
+      />
       {/* 1. Hero Section */}
       <HeroSection />
 

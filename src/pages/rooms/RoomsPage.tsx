@@ -22,6 +22,7 @@ import { ScrollReveal } from '../../components/common/ScrollReveal';
 import { RoomCategoryCard } from '../../components/rooms/RoomCategoryCard';
 import { roomApiService } from '../../services/api/roomApiService';
 import { ApiRoomCategory } from '../../types/booking';
+import { SEO } from '../../components/common/SEO';
 
 export const RoomsPage: React.FC = () => {
   const [categories, setCategories] = useState<ApiRoomCategory[]>([]);
@@ -49,6 +50,11 @@ export const RoomsPage: React.FC = () => {
 
   return (
     <div className="flex flex-col w-full">
+      <SEO
+        title="Rooms & Accommodations | Manohar Grand Hyderabad"
+        description="Explore 28 premium rooms at Manohar Grand Kukatpally. Choose from Deluxe AC and Comfort Non-AC rooms with Wakefit foam mattresses, high-speed Wi-Fi, and 24/7 service."
+        canonical="https://www.manohargrand.com/rooms"
+      />
       {/* Page Header */}
       <Section variant="dark" padding="md" className="border-b border-neutral-800">
         <Container size="xl">

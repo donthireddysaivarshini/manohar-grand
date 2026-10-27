@@ -14,6 +14,7 @@ import { Card, CardContent } from '../../components/common/Card';
 import { useHotelConfig } from '../../store/HotelConfigContext';
 import { Icon3D } from '../../components/common/Icon3D';
 import { ScrollReveal } from '../../components/common/ScrollReveal';
+import { SEO } from '../../components/common/SEO';
 
 export const CorporateBookingPage: React.FC = () => {
   const { config } = useHotelConfig();
@@ -84,6 +85,11 @@ export const CorporateBookingPage: React.FC = () => {
 
   return (
     <div className="flex flex-col w-full">
+      <SEO
+        title="Corporate & Bulk Room Bookings | Manohar Grand Hyderabad"
+        description="Plan corporate stays, group travel, and bulk room bookings at Manohar Grand Kukatpally. Dedicated coordinator, competitive corporate rates, and GST invoicing."
+        canonical="https://www.manohargrand.com/corporate-booking"
+      />
       {/* Page Header Banner */}
       <section className="bg-neutral-dark text-white py-12 lg:py-16 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#FE0000_1px,transparent_1px)] [background-size:16px_16px]" />

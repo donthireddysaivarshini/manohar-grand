@@ -12,6 +12,7 @@ import { roomApiService } from '../../services/api/roomApiService';
 import { CategoryAvailabilityResult, ApiRoomCategory } from '../../types/booking';
 
 import { getCategoryPrimaryImageUrl } from '../../utils/mediaUtils';
+import { SEO } from '../../components/common/SEO';
 
 export const BookingPage: React.FC = () => {
   const {
@@ -80,6 +81,11 @@ export const BookingPage: React.FC = () => {
 
   return (
     <div className="flex flex-col w-full">
+      <SEO
+        title="Book Your Stay | Manohar Grand Hotel"
+        description="Select room availability and book directly at Manohar Grand."
+        robots="noindex, follow"
+      />
       {/* Page Header */}
       <Section variant="dark" padding="md" className="border-b border-neutral-800">
         <Container size="xl">

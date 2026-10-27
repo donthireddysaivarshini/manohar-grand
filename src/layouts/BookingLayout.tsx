@@ -3,10 +3,16 @@ import { Outlet, Link } from 'react-router-dom';
 import { ShieldCheck, ArrowLeft } from 'lucide-react';
 import { Container } from '../components/common/Container';
 import { Logo } from '../components/common/Logo';
+import { SEO } from '../components/common/SEO';
 
 export const BookingLayout: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-neutral-light text-neutral-text antialiased">
+      <SEO
+        title="Direct Reservation | Manohar Grand"
+        description="Secure online room reservation and instant voucher generation."
+        robots="noindex, nofollow"
+      />
       {/* Streamlined Checkout Header */}
       <header className="bg-white border-b border-neutral-border sticky top-0 z-30">
         <Container size="xl">

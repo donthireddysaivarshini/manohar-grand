@@ -3,10 +3,16 @@ import { Container } from '../../components/common/Container';
 import { Badge } from '../../components/common/Badge';
 import { Card, CardContent } from '../../components/common/Card';
 import { UserPlus } from 'lucide-react';
+import { SEO } from '../../components/common/SEO';
 
 export const RegisterPage: React.FC = () => {
   return (
     <div className="py-12 flex-1">
+      <SEO
+        title="Create Account | Manohar Grand"
+        description="Register for a Manohar Grand guest account."
+        robots="noindex, nofollow"
+      />
       <Container size="sm">
         <div className="text-center flex flex-col items-center gap-4">
           <Badge variant="brand" size="md" className="gap-1.5">

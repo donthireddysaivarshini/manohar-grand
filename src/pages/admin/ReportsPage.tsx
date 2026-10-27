@@ -22,6 +22,7 @@ import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/common/Card';
 import { reportApiService, OverviewKPIResponse, BookingReportResponse, OccupancyReportResponse, CategoryPerformanceResponse, RevenueReportResponse, PaymentReportResponse, FrontDeskReportResponse, SourcesReportResponse, RoomUtilizationResponse, OverbookingReportResponse, ReconciliationReportResponse } from '../../services/api/reportApiService';
+import { SEO } from '../../components/common/SEO';
 
 type ReportTab = 'overview' | 'bookings' | 'occupancy' | 'categories' | 'revenue' | 'payments' | 'frontdesk' | 'sources' | 'utilization' | 'overbookings' | 'reconciliation';
 
@@ -140,6 +141,11 @@ export const ReportsPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <SEO
+        title="Admin Reports & KPI Analytics | Manohar Grand"
+        description="Internal management dashboard."
+        robots="noindex, nofollow"
+      />
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-neutral-200 pb-6">
         <div>

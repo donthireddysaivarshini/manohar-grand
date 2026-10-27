@@ -9,6 +9,7 @@ import { Lock, Mail, ShieldCheck, Eye, EyeOff, Loader2, AlertCircle } from 'luci
 import { useAuth } from '../../store/AuthContext';
 
 import { extractErrorMessage } from '../../utils/errorUtils';
+import { SEO } from '../../components/common/SEO';
 
 export const LoginPage: React.FC = () => {
   const { isAuthenticated, login, loginWithGoogle, isLoading } = useAuth();
@@ -67,6 +68,11 @@ export const LoginPage: React.FC = () => {
 
   return (
     <div className="py-16 flex-1 flex items-center justify-center min-h-[70vh]">
+      <SEO
+        title="Sign In | Manohar Grand Guest Portal"
+        description="Sign in to manage your Manohar Grand reservations."
+        robots="noindex, nofollow"
+      />
       <Container size="sm">
         <div className="text-center flex flex-col items-center gap-5">
           <Badge variant="brand" size="md" className="gap-1.5 px-3 py-1">
