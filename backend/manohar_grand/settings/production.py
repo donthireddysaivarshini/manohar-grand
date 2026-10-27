@@ -111,3 +111,41 @@ LOGGING = {
         },
     },
 }
+
+# Production Frontend URL Configuration
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'https://www.manohargrand.com')
+
+# Ensure Jazzmin links use production FRONTEND_URL
+JAZZMIN_SETTINGS = {
+    **JAZZMIN_SETTINGS,
+    "topmenu_links": [
+        {"name": "Home", "url": "admin:index", "permissions": ["auth.view_user"]},
+        {"name": "📊 Daily Occupancy & Reports", "url": "/admin/occupancy-report/", "permissions": ["auth.view_user"]},
+        {"name": "🌐 Analytics Dashboard", "url": f"{FRONTEND_URL}/admin/reports", "new_window": True},
+        {"name": "🏨 Live Site", "url": FRONTEND_URL, "new_window": True},
+    ],
+    "custom_links": {
+        **JAZZMIN_SETTINGS.get("custom_links", {}),
+        "bookings": [
+            {
+                "name": "⚡ Pending Cancellations",
+                "url": "/admin/bookings/cancellationrequest/?status__exact=cancellation_requested",
+                "icon": "fas fa-exclamation-triangle",
+                "permissions": ["auth.view_user"],
+            },
+            {
+                "name": "📊 Daily Occupancy & Forecast",
+                "url": "/admin/occupancy-report/",
+                "icon": "fas fa-chart-pie",
+                "permissions": ["auth.view_user"],
+            },
+            {
+                "name": "🌐 Advanced Analytics Suite",
+                "url": f"{FRONTEND_URL}/admin/reports",
+                "icon": "fas fa-analytics",
+                "permissions": ["auth.view_user"],
+                "new_window": True,
+            }
+        ]
+    }
+}

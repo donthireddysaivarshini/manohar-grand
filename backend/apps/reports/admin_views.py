@@ -2,6 +2,7 @@ from datetime import date, timedelta
 from django.shortcuts import render
 from django.contrib.admin.views.decorators import staff_member_required
 from django.utils import timezone
+from django.conf import settings
 from apps.reports.services import ReportingService
 
 
@@ -19,6 +20,8 @@ def admin_occupancy_dashboard_view(request):
     overview_data = ReportingService.get_overview_kpis()
     frontdesk_data = ReportingService.get_frontdesk_report(target_date_str=today.isoformat())
 
+    frontend_base = getattr(settings, 'FRONTEND_URL', 'https://www.manohargrand.com').rstrip('/')
+
     context = {
         'title': 'Daily Room Occupancy & Booking Forecast',
         'from_date': from_date_str,
@@ -29,5 +32,6 @@ def admin_occupancy_dashboard_view(request):
         'has_permission': True,
         'site_title': 'Manohar Grand Admin',
         'site_header': 'Manohar Grand',
+        'frontend_reports_url': f"{frontend_base}/admin/reports",
     }
     return render(request, 'admin/occupancy_dashboard.html', context)
