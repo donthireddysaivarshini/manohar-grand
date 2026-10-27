@@ -19,7 +19,8 @@ declare global {
  */
 export const GoogleAnalytics: React.FC = () => {
   const location = useLocation();
-  const measurementId = import.meta.env.VITE_GA_MEASUREMENT_ID as string | undefined;
+  const measurementId =
+    (import.meta.env.VITE_GA_MEASUREMENT_ID as string | undefined) || 'G-4GW8PCVJQX';
 
   useEffect(() => {
     // Only initialize if a valid measurement ID (e.g. G-XXXXXXXXXX) is provided
