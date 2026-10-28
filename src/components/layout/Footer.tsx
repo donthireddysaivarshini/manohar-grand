@@ -49,16 +49,19 @@ export const Footer: React.FC = () => {
               >
                 <svg className="w-full h-full" viewBox="0 0 36 36" fill="none">
                   <defs>
-                    <radialGradient id="footer-ig-grad" cx="20%" cy="105%" r="105%" fx="20%" fy="105%">
-                      <stop offset="0%" stopColor="#fdf497" />
-                      <stop offset="10%" stopColor="#fdf497" />
-                      <stop offset="45%" stopColor="#fd5949" />
-                      <stop offset="60%" stopColor="#d6249f" />
-                      <stop offset="90%" stopColor="#285AEB" />
-                    </radialGradient>
+                    <linearGradient id="footer-ig-grad" x1="0%" y1="100%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#FFDC80" />
+                      <stop offset="20%" stopColor="#FEA734" />
+                      <stop offset="40%" stopColor="#FE3E4D" />
+                      <stop offset="65%" stopColor="#FF0C5C" />
+                      <stop offset="85%" stopColor="#D11A91" />
+                      <stop offset="100%" stopColor="#833AB4" />
+                    </linearGradient>
                   </defs>
                   <circle cx="18" cy="18" r="18" fill="url(#footer-ig-grad)" />
-                  <path d="M18 12.2c1.9 0 2.15.01 2.9.04 1.9.09 2.8.99 2.9 2.9.03.74.04 1 .04 2.86s-.01 2.12-.04 2.86c-.09 1.9-.99 2.8-2.9 2.9-.74.03-1 .04-2.9.04s-2.16-.01-2.9-.04c-1.9-.09-2.8-.99-2.9-2.9-.03-.74-.04-1-.04-2.86s.01-2.12.04-2.86c.09-1.9.99-2.8 2.9-2.9.74-.03 1-.04 2.9-.04zm0-1.6c-1.93 0-2.18.01-2.94.04-2.6.12-4.04 1.56-4.15 4.15-.04.76-.04 1-.04 2.94s.01 2.18.04 2.94c.12 2.6 1.56 4.04 4.15 4.15.76.04 1.01.04 2.94.04s2.18-.01 2.94-.04c2.6-.12 4.04-1.56 4.15-4.15.04-.76.04-1.01.04-2.94s-.01-2.18-.04-2.94c-.12-2.6-1.56-4.04-4.15-4.15-.76-.04-1.01-.04-2.94-.04zm0 4a3.4 3.4 0 1 0 0 6.8 3.4 3.4 0 0 0 0-6.8zm0 5.4a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm4.4-5.8a.8.8 0 1 0 0 1.6.8.8 0 0 0 0-1.6z" fill="white" />
+                  <rect x="9" y="9" width="18" height="18" rx="5" stroke="white" strokeWidth="2" fill="none" />
+                  <circle cx="18" cy="18" r="4.5" stroke="white" strokeWidth="2" fill="none" />
+                  <circle cx="22.6" cy="13.4" r="1.1" fill="white" />
                 </svg>
               </a>
             </div>

@@ -206,8 +206,10 @@ export const ContactPage: React.FC = () => {
                           aria-label="Manohar Grand on Instagram"
                           className="px-3.5 py-1.5 rounded-full bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] hover:opacity-95 text-white text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs hover:scale-105 active:scale-95"
                         >
-                          <svg className="w-4 h-4" viewBox="0 0 36 36" fill="none">
-                            <path d="M18 12.2c1.9 0 2.15.01 2.9.04 1.9.09 2.8.99 2.9 2.9.03.74.04 1 .04 2.86s-.01 2.12-.04 2.86c-.09 1.9-.99 2.8-2.9 2.9-.74.03-1 .04-2.9.04s-2.16-.01-2.9-.04c-1.9-.09-2.8-.99-2.9-2.9-.03-.74-.04-1-.04-2.86s.01-2.12.04-2.86c.09-1.9.99-2.8 2.9-2.9.74-.03 1-.04 2.9-.04zm0-1.6c-1.93 0-2.18.01-2.94.04-2.6.12-4.04 1.56-4.15 4.15-.04.76-.04 1-.04 2.94s.01 2.18.04 2.94c.12 2.6 1.56 4.04 4.15 4.15.76.04 1.01.04 2.94.04s2.18-.01 2.94-.04c2.6-.12 4.04-1.56 4.15-4.15.04-.76.04-1.01.04-2.94s-.01-2.18-.04-2.94c-.12-2.6-1.56-4.04-4.15-4.15-.76-.04-1.01-.04-2.94-.04zm0 4a3.4 3.4 0 1 0 0 6.8 3.4 3.4 0 0 0 0-6.8zm0 5.4a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm4.4-5.8a.8.8 0 1 0 0 1.6.8.8 0 0 0 0-1.6z" fill="white" />
+                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                            <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
                           </svg>
                           <span>Instagram</span>
                         </a>
