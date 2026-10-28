@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
 import { Container } from '../../components/common/Container';
 import { Badge } from '../../components/common/Badge';
@@ -14,6 +14,9 @@ import { SEO } from '../../components/common/SEO';
 export const LoginPage: React.FC = () => {
   const { isAuthenticated, login, loginWithGoogle, isLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const redirectTarget = searchParams.get('redirect') || (location.state as any)?.from || '/account/dashboard';
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,9 +26,9 @@ export const LoginPage: React.FC = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/account/dashboard', { replace: true });
+      navigate(redirectTarget, { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, redirectTarget]);
 
   const handleGoogleLogin = useGoogleLogin({
     flow: 'auth-code',
@@ -34,7 +37,7 @@ export const LoginPage: React.FC = () => {
       setIsSubmitting(true);
       try {
         await loginWithGoogle(codeResponse.code);
-        navigate('/account/dashboard', { replace: true });
+        navigate(redirectTarget, { replace: true });
       } catch (err: unknown) {
         setError(extractErrorMessage(err, 'Google sign-in failed. Please try again.'));
       } finally {
@@ -58,7 +61,7 @@ export const LoginPage: React.FC = () => {
     setIsSubmitting(true);
     try {
       await login(email.trim(), password);
-      navigate('/account/dashboard', { replace: true });
+      navigate(redirectTarget, { replace: true });
     } catch (err: unknown) {
       setError(extractErrorMessage(err, 'Invalid email or password credentials.'));
     } finally {

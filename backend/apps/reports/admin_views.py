@@ -1,8 +1,9 @@
 from datetime import date, timedelta
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.contrib.admin.views.decorators import staff_member_required
 from django.utils import timezone
 from django.conf import settings
+from rest_framework_simplejwt.tokens import RefreshToken
 from apps.reports.services import ReportingService
 
 
@@ -20,8 +21,6 @@ def admin_occupancy_dashboard_view(request):
     overview_data = ReportingService.get_overview_kpis()
     frontdesk_data = ReportingService.get_frontdesk_report(target_date_str=today.isoformat())
 
-    frontend_base = getattr(settings, 'FRONTEND_URL', 'https://www.manohargrand.com').rstrip('/')
-
     context = {
         'title': 'Daily Room Occupancy & Booking Forecast',
         'from_date': from_date_str,
@@ -32,6 +31,26 @@ def admin_occupancy_dashboard_view(request):
         'has_permission': True,
         'site_title': 'Manohar Grand Admin',
         'site_header': 'Manohar Grand',
-        'frontend_reports_url': f"{frontend_base}/admin/reports",
+        'frontend_reports_url': '/admin/analytics-bridge/',
     }
     return render(request, 'admin/occupancy_dashboard.html', context)
+
+
+@staff_member_required
+def admin_analytics_bridge_view(request):
+    """
+    Seamless Single Sign-On (SSO) bridge from Django Admin to Frontend Advanced Analytics Suite.
+    Generates a secure JWT token pair for the authenticated staff member and redirects
+    to the frontend reports page, passing tokens so the frontend can auto-authenticate.
+    """
+    frontend_base = getattr(settings, 'FRONTEND_URL', 'https://www.manohargrand.com').rstrip('/')
+    if not frontend_base or 'vercel.app' in frontend_base:
+        frontend_base = 'https://www.manohargrand.com'
+
+    # Generate JWT for current authenticated admin/staff user
+    refresh = RefreshToken.for_user(request.user)
+    access_token = str(refresh.access_token)
+    refresh_token = str(refresh)
+
+    target_url = f"{frontend_base}/admin/reports?token={access_token}&refresh={refresh_token}"
+    return redirect(target_url)

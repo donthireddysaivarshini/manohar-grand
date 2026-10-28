@@ -113,15 +113,26 @@ LOGGING = {
 }
 
 # Production Frontend URL Configuration
-FRONTEND_URL = os.environ.get('FRONTEND_URL', 'https://www.manohargrand.com')
+raw_frontend_url = os.environ.get('FRONTEND_URL', '').strip()
+if not raw_frontend_url or 'vercel.app' in raw_frontend_url or 'manohargrandfrontweb' in raw_frontend_url:
+    FRONTEND_URL = 'https://www.manohargrand.com'
+else:
+    FRONTEND_URL = raw_frontend_url.rstrip('/')
 
-# Ensure Jazzmin links use production FRONTEND_URL
+# Ensure canonical frontend domains are always permitted for CORS & CSRF
+for origin in ['https://www.manohargrand.com', 'https://manohargrand.com', 'https://admin.manohargrand.com']:
+    if origin not in CORS_ALLOWED_ORIGINS:
+        CORS_ALLOWED_ORIGINS.append(origin)
+    if origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(origin)
+
+# Ensure Jazzmin links use SSO bridge and production Live Site URL
 JAZZMIN_SETTINGS = {
     **JAZZMIN_SETTINGS,
     "topmenu_links": [
         {"name": "Home", "url": "admin:index", "permissions": ["auth.view_user"]},
         {"name": "📊 Daily Occupancy & Reports", "url": "/admin/occupancy-report/", "permissions": ["auth.view_user"]},
-        {"name": "🌐 Analytics Dashboard", "url": f"{FRONTEND_URL}/admin/reports", "new_window": True},
+        {"name": "🌐 Analytics Dashboard", "url": "/admin/analytics-bridge/", "new_window": True},
         {"name": "🏨 Live Site", "url": FRONTEND_URL, "new_window": True},
     ],
     "custom_links": {
@@ -141,7 +152,7 @@ JAZZMIN_SETTINGS = {
             },
             {
                 "name": "🌐 Advanced Analytics Suite",
-                "url": f"{FRONTEND_URL}/admin/reports",
+                "url": "/admin/analytics-bridge/",
                 "icon": "fas fa-analytics",
                 "permissions": ["auth.view_user"],
                 "new_window": True,

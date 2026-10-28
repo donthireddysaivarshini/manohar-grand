@@ -79,7 +79,7 @@ JAZZMIN_SETTINGS = {
     "topmenu_links": [
         {"name": "Home", "url": "admin:index", "permissions": ["auth.view_user"]},
         {"name": "📊 Daily Occupancy & Reports", "url": "/admin/occupancy-report/", "permissions": ["auth.view_user"]},
-        {"name": "🌐 Analytics Dashboard", "url": f"{FRONTEND_URL}/admin/reports", "new_window": True},
+        {"name": "🌐 Analytics Dashboard", "url": "/admin/analytics-bridge/", "new_window": True},
         {"name": "🏨 Live Site", "url": FRONTEND_URL, "new_window": True},
     ],
     "custom_links": {
@@ -98,7 +98,7 @@ JAZZMIN_SETTINGS = {
             },
             {
                 "name": "🌐 Advanced Analytics Suite",
-                "url": f"{FRONTEND_URL}/admin/reports",
+                "url": "/admin/analytics-bridge/",
                 "icon": "fas fa-analytics",
                 "permissions": ["auth.view_user"],
                 "new_window": True,

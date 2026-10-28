@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   BarChart3, 
   Calendar, 
@@ -14,7 +15,9 @@ import {
   ChevronRight,
   Filter,
   Ban,
-  Zap
+  Zap,
+  Lock,
+  LogIn
 } from 'lucide-react';
 import { StopSellManagerModal } from '../../components/admin/StopSellManagerModal';
 import { QuickOfflineBookingModal } from '../../components/admin/QuickOfflineBookingModal';
@@ -22,6 +25,7 @@ import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/common/Card';
 import { reportApiService, OverviewKPIResponse, BookingReportResponse, OccupancyReportResponse, CategoryPerformanceResponse, RevenueReportResponse, PaymentReportResponse, FrontDeskReportResponse, SourcesReportResponse, RoomUtilizationResponse, OverbookingReportResponse, ReconciliationReportResponse } from '../../services/api/reportApiService';
+import { getAccessToken, setTokens, BACKEND_URL } from '../../lib/api';
 import { SEO } from '../../components/common/SEO';
 
 type ReportTab = 'overview' | 'bookings' | 'occupancy' | 'categories' | 'revenue' | 'payments' | 'frontdesk' | 'sources' | 'utilization' | 'overbookings' | 'reconciliation';
@@ -30,6 +34,21 @@ export const ReportsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ReportTab>('overview');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Process SSO bridge tokens passed from Django Admin
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    const refresh = params.get('refresh');
+
+    if (token) {
+      setTokens(token, refresh || undefined);
+      params.delete('token');
+      params.delete('refresh');
+      const cleanSearch = params.toString() ? `?${params.toString()}` : '';
+      window.history.replaceState({}, document.title, `${window.location.pathname}${cleanSearch}`);
+    }
+  }, []);
 
   // Date filters
   const todayStr = new Date().toISOString().split('T')[0];
@@ -124,6 +143,18 @@ export const ReportsPage: React.FC = () => {
   useEffect(() => {
     fetchReportData();
   }, [activeTab, fromDate, toDate, frontDeskDate]);
+
+  const isAuthError = Boolean(
+    error && (
+      error.toLowerCase().includes('permission') ||
+      error.toLowerCase().includes('authentication') ||
+      error.toLowerCase().includes('credentials') ||
+      error.toLowerCase().includes('401') ||
+      error.toLowerCase().includes('403') ||
+      error.toLowerCase().includes('unauthorized') ||
+      !getAccessToken()
+    )
+  );
 
   const tabs: Array<{ id: ReportTab; label: string; icon: React.ReactNode }> = [
     { id: 'overview', label: 'Overview & KPIs', icon: <TrendingUp className="w-4 h-4" /> },
@@ -277,13 +308,48 @@ export const ReportsPage: React.FC = () => {
         ))}
       </div>
 
-      {/* Error Display */}
-      {error && (
+      {/* Staff Authentication / Permissions State */}
+      {isAuthError ? (
+        <Card variant="bordered" className="bg-amber-50/70 border-amber-200 p-8 rounded-2xl shadow-sm text-center">
+          <div className="max-w-lg mx-auto flex flex-col items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-700 shadow-sm">
+              <Lock className="w-7 h-7" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-neutral-900 tracking-tight">Staff Authentication Required</h2>
+              <p className="text-sm text-neutral-600 mt-1.5 leading-relaxed">
+                The Advanced Analytics Suite requires active receptionist, manager, or administrator credentials to view live occupancy, revenue ledgers, and operational manifests.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full justify-center pt-2">
+              <a
+                href={`${BACKEND_URL}/admin/analytics-bridge/`}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold rounded-xl shadow-sm transition-all"
+              >
+                <Zap className="w-4 h-4 text-amber-400" />
+                Launch SSO via Django Admin
+              </a>
+              <Link
+                to="/account/login?redirect=/admin/reports"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-white hover:bg-neutral-50 text-neutral-800 border border-neutral-300 text-xs font-bold rounded-xl shadow-sm transition-all"
+              >
+                <LogIn className="w-4 h-4 text-neutral-600" />
+                Sign In with Staff Account
+              </Link>
+            </div>
+
+            <p className="text-[11px] text-neutral-400 mt-1">
+              Already logged into <a href={`${BACKEND_URL}/admin/`} className="underline hover:text-neutral-600" target="_blank" rel="noopener noreferrer">Django Admin</a>? Click <strong>Launch SSO via Django Admin</strong> above.
+            </p>
+          </div>
+        </Card>
+      ) : error ? (
         <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm flex items-center justify-between">
           <span>{error}</span>
           <Button variant="outline" size="sm" onClick={fetchReportData}>Retry</Button>
         </div>
-      )}
+      ) : null}
 
       {/* Loading State */}
       {loading && !overviewData && (

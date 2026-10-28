@@ -268,6 +268,30 @@ class TestReportsRBACAndSecurity:
             assert api_client.get(reverse('reports:report-overbookings')).status_code == status.HTTP_200_OK
             assert api_client.get(reverse('reports:report-reconciliation')).status_code == status.HTTP_200_OK
 
+    def test_admin_analytics_bridge_requires_staff(self, client, customer_user):
+        """Unauthenticated and customer users must be redirected to admin login."""
+        # Unauthenticated
+        resp = client.get(reverse('admin-analytics-bridge'))
+        assert resp.status_code == 302
+        assert '/admin/login/' in resp.url
+
+        # Customer user without staff permissions
+        client.force_login(customer_user)
+        resp = client.get(reverse('admin-analytics-bridge'))
+        assert resp.status_code == 302
+        assert '/admin/login/' in resp.url
+
+    def test_admin_analytics_bridge_redirects_with_jwt_tokens(self, client, manager_user):
+        """Authenticated staff member receives a 302 redirect with JWT tokens."""
+        client.force_login(manager_user)
+        resp = client.get(reverse('admin-analytics-bridge'))
+        assert resp.status_code == 302
+        assert '/admin/reports' in resp.url
+        assert 'token=' in resp.url
+        assert 'refresh=' in resp.url
+        # Must not lead to vercel.app
+        assert 'vercel.app' not in resp.url
+
 
 @pytest.mark.django_db
 class TestReportCalculationsAndOutputs:

@@ -6,11 +6,12 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
 from core.views import health_check
-from apps.reports.admin_views import admin_occupancy_dashboard_view
+from apps.reports.admin_views import admin_occupancy_dashboard_view, admin_analytics_bridge_view
 
 urlpatterns = [
-    # Custom Staff & Manager Occupancy & Booking Dashboard
+    # Custom Staff & Manager Occupancy & Booking Dashboard & SSO Bridge
     path('admin/occupancy-report/', admin_occupancy_dashboard_view, name='admin-occupancy-report'),
+    path('admin/analytics-bridge/', admin_analytics_bridge_view, name='admin-analytics-bridge'),
 
     # Developer/Superadmin Django Admin (Private)
     path('admin/', admin.site.urls),
