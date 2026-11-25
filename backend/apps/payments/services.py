@@ -220,7 +220,13 @@ class RazorpayPaymentProvider:
             hashlib.sha256
         ).hexdigest()
 
-        return hmac.compare_digest(expected_sig, str(signature).strip())
+        is_valid = hmac.compare_digest(expected_sig, str(signature).strip())
+        if not is_valid:
+            logger.warning(
+                f"[Webhook] Signature mismatch! Received sig: '{str(signature).strip()[:16]}...', "
+                f"Expected sig: '{expected_sig[:16]}...', Secret configured length: {len(webhook_secret)}"
+            )
+        return is_valid
 
 
 @transaction.atomic
@@ -416,30 +422,25 @@ def confirm_booking_after_verified_payment(
             "already_confirmed": True,
         }
 
-    if booking.status in ('cancelled', 'expired', 'checked_out', 'checked_in', 'no_show'):
+    if booking.status in ('cancelled', 'checked_out', 'checked_in', 'no_show'):
         raise ValidationError({
             "code": "INVALID_BOOKING_STATE",
             "booking": f"Cannot confirm booking {booking.booking_reference} in '{booking.status}' status."
         })
 
-    if booking.status != 'held':
-        raise ValidationError({
-            "code": "INVALID_BOOKING_STATE",
-            "booking": f"Booking {booking.booking_reference} must be in 'held' status to confirm (current: '{booking.status}')."
-        })
-
-    # Hold Expiry Check
+    # 4. Hold Expiry Handling:
+    # A customer who has completed payment online and whose payment is captured
+    # by Razorpay MUST be honored. We NEVER turn away a paying guest whose payment
+    # was captured just because network or bank OTP took longer than 15 minutes.
     now = timezone.now()
     if booking.hold_expires_at and booking.hold_expires_at <= now:
-        transition_booking_status(
-            booking=booking,
-            target_status='expired',
-            reason="Hold expired before payment verification completed"
+        logger.info(
+            f"Hold for {booking.booking_reference} elapsed before payment verification ({source}), "
+            f"but valid payment {razorpay_payment_id} was captured. Honoring and confirming reservation."
         )
-        raise ValidationError({
-            "code": "HOLD_EXPIRED",
-            "booking": f"The hold for booking {booking.booking_reference} expired at {booking.hold_expires_at.isoformat()}."
-        })
+
+    # Clear hold expiry now that payment is captured
+    booking.hold_expires_at = None
 
     # 5. Financial & Price Snapshot Consistency
     if not hasattr(booking, 'price_snapshot') or booking.price_snapshot is None:

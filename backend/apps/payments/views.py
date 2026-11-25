@@ -277,6 +277,7 @@ def razorpay_webhook(request):
     except DjangoValidationError as exc:
         details = exc.message_dict if hasattr(exc, 'message_dict') else str(exc)
         code = details.get("code", ["WEBHOOK_ERROR"])[0] if isinstance(details, dict) and "code" in details else "WEBHOOK_ERROR"
+        logger.warning(f"[Razorpay Webhook Validation Error] Code: {code}, Details: {details}")
         return Response({
             "success": False,
             "error": {

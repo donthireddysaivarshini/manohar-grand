@@ -288,8 +288,8 @@ class TestDirectPaymentVerificationAPI:
         booking.refresh_from_db()
         assert booking.status == "confirmed"
 
-    def test_expired_hold_cannot_be_verified(self, api_client, customer_user, held_booking_with_order):
-        """Expired hold returns HOLD_EXPIRED and transitions booking to expired."""
+    def test_expired_hold_with_captured_payment_is_confirmed(self, api_client, customer_user, held_booking_with_order):
+        """Proof: If customer completed payment even after hold elapsed, captured payment honors and confirms reservation."""
         booking, payment_order = held_booking_with_order
         api_client.force_authenticate(user=customer_user)
 
@@ -308,12 +308,9 @@ class TestDirectPaymentVerificationAPI:
             "razorpay_signature": valid_sig,
         }, format='json')
 
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        data = response.json()
-        assert data["error"]["code"] == "HOLD_EXPIRED"
-
+        assert response.status_code == status.HTTP_200_OK
         booking.refresh_from_db()
-        assert booking.status == "expired"
+        assert booking.status == "confirmed"
 
     def test_idempotent_duplicate_verification(self, api_client, customer_user, held_booking_with_order):
         """Calling verify multiple times for an already-confirmed payment returns 200 OK safely."""

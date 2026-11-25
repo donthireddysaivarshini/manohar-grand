@@ -82,7 +82,7 @@ VALID_STATUS_TRANSITIONS = {
     'cancelled': {'refunded'},
     'refunded': set(),     # Terminal state
     'checked_out': set(),  # Terminal state
-    'expired': set(),      # Terminal state
+    'expired': {'confirmed'},  # Resurrected if captured payment arrives
 }
 
 
