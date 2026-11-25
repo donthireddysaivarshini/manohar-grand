@@ -41,13 +41,8 @@ export const paymentApiService = {
     token?: string
   ): Promise<ApiPaymentVerifyResponse> {
     const url = `/api/v1/payments/verify/${token ? `?token=${encodeURIComponent(token)}` : ''}`;
-    const headers: Record<string, string> = {};
-    if (token) {
-      headers['X-Booking-Token'] = token;
-    }
     const res = await fetchApi<ApiPaymentVerifyResponse>(url, {
       method: 'POST',
-      headers,
       body: JSON.stringify({
         ...payload,
         ...(token ? { token } : {}),

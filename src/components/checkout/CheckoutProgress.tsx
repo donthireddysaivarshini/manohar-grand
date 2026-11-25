@@ -12,7 +12,7 @@ const STEPS: { id: CheckoutStep; label: string; number: number }[] = [
   { id: 'stay', label: 'Select Stay', number: 1 },
   { id: 'details', label: 'Guest Details', number: 2 },
   { id: 'review', label: 'Review', number: 3 },
-  { id: 'payment', label: 'Demo Payment', number: 4 },
+  { id: 'payment', label: 'Payment', number: 4 },
   { id: 'confirmation', label: 'Confirmation', number: 5 },
 ];
 
