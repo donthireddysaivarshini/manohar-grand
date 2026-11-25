@@ -29,9 +29,17 @@
                 
                 <label class="mr-2 font-weight-bold text-secondary">To Date:</label>
                 <input type="date" name="to_date" value="{{ to_date }}" class="form-control form-control-sm mr-3" required />
+
+                <label class="mr-2 font-weight-bold text-secondary">Room Category:</label>
+                <select name="category" class="form-control form-control-sm mr-3">
+                    <option value="">All Categories (Hotel Total)</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat.slug }}" {% if selected_category == cat.slug %}selected{% endif %}>{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
                 
                 <button type="submit" class="btn btn-primary btn-sm font-weight-bold px-3">
-                    <i class="fas fa-filter mr-1"></i> Update Date Range
+                    <i class="fas fa-filter mr-1"></i> Update Filters
                 </button>
                 <a href="?" class="btn btn-secondary btn-sm ml-2">Reset (Next 14 Days)</a>
             </form>
@@ -100,6 +108,7 @@
                         <th style="text-align: left; padding-left: 15px;">Date</th>
                         <th>Total Capacity</th>
                         <th class="bg-success text-white">Booked / Occupied</th>
+                        <th style="background-color: #1e293b; color: #ffffff;">Category Breakdown</th>
                         <th class="bg-warning text-dark">Active Holds (15m)</th>
                         <th class="bg-secondary text-white">Maintenance Blocks</th>
                         <th class="bg-primary text-white">Available to Book</th>
@@ -126,6 +135,23 @@
                             {% else %}
                                 <span class="font-weight-bold" style="color: #64748b;">0</span>
                             {% endif %}
+                        </td>
+                        <td style="text-align: left; vertical-align: middle;">
+                            <div class="d-flex flex-column" style="gap: 4px; font-size: 11px;">
+                                {% for cb in day.category_breakdown %}
+                                    <div class="d-flex justify-content-between align-items-center" style="gap: 8px;">
+                                        <span class="badge" style="background-color: {% if 'non' in cb.slug %}#475569{% elif 'test' in cb.slug %}#7c3aed{% else %}#0369a1{% endif %}; color: #ffffff; font-weight: 600;">
+                                            {{ cb.name }}
+                                        </span>
+                                        <span class="font-weight-bold text-dark text-nowrap">
+                                            {{ cb.occupied }}/{{ cb.total }}
+                                            <small class="text-success font-weight-bold">({{ cb.available }} free)</small>
+                                        </span>
+                                    </div>
+                                {% empty %}
+                                    <span class="text-muted font-italic">-</span>
+                                {% endfor %}
+                            </div>
                         </td>
                         <td>
                             {% if day.rooms_held > 0 %}
@@ -170,7 +196,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="8" class="p-4 text-muted font-italic">
+                        <td colspan="9" class="p-4 text-muted font-italic">
                             No occupancy records found for the specified date range.
                         </td>
                     </tr>

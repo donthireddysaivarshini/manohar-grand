@@ -32,6 +32,7 @@ class BookingAdmin(admin.ModelAdmin):
         'booking_reference',
         'guest_name',
         'guest_phone',
+        'category_display',
         'source',
         'status_badge',
         'refund_badge',
@@ -42,11 +43,44 @@ class BookingAdmin(admin.ModelAdmin):
         'is_overbooking',
         'created_at',
     ]
-    list_filter = ['status', 'refund_status', 'source', 'is_overbooking', 'check_in_date', 'check_out_date']
-    search_fields = ['booking_reference', 'guest_name', 'guest_phone', 'guest_email', 'refund_reference', 'cancellation_reason']
+    list_filter = ['status', 'rooms__category', 'refund_status', 'source', 'is_overbooking', 'check_in_date', 'check_out_date']
+    search_fields = [
+        'booking_reference', 'guest_name', 'guest_phone', 'guest_email',
+        'rooms__category__name', 'rooms__physical_room__room_number',
+        'refund_reference', 'cancellation_reason'
+    ]
     readonly_fields = ['id', 'booking_reference', 'access_token', 'financial_breakdown_display', 'cancellation_requested_at', 'cancelled_at', 'created_at', 'updated_at']
     inlines = [BookingRoomInline, BookingGuestInline]
     actions = ['approve_cancellation_and_refund', 'approve_cancellation_zero_refund', 'reject_cancellation_request']
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).prefetch_related('rooms__category', 'rooms__physical_room')
+
+    def category_display(self, obj):
+        rooms = obj.rooms.all()
+        if not rooms:
+            return format_html('<span style="color: #94a3b8; font-style: italic;">No category</span>')
+        badges = []
+        for r in rooms:
+            qty_str = f" (x{r.room_quantity})" if r.room_quantity > 1 else ""
+            room_num = f" [#{r.physical_room.room_number}]" if r.physical_room else ""
+            cat_name = r.category.name if r.category else "Unknown"
+            
+            # Subtle badge styling
+            if "non" in cat_name.lower():
+                badge_bg = "#475569"  # Slate for Non-AC
+            elif "test" in cat_name.lower():
+                badge_bg = "#7c3aed"  # Purple for Test
+            else:
+                badge_bg = "#0369a1"  # Ocean blue for AC
+                
+            badges.append(
+                f'<span style="background-color: {badge_bg}; color: #ffffff; padding: 2px 7px; border-radius: 4px; font-weight: 600; font-size: 11px; white-space: nowrap; display: inline-block; margin: 1px 2px;">'
+                f'{cat_name}{qty_str}{room_num}'
+                f'</span>'
+            )
+        return format_html("".join(badges))
+    category_display.short_description = 'Room Category'
 
     fieldsets = (
         ('Reservation Core & Stay Dates', {

@@ -118,7 +118,7 @@ class ReportingService:
         ).count()
 
         # 5. Recent Activity
-        recent_bookings = Booking.objects.select_related('customer', 'price_snapshot').order_by('-created_at')[:5]
+        recent_bookings = Booking.objects.select_related('customer', 'price_snapshot').prefetch_related('rooms__category').order_by('-created_at')[:5]
         recent_payments = PaymentOrder.objects.select_related('booking').order_by('-created_at')[:5]
 
         return {
@@ -155,6 +155,7 @@ class ReportingService:
                 {
                     "booking_reference": b.booking_reference,
                     "guest_name": b.guest_name,
+                    "categories": ", ".join([r.category.name for r in b.rooms.all() if r.category]) or "Unassigned",
                     "status": b.status,
                     "check_in_date": b.check_in_date.isoformat(),
                     "check_out_date": b.check_out_date.isoformat(),
@@ -251,11 +252,21 @@ class ReportingService:
         bookings_list = []
         for b in paginated_bookings:
             snapshot = getattr(b, 'price_snapshot', None)
+            
+            # Format human-readable reserved categories
+            cat_list = [
+                f"{r.category.name} (x{r.room_quantity})" if r.room_quantity > 1 else r.category.name
+                for r in b.rooms.all()
+                if r.category
+            ]
+            categories_str = ", ".join(cat_list) if cat_list else "Unassigned"
+
             bookings_list.append({
                 "booking_reference": b.booking_reference,
                 "guest_name": b.guest_name,
                 "guest_phone": b.guest_phone,
                 "guest_email": b.guest_email,
+                "categories": categories_str,
                 "status": b.status,
                 "status_display": b.get_status_display(),
                 "source": b.source,
@@ -363,6 +374,33 @@ class ReportingService:
             available_qty = max(0, operational_physical_count - occupied_qty - held_qty - blocked_qty)
             occ_rate = round((occupied_qty / operational_physical_count * 100), 1) if operational_physical_count > 0 else 0.0
 
+            # Category-level breakdown on this night
+            category_breakdown = []
+            for cat in RoomCategory.objects.filter(is_active=True).order_by('display_order'):
+                cat_phys = PhysicalRoom.objects.filter(category=cat, operational_status='operational').count()
+                cat_occ = BookingRoom.objects.filter(
+                    category=cat,
+                    booking__status__in=['confirmed', 'checked_in', 'checked_out'],
+                    booking__check_in_date__lte=current_date,
+                    booking__check_out_date__gt=current_date,
+                ).aggregate(total=Sum('room_quantity'))['total'] or 0
+                cat_held = BookingRoom.objects.filter(
+                    category=cat,
+                    booking__status='held',
+                    booking__hold_expires_at__gt=now,
+                    booking__check_in_date__lte=current_date,
+                    booking__check_out_date__gt=current_date,
+                ).aggregate(total=Sum('room_quantity'))['total'] or 0
+                cat_avail = max(0, cat_phys - cat_occ - cat_held)
+                category_breakdown.append({
+                    "slug": cat.slug,
+                    "name": cat.name,
+                    "total": cat_phys,
+                    "occupied": cat_occ,
+                    "held": cat_held,
+                    "available": cat_avail,
+                })
+
             daily_breakdown.append({
                 "date": current_date.isoformat(),
                 "total_operational_rooms": operational_physical_count,
@@ -371,6 +409,7 @@ class ReportingService:
                 "rooms_blocked": blocked_qty,
                 "rooms_available": available_qty,
                 "occupancy_rate_percent": occ_rate,
+                "category_breakdown": category_breakdown,
             })
 
             total_room_nights_occupied += occupied_qty

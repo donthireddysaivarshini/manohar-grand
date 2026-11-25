@@ -422,6 +422,11 @@ export const ReportsPage: React.FC = () => {
                     <div>
                       <span className="font-semibold text-neutral-900">{b.booking_reference}</span>
                       <span className="text-neutral-500 ml-2">{b.guest_name}</span>
+                      {b.categories && (
+                        <span className="ml-2 text-[10px] font-medium bg-neutral-100 text-neutral-600 px-1.5 py-0.5 rounded border border-neutral-200">
+                          {b.categories}
+                        </span>
+                      )}
                       <div className="text-[11px] text-neutral-400">{b.check_in_date} to {b.check_out_date}</div>
                     </div>
                     <div className="text-right">
@@ -574,6 +579,7 @@ export const ReportsPage: React.FC = () => {
                   <tr>
                     <th className="p-3">Reference</th>
                     <th className="p-3">Guest Name</th>
+                    <th className="p-3">Room Category</th>
                     <th className="p-3">Source</th>
                     <th className="p-3">Stay Dates</th>
                     <th className="p-3">Total Value</th>
@@ -586,6 +592,11 @@ export const ReportsPage: React.FC = () => {
                     <tr key={b.booking_reference} className="hover:bg-neutral-50">
                       <td className="p-3 font-semibold text-neutral-900">{b.booking_reference}</td>
                       <td className="p-3 font-medium text-neutral-800">{b.guest_name}</td>
+                      <td className="p-3">
+                        <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-neutral-100 text-neutral-800 border border-neutral-200">
+                          {b.categories || 'Standard'}
+                        </span>
+                      </td>
                       <td className="p-3 capitalize text-neutral-600">{b.source_display || b.source}</td>
                       <td className="p-3 text-neutral-600">{b.check_in_date} to {b.check_out_date}</td>
                       <td className="p-3 font-bold text-neutral-900">₹{Number(b.gross_total).toLocaleString()}</td>
@@ -637,6 +648,7 @@ export const ReportsPage: React.FC = () => {
                     <th className="p-3">Night Date</th>
                     <th className="p-3">Operational Rooms</th>
                     <th className="p-3">Occupied</th>
+                    <th className="p-3">Category Breakdown</th>
                     <th className="p-3">Temporary Holds</th>
                     <th className="p-3">Blocked / Maint</th>
                     <th className="p-3">Available</th>
@@ -649,6 +661,23 @@ export const ReportsPage: React.FC = () => {
                       <td className="p-3 font-semibold text-neutral-900">{d.date}</td>
                       <td className="p-3">{d.total_operational_rooms}</td>
                       <td className="p-3 font-medium text-emerald-600">{d.rooms_occupied}</td>
+                      <td className="p-3">
+                        {d.category_breakdown && d.category_breakdown.length > 0 ? (
+                          <div className="flex flex-col gap-1">
+                            {d.category_breakdown.map((cb) => (
+                              <div key={cb.slug} className="flex items-center gap-1.5 text-[11px]">
+                                <span className={`px-1.5 py-0.5 rounded font-medium ${cb.slug.includes('non') ? 'bg-neutral-200 text-neutral-800' : 'bg-blue-100 text-blue-800'}`}>
+                                  {cb.name}:
+                                </span>
+                                <span className="font-semibold text-neutral-900">{cb.occupied}/{cb.total}</span>
+                                <span className="text-neutral-400">({cb.available} free)</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-neutral-400">-</span>
+                        )}
+                      </td>
                       <td className="p-3 text-neutral-500">{d.rooms_held}</td>
                       <td className="p-3 text-amber-600">{d.rooms_blocked}</td>
                       <td className="p-3 font-semibold text-neutral-900">{d.rooms_available}</td>

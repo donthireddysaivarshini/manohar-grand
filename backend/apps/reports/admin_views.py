@@ -16,15 +16,21 @@ def admin_occupancy_dashboard_view(request):
     today = timezone.localdate()
     from_date_str = request.GET.get('from_date', today.isoformat())
     to_date_str = request.GET.get('to_date', (today + timedelta(days=14)).isoformat())
+    category_slug = request.GET.get('category') or None
 
-    occupancy_data = ReportingService.get_occupancy_report(from_date_str, to_date_str)
+    occupancy_data = ReportingService.get_occupancy_report(from_date_str, to_date_str, category_slug=category_slug)
     overview_data = ReportingService.get_overview_kpis()
     frontdesk_data = ReportingService.get_frontdesk_report(target_date_str=today.isoformat())
+
+    from apps.rooms.models import RoomCategory
+    categories = RoomCategory.objects.filter(is_active=True).order_by('display_order')
 
     context = {
         'title': 'Daily Room Occupancy & Booking Forecast',
         'from_date': from_date_str,
         'to_date': to_date_str,
+        'selected_category': category_slug,
+        'categories': categories,
         'occupancy': occupancy_data,
         'overview': overview_data,
         'frontdesk': frontdesk_data,

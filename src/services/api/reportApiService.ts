@@ -37,6 +37,7 @@ export interface OverviewKPIResponse {
   recent_bookings: Array<{
     booking_reference: string;
     guest_name: string;
+    categories?: string;
     status: string;
     check_in_date: string;
     check_out_date: string;
@@ -84,6 +85,7 @@ export interface BookingReportResponse {
     check_out_date: string;
     nights_count: number;
     total_rooms_count: number;
+    categories?: string;
     gross_total: string;
     advance_due: string;
     balance_due: string;
@@ -115,6 +117,14 @@ export interface OccupancyReportResponse {
     rooms_blocked: number;
     rooms_available: number;
     occupancy_rate_percent: number;
+    category_breakdown?: Array<{
+      slug: string;
+      name: string;
+      total: number;
+      occupied: number;
+      held: number;
+      available: number;
+    }>;
   }>;
 }
 
