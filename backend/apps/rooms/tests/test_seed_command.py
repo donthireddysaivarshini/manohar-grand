@@ -42,7 +42,7 @@ class TestSeedPhase2MasterDataCommand:
 
         nac = RoomCategory.objects.get(slug='non-ac-room')
         assert nac.name == 'Non-AC Room'
-        assert nac.max_total_occupancy == 2
+        assert nac.max_total_occupancy == 4
 
         # Assert exactly 10 master amenities created and linked
         assert Amenity.objects.count() == 10

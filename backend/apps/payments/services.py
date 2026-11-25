@@ -473,13 +473,14 @@ def confirm_booking_after_verified_payment(
         payment_order.razorpay_signature = razorpay_signature
     payment_order.save()
 
-    # 7. Transition Booking: 'held' -> 'confirmed'
+    # 7. Transition Booking: 'held' -> 'confirmed' (or revive if expired)
     booking = transition_booking_status(
         booking=booking,
         target_status='confirmed',
         actor=actor,
         reason=f"Verified advance payment received via {source} ({razorpay_payment_id})",
         ip_address=ip_address,
+        force=(booking.status == 'expired'),
     )
 
     # 8. Dispatch WhatsApp Confirmation Notification via MSG91

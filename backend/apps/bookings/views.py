@@ -47,15 +47,24 @@ def _check_booking_authorization(booking: Booking, request) -> bool:
     Authorized if:
     1. Authenticated user is Staff (Receptionist, Manager, SuperAdmin).
     2. Authenticated user is the Booking customer.
-    3. Unguessable access_token matches ?token= query param or X-Booking-Token header.
+    3. Authenticated user phone or email matches the booking guest phone or email.
+    4. Unguessable access_token matches ?token= query param, X-Booking-Token header, or body.
     """
     if request.user.is_authenticated:
         if request.user.is_staff or getattr(request.user, 'is_superuser', False):
             return True
         if booking.customer_id and booking.customer_id == request.user.id:
             return True
+        if booking.guest_phone and getattr(request.user, 'phone', None) and str(booking.guest_phone).strip() == str(request.user.phone).strip():
+            return True
+        if booking.guest_email and getattr(request.user, 'email', None) and str(booking.guest_email).strip().lower() == str(request.user.email).strip().lower():
+            return True
 
-    token_param = request.query_params.get('token') or request.headers.get('X-Booking-Token')
+    token_param = (
+        request.query_params.get('token')
+        or request.headers.get('X-Booking-Token')
+        or (request.data.get('token') if hasattr(request, 'data') and isinstance(request.data, dict) else None)
+    )
     if token_param and str(booking.access_token) == str(token_param).strip():
         return True
 

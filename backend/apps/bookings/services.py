@@ -82,7 +82,7 @@ VALID_STATUS_TRANSITIONS = {
     'cancelled': {'refunded'},
     'refunded': set(),     # Terminal state
     'checked_out': set(),  # Terminal state
-    'expired': {'confirmed'},  # Resurrected if captured payment arrives
+    'expired': set(),      # Terminal state
 }
 
 
@@ -91,7 +91,8 @@ def transition_booking_status(
     target_status: str,
     actor=None,
     reason: str = "",
-    ip_address: str = None
+    ip_address: str = None,
+    force: bool = False,
 ):
     """
     Executes a validated state transition for a Booking record, emitting an immutable AuditLog entry.
@@ -102,7 +103,7 @@ def transition_booking_status(
         return booking
 
     allowed_targets = VALID_STATUS_TRANSITIONS.get(current_status, set())
-    if target_status not in allowed_targets:
+    if not force and target_status not in allowed_targets:
         raise ValidationError({
             "status": f"Invalid booking status transition from '{current_status}' to '{target_status}'. "
                       f"Permitted next states: {sorted(list(allowed_targets)) or 'None (Terminal state)'}."

@@ -49,7 +49,9 @@ export const ConfirmationPage: React.FC = () => {
     }
   }, [token, id]);
 
-  const loadBooking = () => {
+  const [retryAttempt, setRetryAttempt] = useState(0);
+
+  const loadBooking = (attempt = 0) => {
     document.title = 'Reservation Voucher | Manohar Grand Hotel';
 
     if (!id) {
@@ -58,53 +60,52 @@ export const ConfirmationPage: React.FC = () => {
       return;
     }
 
-    setIsLoading(true);
+    if (attempt === 0) {
+      setIsLoading(true);
+      setError(null);
+    }
+
     bookingApiService
       .getBookingDetail(id, token)
       .then((data) => {
         setBooking(data);
         setError(null);
+        setIsLoading(false);
+
+        // If it's still held, retry in 2.5s (up to 5 times) while waiting for background webhook confirmation
+        if (data.status === 'held' && attempt < 5) {
+          setTimeout(() => loadBooking(attempt + 1), 2500);
+        }
       })
       .catch((err) => {
-        console.error('Failed to load booking voucher:', err);
-        setError(err?.message || 'Unable to load reservation voucher from server.');
-      })
-      .finally(() => {
-        setIsLoading(false);
+        console.warn(`Booking load attempt ${attempt + 1} error:`, err);
+        // If initial lookup failed (e.g. race condition with webhook commit), auto-retry up to 4 times
+        if (attempt < 4) {
+          setRetryAttempt(attempt + 1);
+          setTimeout(() => loadBooking(attempt + 1), 2000);
+        } else {
+          setError(err?.message || 'Unable to load reservation voucher from server.');
+          setIsLoading(false);
+        }
       });
   };
 
   useEffect(() => {
-    loadBooking();
+    loadBooking(0);
   }, [id, token]);
-
-  // If status is held, poll every 3 seconds up to 6 times to catch background webhook confirmation
-  useEffect(() => {
-    let timer: any;
-    if (booking && booking.status === 'held' && id) {
-      timer = setTimeout(() => {
-        bookingApiService
-          .getBookingDetail(id, token)
-          .then((refreshed) => {
-            if (refreshed && refreshed.status !== 'held') {
-              setBooking(refreshed);
-            }
-          })
-          .catch(() => {});
-      }, 3000);
-    }
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [booking?.status, id, token]);
 
   if (isLoading) {
     return (
       <div className="py-24 flex flex-col items-center justify-center gap-4">
         <Loader2 className="w-10 h-10 text-brand animate-spin" />
         <span className="text-sm font-semibold text-neutral-secondary">
-          Loading reservation voucher from Manohar Grand...
+          Confirming and loading your reservation voucher from Manohar Grand...
         </span>
+        {retryAttempt > 0 && (
+          <span className="text-xs text-neutral-400">
+            Synchronizing with payment gateway... (Attempt {retryAttempt}/4)
+          </span>
+        )}
       </div>
     );
   }
@@ -131,11 +132,21 @@ export const ConfirmationPage: React.FC = () => {
               {error || `No active reservation was found matching reference ${id}.`}
             </p>
 
-            <Link to="/booking" onClick={resetBookingFlow}>
-              <Button variant="primary" size="md" className="font-bold shadow-sm cursor-pointer">
-                Start a New Reservation
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button
+                variant="primary"
+                size="md"
+                onClick={() => loadBooking(0)}
+                className="font-bold shadow-sm cursor-pointer"
+              >
+                Retry Loading Voucher
               </Button>
-            </Link>
+              <Link to="/booking" onClick={resetBookingFlow}>
+                <Button variant="outline" size="md" className="font-bold shadow-sm cursor-pointer">
+                  Start a New Reservation
+                </Button>
+              </Link>
+            </div>
           </div>
         </Container>
       </div>
