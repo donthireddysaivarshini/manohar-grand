@@ -260,6 +260,31 @@ class TestRazorpayPaymentOrders:
         assert data["success"] is False
         assert data["error"]["code"] == "PERMISSION_DENIED"
 
+    def test_order_creation_rejected_if_guest_phone_missing(self, api_client, room_setup, hotel_config):
+        """Payment order creation is rejected if booking has no valid guest phone."""
+        ac_cat, _ = room_setup
+        check_in = (timezone.now() + timedelta(days=5)).date()
+        check_out = (timezone.now() + timedelta(days=7)).date()
+
+        booking = create_booking_hold(
+            rooms_request=[{"category": ac_cat, "room_quantity": 1}],
+            check_in_date=check_in,
+            check_out_date=check_out,
+            guest_name="Guest No Phone",
+            guest_phone="",
+        )
+
+        url = reverse('payments:payment-order-create')
+        resp = api_client.post(
+            url,
+            {"booking_reference": booking.booking_reference},
+            format='json',
+            HTTP_X_BOOKING_TOKEN=str(booking.access_token)
+        )
+        assert resp.status_code == status.HTTP_400_BAD_REQUEST
+        data = resp.json()
+        assert data["error"]["code"] == "MISSING_GUEST_PHONE"
+
     def test_unauthenticated_user_with_token_can_create_order(self, api_client, room_setup, hotel_config, mock_razorpay):
         """Unauthenticated user with valid access token can create payment order."""
         ac_cat, _ = room_setup
@@ -271,6 +296,7 @@ class TestRazorpayPaymentOrders:
             check_in_date=check_in,
             check_out_date=check_out,
             guest_name="Anonymous Guest",
+            guest_phone="9876543210",
         )
 
         url = reverse('payments:payment-order-create')

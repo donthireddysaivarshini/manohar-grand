@@ -260,6 +260,7 @@ class TestDirectPaymentVerificationAPI:
             check_in_date=check_in,
             check_out_date=check_out,
             guest_name="Guest User",
+            guest_phone="9876543210",
         )
 
         with patch.object(RazorpayPaymentProvider, 'create_order') as mock_create:

@@ -244,6 +244,18 @@ def create_advance_payment_order(
     validation_res = validate_booking_for_checkout(booking)
     snapshot = validation_res['snapshot']
 
+    # Ensure primary contact phone is present for confirmed vouchers & gateway prefill
+    if not booking.guest_phone and booking.customer and getattr(booking.customer, 'phone', None):
+        booking.guest_phone = str(booking.customer.phone).strip()
+        booking.save(update_fields=['guest_phone'])
+
+    cleaned_phone = "".join(filter(str.isdigit, str(booking.guest_phone or '')))
+    if len(cleaned_phone) < 10:
+        raise ValidationError({
+            "code": "MISSING_GUEST_PHONE",
+            "booking": "A valid 10-digit mobile phone number is required on the reservation before initiating payment."
+        })
+
     # 2. Check for existing active PaymentOrder (Idempotency protection)
     existing_order = PaymentOrder.objects.filter(
         booking=booking,

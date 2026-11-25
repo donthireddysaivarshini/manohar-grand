@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, MessageSquare, ArrowRight, ShieldCheck, Loader2 } from 'lucide-react';
+import { User, MessageSquare, ArrowRight, ShieldCheck, Loader2, AlertCircle } from 'lucide-react';
 import { Card, CardContent } from '../common/Card';
 import { Input } from '../common/Input';
 import { Button } from '../common/Button';
@@ -10,7 +10,7 @@ export interface GuestDetailsFormProps {
 }
 
 export const GuestDetailsForm: React.FC<GuestDetailsFormProps> = ({ onProceedToReview }) => {
-  const { guestDetails, setGuestDetails, updateGuestInfo, activeHold } = useBooking();
+  const { guestDetails, setGuestDetails, updateGuestInfo, activeHold, checkoutSummary } = useBooking();
 
   const [formData, setFormData] = useState({
     fullName: guestDetails.fullName || '',
@@ -62,7 +62,8 @@ export const GuestDetailsForm: React.FC<GuestDetailsFormProps> = ({ onProceedToR
 
     setGuestDetails(formData);
 
-    if (activeHold?.booking_reference) {
+    const targetRef = activeHold?.booking_reference || checkoutSummary?.booking_reference;
+    if (targetRef) {
       setIsSubmitting(true);
       try {
         await updateGuestInfo({
@@ -71,11 +72,21 @@ export const GuestDetailsForm: React.FC<GuestDetailsFormProps> = ({ onProceedToR
           guest_phone: formData.phone.trim(),
           special_requests: formData.specialRequests.trim(),
         });
-      } catch (err) {
-        console.warn('Backend guest update notice:', err);
+      } catch (err: any) {
+        console.error('Backend guest update error:', err);
+        setErrors({
+          form: err?.message || 'Failed to save contact information to your reservation. Please try again.',
+        });
+        setIsSubmitting(false);
+        return; // Strictly stop navigation if backend update failed!
       } finally {
         setIsSubmitting(false);
       }
+    } else {
+      setErrors({
+        form: 'No active reservation reference found. Please return to room selection.',
+      });
+      return;
     }
 
     onProceedToReview();
@@ -174,6 +185,13 @@ export const GuestDetailsForm: React.FC<GuestDetailsFormProps> = ({ onProceedToR
               </li>
             </ul>
           </div>
+
+          {errors.form && (
+            <div className="p-3.5 bg-red-50 border border-red-200 text-red-700 rounded-lg text-xs font-semibold flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+              <span>{errors.form}</span>
+            </div>
+          )}
 
           <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-neutral-border/80 mt-2">
             <div className="flex items-center gap-2 text-xs text-neutral-secondary">

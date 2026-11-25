@@ -245,12 +245,15 @@ def create_booking_hold(
     hold_duration_minutes = getattr(settings, 'BOOKING_HOLD_DURATION_MINUTES', 15)
     hold_expires_at = timezone.now() + timedelta(minutes=hold_duration_minutes)
 
-    # 6. Create the Booking record
+    # 6. Create the Booking record (fallback to authenticated customer contact if not explicitly provided)
+    resolved_phone = (guest_phone or (getattr(customer, 'phone', '') if customer else '') or '').strip()
+    resolved_email = (guest_email or (getattr(customer, 'email', '') if customer else '') or '').strip()
+
     booking = Booking.objects.create(
         customer=customer,
         guest_name=guest_name,
-        guest_phone=guest_phone,
-        guest_email=guest_email,
+        guest_phone=resolved_phone,
+        guest_email=resolved_email,
         source=source,
         status='held',
         check_in_date=check_in_date,

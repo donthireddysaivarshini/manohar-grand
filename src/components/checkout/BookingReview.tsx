@@ -79,6 +79,24 @@ export const BookingReview: React.FC<BookingReviewProps> = ({ onBackToDetails })
   const taxAmount = pricing ? parseFloat(String(pricing.tax_amount)) : 0;
   const taxRate = pricing ? pricing.tax_rate_percent : 5;
 
+  const leadName =
+    guestDetails.fullName ||
+    checkoutSummary?.guest_name ||
+    activeHold?.guest_name ||
+    'Guest';
+  const leadEmail =
+    guestDetails.email ||
+    checkoutSummary?.guest_email ||
+    activeHold?.guest_email ||
+    '';
+  const leadPhone =
+    guestDetails.phone ||
+    checkoutSummary?.guest_phone ||
+    activeHold?.guest_phone ||
+    '';
+
+  const isPhoneValid = leadPhone.replace(/\D/g, '').length >= 10;
+
   const handlePayAdvance = async () => {
     if (!bookingRef) {
       setPaymentError('No active reservation reference found. Please restart your booking.');
@@ -87,6 +105,13 @@ export const BookingReview: React.FC<BookingReviewProps> = ({ onBackToDetails })
 
     if (isHoldExpired) {
       setPaymentError('Your 15-minute reservation hold has expired. Please select rooms again.');
+      return;
+    }
+
+    if (!isPhoneValid) {
+      setPaymentError(
+        'A valid 10-digit mobile phone number is required to receive your booking confirmation and official WhatsApp voucher. Please click "Back to Guest Details" to provide your mobile number.'
+      );
       return;
     }
 
@@ -101,22 +126,6 @@ export const BookingReview: React.FC<BookingReviewProps> = ({ onBackToDetails })
       setPaymentStatusText('Opening Razorpay Checkout...');
 
       // 2. Open standard Razorpay Checkout Modal
-      const leadName =
-        guestDetails.fullName ||
-        checkoutSummary?.guest_name ||
-        activeHold?.guest_name ||
-        'Guest';
-      const leadEmail =
-        guestDetails.email ||
-        checkoutSummary?.guest_email ||
-        activeHold?.guest_email ||
-        '';
-      const leadPhone =
-        guestDetails.phone ||
-        checkoutSummary?.guest_phone ||
-        activeHold?.guest_phone ||
-        '';
-
       const checkoutResult = await razorpayService.openCheckout({
         key: paymentOrder.razorpay_key_id,
         amount: paymentOrder.amount, // in paise
@@ -266,9 +275,16 @@ export const BookingReview: React.FC<BookingReviewProps> = ({ onBackToDetails })
 
             <div>
               <span className="text-neutral-secondary font-medium block">Phone:</span>
-              <span className="font-bold text-neutral-dark text-sm mt-0.5 block">
-                {guestDetails.phone || checkoutSummary?.guest_phone || activeHold?.guest_phone || 'Not provided'}
-              </span>
+              {isPhoneValid ? (
+                <span className="font-bold text-neutral-dark text-sm mt-0.5 block">
+                  {leadPhone}
+                </span>
+              ) : (
+                <span className="font-bold text-red-600 text-sm mt-0.5 flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5 text-red-500 inline shrink-0" />
+                  Missing (Click &quot;Edit Details&quot;)
+                </span>
+              )}
             </div>
           </div>
 
@@ -487,7 +503,7 @@ export const BookingReview: React.FC<BookingReviewProps> = ({ onBackToDetails })
           type="button"
           variant="primary"
           size="lg"
-          disabled={isProcessingPayment || isHoldExpired}
+          disabled={isProcessingPayment || isHoldExpired || !isPhoneValid}
           onClick={handlePayAdvance}
           className="w-full sm:w-auto font-bold shadow-md gap-2 min-w-[240px] cursor-pointer"
         >
