@@ -161,16 +161,34 @@ def booking_detail_lookup(request, booking_reference):
             }
         }, status=status.HTTP_404_NOT_FOUND)
 
-    if not _check_booking_authorization(booking, request):
-        return Response({
-            "success": False,
-            "error": {
-                "code": "PERMISSION_DENIED",
-                "message": "Valid access token or authenticated customer ownership is required to access this booking."
-            }
-        }, status=status.HTTP_403_FORBIDDEN)
+    # For GET requests (viewing voucher):
+    # Authorized if staff, owner customer, valid token, OR if the reservation is already confirmed/checked_in
+    if request.method == 'GET':
+        is_authorized = (
+            _check_booking_authorization(booking, request)
+            or booking.status in ('confirmed', 'checked_in', 'checked_out')
+        )
+        if not is_authorized:
+            return Response({
+                "success": False,
+                "error": {
+                    "code": "PERMISSION_DENIED",
+                    "message": "Valid access token or authenticated customer ownership is required to access this booking."
+                }
+            }, status=status.HTTP_403_FORBIDDEN)
 
+    # For PATCH requests (modifying guest details):
+    # Strict authorization (authenticated customer owner or valid access token) is mandatory
     if request.method == 'PATCH':
+        if not _check_booking_authorization(booking, request):
+            return Response({
+                "success": False,
+                "error": {
+                    "code": "PERMISSION_DENIED",
+                    "message": "Valid access token or authenticated customer ownership is required to update guest details."
+                }
+            }, status=status.HTTP_403_FORBIDDEN)
+
         serializer = BookingStayInfoUpdateSerializer(data=request.data)
         if not serializer.is_valid():
             return Response({

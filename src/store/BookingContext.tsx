@@ -75,7 +75,29 @@ export const BookingProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [selectedCategorySlug, setSelectedCategorySlug] = useState<string | null>(null);
   const [guestDetails, setGuestDetailsState] = useState<GuestDetails>(defaultGuestDetails);
   const [selectedRooms, setSelectedRooms] = useState<SelectedRoomItem[]>([]);
-  const [activeHold, setActiveHold] = useState<ApiBookingDetail | null>(null);
+  const [activeHold, setActiveHoldState] = useState<ApiBookingDetail | null>(() => {
+    try {
+      const saved = sessionStorage.getItem('mg_active_hold');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const setActiveHold = (hold: ApiBookingDetail | null) => {
+    setActiveHoldState(hold);
+    try {
+      if (hold) {
+        sessionStorage.setItem('mg_active_hold', JSON.stringify(hold));
+        if (hold.booking_reference && hold.access_token) {
+          sessionStorage.setItem(`mg_booking_token_${hold.booking_reference}`, hold.access_token);
+        }
+      } else {
+        sessionStorage.removeItem('mg_active_hold');
+      }
+    } catch {}
+  };
+
   const [checkoutSummary, setCheckoutSummary] = useState<ApiCheckoutSummary | null>(null);
 
   // Auto-fill guest details from authenticated user when available
