@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
 import {
   CheckCircle2,
   Printer,
@@ -28,12 +28,26 @@ import { CancellationModal } from '../../components/booking/CancellationModal';
 
 export const ConfirmationPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { resetBookingFlow } = useBooking();
+  const [searchParams] = useSearchParams();
+  const { activeHold, resetBookingFlow } = useBooking();
 
   const [booking, setBooking] = useState<ApiBookingDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+
+  // Retrieve token from query param, activeHold context, or session storage fallback
+  const token =
+    searchParams.get('token') ||
+    (activeHold?.booking_reference === id ? activeHold?.access_token : undefined) ||
+    (id ? sessionStorage.getItem(`mg_booking_token_${id}`) : null) ||
+    undefined;
+
+  useEffect(() => {
+    if (token && id) {
+      sessionStorage.setItem(`mg_booking_token_${id}`, token);
+    }
+  }, [token, id]);
 
   const loadBooking = () => {
     document.title = 'Reservation Voucher | Manohar Grand Hotel';
@@ -46,7 +60,7 @@ export const ConfirmationPage: React.FC = () => {
 
     setIsLoading(true);
     bookingApiService
-      .getBookingDetail(id)
+      .getBookingDetail(id, token)
       .then((data) => {
         setBooking(data);
         setError(null);
@@ -62,7 +76,27 @@ export const ConfirmationPage: React.FC = () => {
 
   useEffect(() => {
     loadBooking();
-  }, [id]);
+  }, [id, token]);
+
+  // If status is held, poll every 3 seconds up to 6 times to catch background webhook confirmation
+  useEffect(() => {
+    let timer: any;
+    if (booking && booking.status === 'held' && id) {
+      timer = setTimeout(() => {
+        bookingApiService
+          .getBookingDetail(id, token)
+          .then((refreshed) => {
+            if (refreshed && refreshed.status !== 'held') {
+              setBooking(refreshed);
+            }
+          })
+          .catch(() => {});
+      }, 3000);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [booking?.status, id, token]);
 
   if (isLoading) {
     return (

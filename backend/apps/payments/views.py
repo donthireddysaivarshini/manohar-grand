@@ -170,7 +170,17 @@ def payment_verify(request):
         }, status=status.HTTP_404_NOT_FOUND)
 
     # 3. Ownership / Authorization verification
-    if not _check_booking_authorization(payment_order.booking, request):
+    token_param = (
+        request.query_params.get('token')
+        or request.headers.get('X-Booking-Token')
+        or request.data.get('token')
+    )
+    is_authorized = (
+        _check_booking_authorization(payment_order.booking, request)
+        or (token_param and str(payment_order.booking.access_token) == str(token_param).strip())
+        or (payment_order.booking.customer is None)
+    )
+    if not is_authorized:
         return Response({
             "success": False,
             "error": {
@@ -259,6 +269,11 @@ def razorpay_webhook(request):
                 "message": f"Malformed webhook JSON body: {exc}"
             }
         }, status=status.HTTP_400_BAD_REQUEST)
+
+    # Attach header event id if provided and missing from payload root
+    event_id_header = request.headers.get('X-Razorpay-Event-Id')
+    if event_id_header and isinstance(payload, dict) and not payload.get('id'):
+        payload['id'] = event_id_header
 
     ip_address = _get_client_ip(request)
 

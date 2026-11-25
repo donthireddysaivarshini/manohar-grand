@@ -578,14 +578,29 @@ def process_razorpay_webhook_event(
             "webhook": "Cryptographic webhook HMAC-SHA256 signature verification failed."
         })
 
-    event_id = payload.get('id', '')
     event_type = payload.get('event', '')
-
-    if not event_id or not event_type:
+    if not event_type:
         raise ValidationError({
             "code": "INVALID_WEBHOOK_PAYLOAD",
-            "webhook": "Missing required event 'id' or 'event' field."
+            "webhook": "Missing required event 'event' field."
         })
+
+    payment_entity = payload.get('payload', {}).get('payment', {}).get('entity', {})
+    order_entity = payload.get('payload', {}).get('order', {}).get('entity', {})
+    payment_id = payment_entity.get('id', '')
+    order_id = payment_entity.get('order_id') or order_entity.get('id', '')
+    created_at = payload.get('created_at', '')
+
+    # Razorpay standard webhook payloads often omit 'id' at root level.
+    # Deterministically resolve or derive event_id to prevent false rejection.
+    event_id = (
+        payload.get('id')
+        or payload.get('event_id')
+        or (f"evt_{payment_id}_{event_type}" if payment_id else None)
+        or (f"evt_{order_id}_{created_at}_{event_type}" if order_id else None)
+        or f"evt_{hashlib.sha256(raw_body if isinstance(raw_body, bytes) else str(raw_body).encode('utf-8')).hexdigest()[:24]}"
+    )
+    event_id = str(event_id)[:100]
 
     # 2. Idempotency / Deduplication check with row locking
     with transaction.atomic():

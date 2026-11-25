@@ -36,10 +36,22 @@ export const paymentApiService = {
    * Cryptographically verifies Razorpay checkout signatures and confirms reservation.
    * Endpoint: POST /api/v1/payments/verify/
    */
-  async verifyPayment(payload: ApiPaymentVerifyPayload): Promise<ApiPaymentVerifyResponse> {
-    const res = await fetchApi<ApiPaymentVerifyResponse>('/api/v1/payments/verify/', {
+  async verifyPayment(
+    payload: ApiPaymentVerifyPayload,
+    token?: string
+  ): Promise<ApiPaymentVerifyResponse> {
+    const url = `/api/v1/payments/verify/${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['X-Booking-Token'] = token;
+    }
+    const res = await fetchApi<ApiPaymentVerifyResponse>(url, {
       method: 'POST',
-      body: JSON.stringify(payload),
+      headers,
+      body: JSON.stringify({
+        ...payload,
+        ...(token ? { token } : {}),
+      }),
     });
 
     if (res.success && res.data) {

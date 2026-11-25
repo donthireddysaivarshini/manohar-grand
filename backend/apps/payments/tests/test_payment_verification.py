@@ -392,6 +392,52 @@ class TestRazorpayWebhookAPI:
         event_log = WebhookEventLog.objects.get(event_id=payload_dict["id"])
         assert event_log.status == "processed"
 
+    def test_webhook_without_root_id_succeeds(self, api_client, held_booking_with_order):
+        """Standard Razorpay webhooks that omit 'id' at root level must succeed and derive event_id."""
+        booking, payment_order = held_booking_with_order
+        order_id = payment_order.razorpay_order_id
+        payment_id = "pay_noid_554433"
+        amount_paise = payment_order.amount_paise
+
+        payload_dict = {
+            "entity": "event",
+            "account_id": "acc_live_test",
+            "event": "payment.captured",
+            "contains": ["payment"],
+            "payload": {
+                "payment": {
+                    "entity": {
+                        "id": payment_id,
+                        "order_id": order_id,
+                        "amount": amount_paise,
+                        "currency": "INR",
+                        "status": "captured",
+                    }
+                }
+            },
+            "created_at": 1732549949
+        }
+        raw_body = json.dumps(payload_dict).encode('utf-8')
+        signature = generate_valid_webhook_signature(raw_body)
+
+        url = reverse('payments:payment-webhook-razorpay')
+        response = api_client.post(
+            url,
+            data=raw_body,
+            content_type="application/json",
+            HTTP_X_RAZORPAY_SIGNATURE=signature
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["success"] is True
+
+        booking.refresh_from_db()
+        assert booking.status == "confirmed"
+
+        payment_order.refresh_from_db()
+        assert payment_order.status == "captured"
+        assert payment_order.razorpay_payment_id == payment_id
+
     def test_webhook_deduplication_does_not_process_twice(self, api_client, held_booking_with_order):
         """Duplicate webhook event delivery is recognized and acknowledged without re-processing."""
         booking, payment_order = held_booking_with_order

@@ -146,14 +146,19 @@ export const BookingReview: React.FC<BookingReviewProps> = ({ onBackToDetails })
       // 3. Cryptographic Signature Verification & Confirmation on Django backend
       setPaymentStatusText('Verifying payment signature & confirming reservation...');
 
+      const bookingToken = activeHold?.access_token || (checkoutSummary as any)?.access_token;
+
       const verifyRes = await paymentApiService.verifyPayment({
         razorpay_order_id: checkoutResult.razorpay_order_id,
         razorpay_payment_id: checkoutResult.razorpay_payment_id,
         razorpay_signature: checkoutResult.razorpay_signature,
-      });
+      }, bookingToken);
 
       if (verifyRes && (verifyRes.booking_status === 'confirmed' || verifyRes.payment_status === 'captured')) {
-        navigate(`/booking/confirmation/${bookingRef}`, { replace: true });
+        const targetUrl = bookingToken
+          ? `/booking/confirmation/${bookingRef}?token=${encodeURIComponent(bookingToken)}`
+          : `/booking/confirmation/${bookingRef}`;
+        navigate(targetUrl, { replace: true });
       } else {
         throw new Error('Verification completed but status was not confirmed.');
       }
