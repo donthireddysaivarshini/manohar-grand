@@ -20,4 +20,6 @@ class AuditLogAdmin(admin.ModelAdmin):
         return False
 
     def has_delete_permission(self, request, obj=None):
-        return False
+        if not request.user.is_authenticated:
+            return False
+        return bool(request.user.is_superuser or getattr(request.user, 'is_staff', False))

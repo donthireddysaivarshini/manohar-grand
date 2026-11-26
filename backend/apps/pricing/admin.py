@@ -479,4 +479,4 @@ class BookingPriceSnapshotAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         if not request.user.is_authenticated:
             return False
-        return request.user.is_superuser
+        return bool(request.user.is_superuser or getattr(request.user, 'is_staff', False))

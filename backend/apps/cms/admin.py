@@ -41,8 +41,9 @@ class HotelConfigurationAdmin(admin.ModelAdmin):
         return self.has_change_permission(request)
 
     def has_delete_permission(self, request, obj=None):
-        # Do not allow deleting the singleton config
-        return False
+        if not request.user.is_authenticated:
+            return False
+        return bool(request.user.is_superuser)
 
     def has_change_permission(self, request, obj=None):
         if not request.user.is_authenticated:
