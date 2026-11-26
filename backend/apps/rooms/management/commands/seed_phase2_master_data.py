@@ -250,10 +250,8 @@ class Command(BaseCommand):
             hotel_config.secondary_phone = '+91 79970 22999'
         if not hotel_config.email:
             hotel_config.email = 'manohargrand1@gmail.com'
-        if not hotel_config.address:
-            hotel_config.address = 'D.No. 15-31-2M-15/5/1, Beside Nexus Hyderabad Mall, Near JNTU Metro Station, KPHB Colony, Kukatpally, Hyderabad, Telangana 500072'
-        if not hotel_config.near_landmark:
-            hotel_config.near_landmark = 'Beside Nexus Hyderabad Mall & Walkable distance from JNTU Metro Station'
+        hotel_config.address = 'Near JNTU Metro Station, Kukatpally, Hyderabad, Telangana'
+        hotel_config.near_landmark = 'Near JNTU Metro Station, Kukatpally'
         if not hotel_config.google_maps_url:
             hotel_config.google_maps_url = 'https://maps.google.com/?q=Manohar+Grand+Kukatpally+Hyderabad'
         if not hotel_config.google_maps_embed_url:
